@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneSms.Server.Droid", "OneSms.Server.Droid.csproj", "{E7A4D933-24FF-40EA-9830-6A17A999A8FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OneUssd", "..\OneUssd\OneUssd.csproj", "{E3BD077B-C9E4-4BE6-A025-7C29EA46A844}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneSms.Web.Server", "..\OneSms.Web\Server\OneSms.Web.Server.csproj", "{E0348D12-73D9-470D-8F02-7F9D6C6D7948}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneSms.Web.Client", "..\OneSms.Web\Client\OneSms.Web.Client.csproj", "{110F7843-2974-4A6B-BC34-CDBC4C50E7F2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneSms.Web.Shared", "..\OneSms.Web\Shared\OneSms.Web.Shared.csproj", "{C5A38CF4-6CBC-4A2A-B9B4-662B2E87DA9E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneSms.Online", "..\OneSms.Online\OneSms.Online.csproj", "{885179C5-0AB8-4C4D-BCC0-9FCC933683ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E7A4D933-24FF-40EA-9830-6A17A999A8FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7A4D933-24FF-40EA-9830-6A17A999A8FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7A4D933-24FF-40EA-9830-6A17A999A8FE}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{E7A4D933-24FF-40EA-9830-6A17A999A8FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7A4D933-24FF-40EA-9830-6A17A999A8FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7A4D933-24FF-40EA-9830-6A17A999A8FE}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{E3BD077B-C9E4-4BE6-A025-7C29EA46A844}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3BD077B-C9E4-4BE6-A025-7C29EA46A844}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3BD077B-C9E4-4BE6-A025-7C29EA46A844}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3BD077B-C9E4-4BE6-A025-7C29EA46A844}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0348D12-73D9-470D-8F02-7F9D6C6D7948}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0348D12-73D9-470D-8F02-7F9D6C6D7948}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0348D12-73D9-470D-8F02-7F9D6C6D7948}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0348D12-73D9-470D-8F02-7F9D6C6D7948}.Release|Any CPU.Build.0 = Release|Any CPU
+		{110F7843-2974-4A6B-BC34-CDBC4C50E7F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{110F7843-2974-4A6B-BC34-CDBC4C50E7F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{110F7843-2974-4A6B-BC34-CDBC4C50E7F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{110F7843-2974-4A6B-BC34-CDBC4C50E7F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5A38CF4-6CBC-4A2A-B9B4-662B2E87DA9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5A38CF4-6CBC-4A2A-B9B4-662B2E87DA9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5A38CF4-6CBC-4A2A-B9B4-662B2E87DA9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5A38CF4-6CBC-4A2A-B9B4-662B2E87DA9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{885179C5-0AB8-4C4D-BCC0-9FCC933683ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{885179C5-0AB8-4C4D-BCC0-9FCC933683ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{885179C5-0AB8-4C4D-BCC0-9FCC933683ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{885179C5-0AB8-4C4D-BCC0-9FCC933683ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {06C93291-C053-4CA3-B4BD-A5C8E461040F}
+	EndGlobalSection
+EndGlobal
