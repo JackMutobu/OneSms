@@ -1,0 +1,105 @@
+﻿@inject AuthenticationStateProvider AuthenticationsStateProvider
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="">OneSms</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <Space>
+                    <SpaceItem><Icon Style="font-size:25px" Type="home" /></SpaceItem>
+                    <SpaceItem><h6 style="color:white; margin-top:10px">Statistics</h6></SpaceItem>
+                </Space>
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="apps">
+                <Space>
+                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                    <SpaceItem><h6 style="color:white; margin-top:10px">Apps</h6></SpaceItem>
+                </Space>
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="sms">
+                <Space>
+                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                    <SpaceItem><h6 style="color:white; margin-top:10px">Sms</h6></SpaceItem>
+                </Space>
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="mobileserveradmin">
+                <Space>
+                    <SpaceItem><Icon Style="font-size:25px" Type="MobileOutlined" /></SpaceItem>
+                    <SpaceItem><h6 style="color:white; margin-top:10px">Mobile Servers</h6></SpaceItem>
+                </Space>
+            </NavLink>
+        </li>
+        @if (user.IsInRole(UserRoles.SuperAdmin))
+        {
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="simadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Sim Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="ussdadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="networkadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Networks</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="smsadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">SMS Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+        }
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="ussdtransactions">
+                <Space>
+                    <SpaceItem><Icon Style="font-size:25px" Type="SlidersOutlined" /></SpaceItem>
+                    <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Transaction</h6></SpaceItem>
+                </Space>
+            </NavLink>
+        </li>
+
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    System.Security.Claims.ClaimsPrincipal user = new System.Security.Claims.ClaimsPrincipal();
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var authstate = await AuthenticationsStateProvider.GetAuthenticationStateAsync();
+        user = authstate.User;
+    }
+}

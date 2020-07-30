@@ -1,0 +1,47 @@
+﻿@page "/apps"
+@inherits ReactiveComponentBase<AppViewModel>
+@attribute [Authorize(Roles = "SuperAdmin,Admin")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Apps</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary"  @onclick="() => ShowModal(app)">Add</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<Text Type="danger">@ViewModel.Errors</Text>
+<Table DataSource="@ViewModel.Apps" Class="table-responsive">
+    <Column @bind-Field="@context.Name"></Column>
+    <Column @bind-Field="@context.SmsBalance"></Column>
+    <Column @bind-Field="@context.Credit"></Column>
+    <Column @bind-Field="@context.AppId"></Column>
+    <Column @bind-Field="@context.CreatedOn"></Column>
+    <ActionColumn Title="Action">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button Type="primary">Sms</Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button @onclick="() => ShowModal(context)">Edit</Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="danger" @onclick="() => Delete(context)">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
+<Modal Title="@("Add or modify app")" OnCancel="HideModal" Visible="@modalVisible" Footer="null">
+    <Form Model="app" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+        <FormItem Label="Name">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => app = new OneSmsApp()">Clear</Button>
+                </SpaceItem>
+            </Space>
+        </FormItem>
+    </Form>
+</Modal>

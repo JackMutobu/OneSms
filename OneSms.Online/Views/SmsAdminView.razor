@@ -1,0 +1,31 @@
+﻿@page "/smsadmin"
+@inherits ReactiveComponentBase<SimAdminViewModel>
+@attribute [Authorize(Roles = "SuperAdmin")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Sms Test</PageHeaderTitle>
+</PageHeader>
+<div class="Gutter-example">
+    <Row Gutter="@Gutter1">
+        <Col class="Gutter-row" Span="6"><Input Placeholder="Receiver" Size="@InputSize.Large" @bind-Value="sender" /></Col>
+
+        <Col class="Gutter-row" Span="6"><Input Placeholder="Message" Size="@InputSize.Large" @bind-Value="message" /></Col>
+
+        <Col class="Gutter-row" Span="6"><Input Placeholder="Number" Type="number" Size="@InputSize.Large" @bind-Value="numberOfMessageToSend" />
+        </Col>
+        <Col class="Gutter-row" Span="6"><Button Size="@ButtonSize.Large" Type="primary">Send test</Button></Col>
+    </Row>
+</div>
+@code{
+    string sender = "786408335";
+    string message = "Message test";
+    int numberOfMessageToSend = 5;
+    Dictionary<string, int> Gutter1 = new Dictionary<string, int>()
+    {
+        ["xs"] = 8,
+        ["sm"] = 64,
+        ["md"] = 24,
+        ["lg"] = 32,
+        ["xl"] = 48,
+        ["xxl"] = 64
+    };
+}
