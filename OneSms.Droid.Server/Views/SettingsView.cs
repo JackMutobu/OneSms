@@ -1,28 +1,41 @@
 ﻿using Android.Content;
 using Android.Widget;
+using Java.Util;
 using OneSms.Droid.Server.Services;
-using System.Text.RegularExpressions;
+using OneUssd;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
+using UssdService = OneSms.Droid.Server.Services.UssdService;
 
 namespace OneSms.Droid.Server.Views
 {
     public class SettingsView : LinearLayout
     {
         private TextView _label;
+        private TextView _ussdLabel;
         private Button _save;
+        private Button _executeUssd;
         private EditText _appId;
         private EditText _message;
+        private EditText _simNumber;
+        private EditText _ussdCode;
+        private EditText _ussdData;
         private SmsService _smsService;
-        private PermissionStatus permissionStatus;
-        public SettingsView(Context context) : base(context)
+        private UssdService _ussdService;
+
+        
+        public SettingsView(Context context,SmsService smsService) : base(context)
         {
             Orientation = Orientation.Vertical;
-            _smsService = new SmsService(context);
+            _smsService = smsService;
+            _ussdService = new UssdService(context);
             _label = new TextView(context)
             {
                 Text = "Envoyer un sms"
             };
+            _ussdLabel = new TextView(context);
             _save = new Button(context)
             {
                 Text = "Send"
@@ -37,36 +50,61 @@ namespace OneSms.Droid.Server.Views
             {
                 Hint = "Sms body"
             };
+            _simNumber = new EditText(context) 
+            {
+                Hint = "Sim slot"
+            };
+            _ussdLabel = new TextView(context)
+            {
+                Text = "Ussd Transaction"
+            };
+            _ussdCode = new EditText(context) 
+            {
+                Hint = "Ussd Code"
+            };
+            _ussdData = new EditText(context) 
+            {
+                Hint = "Ussd Data"
+            };
+            _executeUssd = new Button(context)
+            {
+                Text = "Execute Ussd",
+            };
             AddView(_label);
             AddView(_appId);
             AddView(_message);
+            AddView(_simNumber);
             AddView(_save);
+            AddView(_ussdLabel);
+            AddView(_ussdCode);
+            AddView(_ussdData);
+            AddView(_executeUssd);
+            _executeUssd.Click += OnUssdClick;
+        }
+
+        private void OnUssdClick(object sender, System.EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_ussdData.Text) && !string.IsNullOrEmpty(_ussdCode.Text))
+            {
+                var sim = string.IsNullOrEmpty(_simNumber.Text) ? 0 : int.Parse(_simNumber.Text);
+                var keyProblems = new HashSet<string>();
+                var keyWelcome = new HashSet<string>();
+                var data = new Dictionary<string, HashSet<string>>
+                {
+                    { UssdController.KeyLogin, keyWelcome },
+                    { UssdController.KeyError, keyProblems }
+                };
+                _ussdService.Execute(_ussdCode.Text, sim, data, _ussdData.Text.Split(",").ToList());
+            }
         }
 
         private async void Save_Click(object sender, System.EventArgs e)
         {
-            permissionStatus = await Permissions.CheckStatusAsync<Permissions.Sms>();
-            if(permissionStatus == PermissionStatus.Granted)
+            if (!string.IsNullOrEmpty(_message.Text) && !string.IsNullOrEmpty(_appId.Text))
             {
-                if (!string.IsNullOrEmpty(_message.Text) && !string.IsNullOrEmpty(_appId.Text))
-                {
-                    _smsService.SendSms(_appId.Text, _message.Text);
-                }              
+                var sim = string.IsNullOrEmpty(_simNumber.Text) ? 0 : int.Parse(_simNumber.Text);
+                await _smsService.SendSms(_appId.Text, _message.Text, sim);
             }
-            else
-                permissionStatus = await Permissions.RequestAsync<Permissions.Sms>();
-        }
-        public async Task<PermissionStatus> CheckAndRequestSmsPermission()
-        {
-            var status = await Permissions.CheckStatusAsync<Permissions.Sms>();
-            if (status != PermissionStatus.Granted)
-            {
-                status = await Permissions.RequestAsync<Permissions.Sms>();
-            }
-
-            // Additionally could prompt the user to turn on in settings
-
-            return status;
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using OneSms.Droid.Server.Models;
-using ReactiveUI.Fody.Helpers;
 using System.Collections.ObjectModel;
 
 namespace OneSms.Droid.Server.ViewModels
@@ -20,7 +19,7 @@ namespace OneSms.Droid.Server.ViewModels
             };
         }
 
-        [Reactive]
+ 
         public ObservableCollection<ContactInfo> ContactList { get; set; }
     }
 

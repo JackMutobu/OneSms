@@ -9,4 +9,11 @@
 	<uses-permission android:name="android.permission.BROADCAST_SMS" />
 	<uses-permission android:name="android.permission.WRITE_SMS" />
 	<uses-permission android:name="android.permission.SMS_FINANCIAL_TRANSACTIONS" />
+	<uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+	<uses-permission android:name="android.permission.MODIFY_PHONE_STATE" />
+	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+	<uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+  <uses-permission android:name="android.permission.CALL_PHONE" />
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <uses-permission android:name="android.permission.ACTION_MANAGE_OVERLAY_PERMISSION" />
 </manifest>

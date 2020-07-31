@@ -1,8 +1,6 @@
-﻿using ReactiveUI;
-
-namespace OneSms.Droid.Server.ViewModels
+﻿namespace OneSms.Droid.Server.ViewModels
 {
-    public class ViewModelBase : ReactiveObject
+    public class ViewModelBase 
     {
        
     }

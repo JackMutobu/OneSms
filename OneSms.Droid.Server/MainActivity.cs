@@ -3,16 +3,15 @@ using Android.Content;
 using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
-using Android.Support.V7.App;
 using Android.Widget;
+using AndroidX.AppCompat.App;
 using OneSms.Droid.Server.Adapters;
 using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Receivers;
+using OneSms.Droid.Server.Services;
 using OneSms.Droid.Server.ViewModels;
 using OneSms.Droid.Server.Views;
 using Syncfusion.Android.TabView;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using Xamarin.Essentials;
 
 namespace OneSms.Droid.Server
@@ -25,6 +24,7 @@ namespace OneSms.Droid.Server
         private SettingsView settingsView;
         private ContactViewModel contactViewModel;
         private SmsReceiver smsReceiver;
+        private SmsService smsService;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -33,10 +33,11 @@ namespace OneSms.Droid.Server
             //Register Syncfusion license
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mjk2NzM0QDMxMzgyZTMyMmUzMENBcnhhYldQMkZMbGorVlI4OXhBWUlYOFk1RVV6K0cvNHI2UFFvUGsyVHc9");
             tabView = new SfTabView(this.ApplicationContext);
-            smsReceiver = new SmsReceiver();
+            smsService = new SmsService(this);
+            smsReceiver = new SmsReceiver(smsService);
             CheckForIncommingSMS();
             contactViewModel = new ContactViewModel();
-            settingsView = new SettingsView(this);
+            settingsView = new SettingsView(this,smsService);
             SetContentView(tabView);
             InitializeTab();
             var listView = new ListView(this);
@@ -46,7 +47,7 @@ namespace OneSms.Droid.Server
         }
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
