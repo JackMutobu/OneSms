@@ -30,9 +30,7 @@ namespace OneSms.Online.Views
         {
             base.OnInitialized();
             ViewModel = new SimAdminViewModel(OneSmsDbContext);
-            await ViewModel.LoadSimCards.Execute().ToTask();
             await ViewModel.LoadNetworks.Execute().ToTask();
-            await ViewModel.LoadApps.Execute().ToTask();
         }
         private async Task AddOrUpdate(SimCard sim)
            => await ViewModel.AddOrUpdateCard.Execute(sim).ToTask();
@@ -134,6 +132,10 @@ namespace OneSms.Online.Views
         private void OnAppSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
         {
             sim.AppIds = ((IEnumerable<string>)value.Value).Select(x => new Guid(x)).ToList();
+        }
+        private void OnServerSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
+        {
+            sim.MobileServerId = ViewModel.MobileServers.First(x => x.Id == int.Parse(value.Value.ToString())).Id;
         }
         private async Task OnRemoveApp(OneSmsApp oneSmsApp)
         {

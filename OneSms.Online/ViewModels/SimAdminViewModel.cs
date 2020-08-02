@@ -1,4 +1,5 @@
 ﻿using AntDesign;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using OneSms.Online.Data;
 using OneSms.Web.Shared.Models;
@@ -20,9 +21,13 @@ namespace OneSms.Online.ViewModels
         public SimAdminViewModel(OneSmsDbContext oneSmsDbContext)
         {
             _oneSmsDbContext = oneSmsDbContext;
+            Sims = new ObservableCollection<SimCard>();
+            Networks = new ObservableCollection<NetworkOperator>();
+            Apps = new ObservableCollection<OneSmsApp>();
+
             LoadNetworks = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Networks.ToListAsync());
             LoadNetworks.Do(networks => Networks = new ObservableCollection<NetworkOperator>(networks)).Subscribe();
-            LoadSimCards = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Sims.AsNoTracking().Include(x =>x.Apps).AsNoTracking().ToListAsync());
+            LoadSimCards = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Sims.AsNoTracking().Include(x => x.MobileServer).Include(x =>x.Apps).AsNoTracking().ToListAsync());
             LoadSimCards.Do(sims => Sims = new ObservableCollection<SimCard>(sims)).Subscribe();
             LoadApps = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Apps.ToListAsync());
             LoadApps.Do(apps => Apps = new ObservableCollection<OneSmsApp>(apps)).Subscribe();
@@ -60,10 +65,17 @@ namespace OneSms.Online.ViewModels
             DeleteAppSim.Where(rows => rows > 0).Select(_ => Unit.Default).InvokeCommand(LoadSimCards);
             AddAppSim.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
             DeleteAppSim.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+
+            LoadServers = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.MobileServers.ToListAsync());
+            LoadServers.Do(servers => MobileServers = new ObservableCollection<ServerMobile>(servers)).Subscribe();
+            LoadNetworks.Select(_ => Unit.Default).InvokeCommand(LoadServers);
+            LoadServers.Select(_ => Unit.Default).InvokeCommand(LoadApps);
+            LoadApps.Select(_ => Unit.Default).InvokeCommand(LoadSimCards);
         }
 
         [Reactive]
         public bool IsBusy { get; set; }
+
         public string Errors { [ObservableAsProperty]get; }
 
         [Reactive]
@@ -73,6 +85,9 @@ namespace OneSms.Online.ViewModels
         public ObservableCollection<NetworkOperator> Networks { get; set; } = new ObservableCollection<NetworkOperator>();
         [Reactive]
         public ObservableCollection<OneSmsApp> Apps { get; set; } = new ObservableCollection<OneSmsApp>();
+
+        [Reactive]
+        public ObservableCollection<ServerMobile> MobileServers { get; set; } = new ObservableCollection<ServerMobile>();
 
         public ReactiveCommand<Unit, List<SimCard>> LoadSimCards { get; }
 
@@ -87,5 +102,7 @@ namespace OneSms.Online.ViewModels
         public ReactiveCommand<Unit, List<NetworkOperator>> LoadNetworks { get; }
 
         public ReactiveCommand<Unit, List<OneSmsApp>> LoadApps { get; }
+
+        public ReactiveCommand<Unit,List<ServerMobile>> LoadServers { get; }
     }
 }

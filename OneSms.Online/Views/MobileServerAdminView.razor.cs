@@ -50,13 +50,6 @@ namespace OneSms.Online.Views
         }
         private void HideModal() => modalVisible = false;
 
-        private void OnSimOneChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
-        {
-            serverMobile.SimOneId = int.Parse(value.Value.ToString());
-        }
-        private void OnSimTwoChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
-        {
-            serverMobile.SimTwoId = int.Parse(value.Value.ToString());
-        }
+        
     }
 }

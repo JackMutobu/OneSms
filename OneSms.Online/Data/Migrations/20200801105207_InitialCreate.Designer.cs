@@ -10,7 +10,7 @@ using OneSms.Online.Data;
 namespace OneSms.Online.Data.Migrations
 {
     [DbContext(typeof(OneSmsDbContext))]
-    [Migration("20200727124937_InitialCreate")]
+    [Migration("20200801105207_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -229,6 +229,21 @@ namespace OneSms.Online.Data.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
+            modelBuilder.Entity("OneSms.Web.Shared.Models.AppSim", b =>
+                {
+                    b.Property<Guid>("AppId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SimId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AppId", "SimId");
+
+                    b.HasIndex("SimId");
+
+                    b.ToTable("AppSims");
+                });
+
             modelBuilder.Entity("OneSms.Web.Shared.Models.NetworkOperator", b =>
                 {
                     b.Property<int>("Id")
@@ -274,12 +289,14 @@ namespace OneSms.Online.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SmsBalance")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserEmail")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AppId");
@@ -301,22 +318,13 @@ namespace OneSms.Online.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SimOneId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SimTwoId")
-                        .HasColumnType("int");
 
                     b.Property<string>("UserEmail")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SimOneId");
-
-                    b.HasIndex("SimTwoId");
 
                     b.ToTable("MobileServers");
                 });
@@ -337,19 +345,21 @@ namespace OneSms.Online.Data.Migrations
                     b.Property<string>("MobileMoneyBalance")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("MobileServerId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("NetworkId")
                         .HasColumnType("int");
 
                     b.Property<string>("Number")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("OneSmsAppAppId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("OneSmsAppId")
+                    b.Property<int>("SimSlot")
                         .HasColumnType("int");
 
                     b.Property<string>("SmsBalance")
@@ -357,9 +367,9 @@ namespace OneSms.Online.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NetworkId");
+                    b.HasIndex("MobileServerId");
 
-                    b.HasIndex("OneSmsAppAppId");
+                    b.HasIndex("NetworkId");
 
                     b.ToTable("Sims");
                 });
@@ -372,6 +382,7 @@ namespace OneSms.Online.Data.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Body")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CompletedTime")
@@ -383,10 +394,15 @@ namespace OneSms.Online.Data.Migrations
                     b.Property<int>("MobileServerId")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("OneSmsAppId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("RecieverNumber")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SenderNumber")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartTime")
@@ -395,9 +411,14 @@ namespace OneSms.Online.Data.Migrations
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TransactionState")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MobileServerId");
+
+                    b.HasIndex("OneSmsAppId");
 
                     b.ToTable("SmsTransactions");
                 });
@@ -442,8 +463,14 @@ namespace OneSms.Online.Data.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<bool>("CanSkipe")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPlaceHolder")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -560,30 +587,34 @@ namespace OneSms.Online.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("OneSms.Web.Shared.Models.ServerMobile", b =>
+            modelBuilder.Entity("OneSms.Web.Shared.Models.AppSim", b =>
                 {
-                    b.HasOne("OneSms.Web.Shared.Models.SimCard", "SimOne")
-                        .WithMany()
-                        .HasForeignKey("SimOneId")
+                    b.HasOne("OneSms.Web.Shared.Models.OneSmsApp", "App")
+                        .WithMany("Sims")
+                        .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("OneSms.Web.Shared.Models.SimCard", "SimTwo")
-                        .WithMany()
-                        .HasForeignKey("SimTwoId");
+                    b.HasOne("OneSms.Web.Shared.Models.SimCard", "Sim")
+                        .WithMany("Apps")
+                        .HasForeignKey("SimId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("OneSms.Web.Shared.Models.SimCard", b =>
                 {
+                    b.HasOne("OneSms.Web.Shared.Models.ServerMobile", "MobileServer")
+                        .WithMany("Sims")
+                        .HasForeignKey("MobileServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("OneSms.Web.Shared.Models.NetworkOperator", "Network")
                         .WithMany()
                         .HasForeignKey("NetworkId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("OneSms.Web.Shared.Models.OneSmsApp", "OneSmsApp")
-                        .WithMany()
-                        .HasForeignKey("OneSmsAppAppId");
                 });
 
             modelBuilder.Entity("OneSms.Web.Shared.Models.SmsTransaction", b =>
@@ -591,6 +622,12 @@ namespace OneSms.Online.Data.Migrations
                     b.HasOne("OneSms.Web.Shared.Models.ServerMobile", "MobileServer")
                         .WithMany()
                         .HasForeignKey("MobileServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OneSms.Web.Shared.Models.OneSmsApp", "OneSmsApp")
+                        .WithMany()
+                        .HasForeignKey("OneSmsAppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

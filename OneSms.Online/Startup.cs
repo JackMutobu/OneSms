@@ -12,6 +12,8 @@ using OneSms.Online.Models;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
+using OneSms.Online.Hubs;
+using OneSms.Online.Services;
 
 namespace OneSms.Online
 {
@@ -45,6 +47,7 @@ namespace OneSms.Online
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddControllers();
+            services.AddSignalR();
 
             services.AddAntDesign();
 
@@ -84,6 +87,8 @@ namespace OneSms.Online
 
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<OneSmsUser>>();
             services.AddSingleton<WeatherForecastService>();
+            services.AddSingleton<ServerConnectionService>();
+            services.AddSingleton<SmsHubEventService>();
             services.AddHttpContextAccessor();
             
         }
@@ -124,19 +129,16 @@ namespace OneSms.Online
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
+                endpoints.MapHub<OneSmsHub>("/onesmshub");
             });
         }
         private static void UpdateDatabase(IApplicationBuilder app)
         {
-            using (var serviceScope = app.ApplicationServices
+            using var serviceScope = app.ApplicationServices
                 .GetRequiredService<IServiceScopeFactory>()
-                .CreateScope())
-            {
-                using (var context = serviceScope.ServiceProvider.GetService<OneSmsDbContext>())
-                {
-                    context.Database.Migrate();
-                }
-            }
+                .CreateScope();
+            using var context = serviceScope.ServiceProvider.GetService<OneSmsDbContext>();
+            context.Database.Migrate();
         }
     }
 }

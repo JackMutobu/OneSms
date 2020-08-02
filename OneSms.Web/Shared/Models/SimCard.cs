@@ -31,5 +31,12 @@ namespace OneSms.Web.Shared.Models
         public ICollection<UssdTransaction> UssdTransactions { get; set; }
 
         public ICollection<AppSim> Apps { get; set; }
+
+        public int SimSlot { get; set; }
+
+        public int MobileServerId { get; set; }
+
+        public ServerMobile MobileServer { get; set; }
+
     }
 }

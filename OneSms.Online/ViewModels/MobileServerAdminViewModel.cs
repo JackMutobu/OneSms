@@ -40,6 +40,8 @@ namespace OneSms.Online.ViewModels
             LoadSimCards.Do(sims => SimCards = new ObservableCollection<SimCard>(sims)).Subscribe();
         }
 
+        public string Errors { [ObservableAsProperty]get; }
+
         [Reactive]
         public bool IsBusy { get; set; }
 

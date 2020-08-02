@@ -14,10 +14,10 @@ namespace OneSms.Online.Data.Migrations
                     AppId = table.Column<Guid>(nullable: false),
                     Id = table.Column<int>(nullable: false),
                     CreatedOn = table.Column<DateTime>(nullable: false),
-                    Name = table.Column<string>(nullable: true),
+                    Name = table.Column<string>(nullable: false),
                     ClientId = table.Column<Guid>(nullable: false),
                     ClientSecret = table.Column<Guid>(nullable: false),
-                    UserEmail = table.Column<string>(nullable: true),
+                    UserEmail = table.Column<string>(nullable: false),
                     SmsBalance = table.Column<string>(nullable: true),
                     Credit = table.Column<string>(nullable: true)
                 },
@@ -66,6 +66,22 @@ namespace OneSms.Online.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MobileServers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CreatedOn = table.Column<DateTime>(nullable: false),
+                    Key = table.Column<Guid>(nullable: false),
+                    Name = table.Column<string>(nullable: false),
+                    UserEmail = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MobileServers", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -190,36 +206,70 @@ namespace OneSms.Online.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SmsTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CreatedOn = table.Column<DateTime>(nullable: false),
+                    Title = table.Column<string>(nullable: true),
+                    Body = table.Column<string>(nullable: false),
+                    StartTime = table.Column<DateTime>(nullable: false),
+                    CompletedTime = table.Column<DateTime>(nullable: false),
+                    RecieverNumber = table.Column<string>(nullable: false),
+                    SenderNumber = table.Column<string>(nullable: false),
+                    MobileServerId = table.Column<int>(nullable: false),
+                    TransactionState = table.Column<int>(nullable: false),
+                    OneSmsAppId = table.Column<Guid>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SmsTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SmsTransactions_MobileServers_MobileServerId",
+                        column: x => x.MobileServerId,
+                        principalTable: "MobileServers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SmsTransactions_Apps_OneSmsAppId",
+                        column: x => x.OneSmsAppId,
+                        principalTable: "Apps",
+                        principalColumn: "AppId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sims",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedOn = table.Column<DateTime>(nullable: false),
-                    Number = table.Column<string>(nullable: true),
-                    Name = table.Column<string>(nullable: true),
+                    Number = table.Column<string>(nullable: false),
+                    Name = table.Column<string>(nullable: false),
                     NetworkId = table.Column<int>(nullable: false),
                     SmsBalance = table.Column<string>(nullable: true),
                     MobileMoneyBalance = table.Column<string>(nullable: true),
                     AirtimeBalance = table.Column<string>(nullable: true),
-                    OneSmsAppId = table.Column<int>(nullable: false),
-                    OneSmsAppAppId = table.Column<Guid>(nullable: true)
+                    SimSlot = table.Column<int>(nullable: false),
+                    MobileServerId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Sims_MobileServers_MobileServerId",
+                        column: x => x.MobileServerId,
+                        principalTable: "MobileServers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Sims_Networks_NetworkId",
                         column: x => x.NetworkId,
                         principalTable: "Networks",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Sims_Apps_OneSmsAppAppId",
-                        column: x => x.OneSmsAppAppId,
-                        principalTable: "Apps",
-                        principalColumn: "AppId",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -247,79 +297,25 @@ namespace OneSms.Online.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MobileServers",
+                name: "AppSims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CreatedOn = table.Column<DateTime>(nullable: false),
-                    Key = table.Column<Guid>(nullable: false),
-                    Name = table.Column<string>(nullable: true),
-                    SimOneId = table.Column<int>(nullable: false),
-                    SimTwoId = table.Column<int>(nullable: true),
-                    UserEmail = table.Column<string>(nullable: true)
+                    AppId = table.Column<Guid>(nullable: false),
+                    SimId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MobileServers", x => x.Id);
+                    table.PrimaryKey("PK_AppSims", x => new { x.AppId, x.SimId });
                     table.ForeignKey(
-                        name: "FK_MobileServers_Sims_SimOneId",
-                        column: x => x.SimOneId,
-                        principalTable: "Sims",
-                        principalColumn: "Id",
+                        name: "FK_AppSims_Apps_AppId",
+                        column: x => x.AppId,
+                        principalTable: "Apps",
+                        principalColumn: "AppId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MobileServers_Sims_SimTwoId",
-                        column: x => x.SimTwoId,
+                        name: "FK_AppSims_Sims_SimId",
+                        column: x => x.SimId,
                         principalTable: "Sims",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UssdActionSteps",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CreatedOn = table.Column<DateTime>(nullable: false),
-                    Name = table.Column<string>(nullable: false),
-                    Value = table.Column<string>(nullable: false),
-                    UssdActionId = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UssdActionSteps", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UssdActionSteps_UssdActions_UssdActionId",
-                        column: x => x.UssdActionId,
-                        principalTable: "UssdActions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SmsTransactions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CreatedOn = table.Column<DateTime>(nullable: false),
-                    Title = table.Column<string>(nullable: true),
-                    Body = table.Column<string>(nullable: true),
-                    StartTime = table.Column<DateTime>(nullable: false),
-                    CompletedTime = table.Column<DateTime>(nullable: false),
-                    RecieverNumber = table.Column<string>(nullable: true),
-                    SenderNumber = table.Column<string>(nullable: true),
-                    MobileServerId = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SmsTransactions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SmsTransactions_MobileServers_MobileServerId",
-                        column: x => x.MobileServerId,
-                        principalTable: "MobileServers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -357,6 +353,35 @@ namespace OneSms.Online.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "UssdActionSteps",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CreatedOn = table.Column<DateTime>(nullable: false),
+                    Name = table.Column<string>(nullable: false),
+                    Value = table.Column<string>(nullable: false),
+                    IsPlaceHolder = table.Column<bool>(nullable: false),
+                    CanSkipe = table.Column<bool>(nullable: false),
+                    UssdActionId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UssdActionSteps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UssdActionSteps_UssdActions_UssdActionId",
+                        column: x => x.UssdActionId,
+                        principalTable: "UssdActions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppSims_SimId",
+                table: "AppSims",
+                column: "SimId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -398,14 +423,9 @@ namespace OneSms.Online.Data.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MobileServers_SimOneId",
-                table: "MobileServers",
-                column: "SimOneId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MobileServers_SimTwoId",
-                table: "MobileServers",
-                column: "SimTwoId");
+                name: "IX_Sims_MobileServerId",
+                table: "Sims",
+                column: "MobileServerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sims_NetworkId",
@@ -413,14 +433,14 @@ namespace OneSms.Online.Data.Migrations
                 column: "NetworkId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sims_OneSmsAppAppId",
-                table: "Sims",
-                column: "OneSmsAppAppId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SmsTransactions_MobileServerId",
                 table: "SmsTransactions",
                 column: "MobileServerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SmsTransactions_OneSmsAppId",
+                table: "SmsTransactions",
+                column: "OneSmsAppId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UssdActions_NetworkId",
@@ -445,6 +465,9 @@ namespace OneSms.Online.Data.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AppSims");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -476,19 +499,19 @@ namespace OneSms.Online.Data.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "UssdActions");
+                name: "Apps");
 
             migrationBuilder.DropTable(
-                name: "MobileServers");
+                name: "UssdActions");
 
             migrationBuilder.DropTable(
                 name: "Sims");
 
             migrationBuilder.DropTable(
-                name: "Networks");
+                name: "MobileServers");
 
             migrationBuilder.DropTable(
-                name: "Apps");
+                name: "Networks");
         }
     }
 }

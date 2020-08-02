@@ -67,15 +67,16 @@
     <Compile Include="Models\ContactInfo.cs" />
     <Compile Include="Models\SimInfo.cs" />
     <Compile Include="ExtendedPermissions\ReadPhoneStatePermission.cs" />
-    <Compile Include="Models\SmsLocalTransaction.cs" />
     <Compile Include="Receivers\SmsReceiver.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\SignalRService.cs" />
     <Compile Include="Services\SimService.cs" />
     <Compile Include="Services\SmsService.cs" />
     <Compile Include="Services\UssdService.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Views\ServerView.cs" />
     <Compile Include="Views\SettingsView.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +118,9 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client">
+      <Version>3.1.6</Version>
+    </PackageReference>
     <PackageReference Include="Syncfusion.Xamarin.SfTabView.Android">
       <Version>18.2.0.47</Version>
     </PackageReference>
@@ -140,6 +144,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\OneSms.Web\Shared\OneSms.Web.Shared.csproj">
+      <Project>{3E48221B-A655-4A5D-A3EC-BA04F36E9D85}</Project>
+      <Name>OneSms.Web.Shared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OneUssd\OneUssd.csproj">
       <Project>{e3bd077b-c9e4-4be6-a025-7c29ea46a844}</Project>
       <Name>OneUssd</Name>

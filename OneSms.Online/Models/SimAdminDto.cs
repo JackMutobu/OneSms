@@ -27,7 +27,11 @@ namespace OneSms.Online.Models
             Network = simCard.Network;
             NetworkId = simCard.NetworkId;
             AppIds = simCard.Apps.Select(x => x.AppId).ToList();
+            SimSlot = simCard.SimSlot;
+            MobileServerId = simCard.MobileServerId;
+            
         }
+
         [Required]
         public List<Guid> AppIds { get; set; }
 
@@ -45,8 +49,10 @@ namespace OneSms.Online.Models
                 NetworkId = this.NetworkId,
                 Number = this.Number,
                 UssdTransactions = this.UssdTransactions,
-                Apps = this.Apps
-            };
+                Apps = this.Apps,
+                SimSlot = this.SimSlot,
+                MobileServerId = this.MobileServerId
+        };
         }
     }
 }

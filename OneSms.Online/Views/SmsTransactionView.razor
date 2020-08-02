@@ -1,0 +1,32 @@
+﻿@page "/smstransactions"
+@inherits ReactiveComponentBase<SmsTransactionViewModel>
+    <PageHeader BackIcon="string.Empty">
+        <PageHeaderTitle>Sms Transactions</PageHeaderTitle>
+    </PageHeader>
+    <Table DataSource="@ViewModel.SmsTransactions" Class="table-responsive">
+        <Column @bind-Field="@context.Title"></Column>
+        <Column @bind-Field="@context.SenderNumber"></Column>
+        <Column @bind-Field="@context.RecieverNumber"></Column>
+        <Column @bind-Field="@context.Body"></Column>
+        <Column @bind-Field="@context.StartTime"></Column>
+        <Column @bind-Field="@context.CompletedTime"></Column>
+        <Column @bind-Field="@context.TransactionState"></Column>
+        @if (context.MobileServer != null)
+        {
+            <Column @bind-Field="@context.MobileServer.Name"></Column>
+        }
+        @if (context.OneSmsApp != null)
+        {
+            <ActionColumn Title="Network name">
+                <Column Title="Network name" @bind-Field="@context.OneSmsApp.Name"></Column>
+            </ActionColumn>
+        }
+        <Column @bind-Field="@context.CreatedOn"></Column>
+        <ActionColumn Title="Action">
+            <Space Size="middle">
+                <SpaceItem>
+                    <Button Type="danger" @onclick="() => Delete(context)">Delete</Button>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+    </Table>

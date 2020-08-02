@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OneSms.Web.Shared.Models
 {
@@ -10,16 +13,8 @@ namespace OneSms.Web.Shared.Models
         [Required]
         public string Name { get; set; }
 
-        public int SimOneId { get; set; }
-
-        public SimCard SimOne { get; set; }
-
-        public int? SimTwoId { get; set; }
-
-        public SimCard SimTwo { get; set; }
-
         public string UserEmail { get; set; }
 
-
+        public ICollection<SimCard> Sims { get; set; }
     }
 }

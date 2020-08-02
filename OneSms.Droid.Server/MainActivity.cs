@@ -12,6 +12,7 @@ using OneSms.Droid.Server.Services;
 using OneSms.Droid.Server.ViewModels;
 using OneSms.Droid.Server.Views;
 using Syncfusion.Android.TabView;
+using System.Threading.Tasks;
 using Xamarin.Essentials;
 
 namespace OneSms.Droid.Server
@@ -22,29 +23,53 @@ namespace OneSms.Droid.Server
         private SfTabView tabView;
         private FrameLayout allContactsGrid;
         private SettingsView settingsView;
+        private ServerView serverView;
         private ContactViewModel contactViewModel;
         private SmsReceiver smsReceiver;
         private SmsService smsService;
+        private SignalRService signalRService;
 
-        protected override void OnCreate(Bundle savedInstanceState)
+        protected async override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             Platform.Init(this, savedInstanceState);
             //Register Syncfusion license
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mjk2NzM0QDMxMzgyZTMyMmUzMENBcnhhYldQMkZMbGorVlI4OXhBWUlYOFk1RVV6K0cvNHI2UFFvUGsyVHc9");
             tabView = new SfTabView(this.ApplicationContext);
-            smsService = new SmsService(this);
-            smsReceiver = new SmsReceiver(smsService);
-            CheckForIncommingSMS();
+            await InitializeSignalR();
+            InitializeSmsServices();
             contactViewModel = new ContactViewModel();
-            settingsView = new SettingsView(this,smsService);
+            settingsView = new SettingsView(this, smsService);
+            serverView = new ServerView(this, signalRService);
+            
             SetContentView(tabView);
             InitializeTab();
             var listView = new ListView(this);
-            TabContentListAdapter tabContentListAdapter = new TabContentListAdapter(this,contactViewModel.ContactList);
+            TabContentListAdapter tabContentListAdapter = new TabContentListAdapter(this, contactViewModel.ContactList);
             listView.Adapter = tabContentListAdapter;
             allContactsGrid.AddView(listView);
         }
+
+        private void InitializeSmsServices()
+        {
+            smsService = new SmsService(this,signalRService);
+            smsReceiver = new SmsReceiver(smsService);
+            CheckForIncommingSMS();
+        }
+
+        private async Task InitializeSignalR()
+        {
+            signalRService = new SignalRService("https://7b9b7bc4cce7.ngrok.io/");
+            if (Preferences.ContainsKey(OneSmsAction.ServerUrl))
+            {
+                signalRService = new SignalRService(Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
+                await signalRService.ConnectToHub();
+                if (Preferences.ContainsKey(OneSmsAction.ServerKey))
+                    await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
+            }
+            
+        }
+
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
             Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -56,19 +81,19 @@ namespace OneSms.Droid.Server
         {
             allContactsGrid = new FrameLayout(ApplicationContext);
             var contactsGrid = new FrameLayout(ApplicationContext);
-            allContactsGrid.SetBackgroundColor(Color.Red);
+            allContactsGrid.SetBackgroundColor(Color.White);
             contactsGrid.SetBackgroundColor(Color.Blue);
             var tabItems = new TabItemCollection
                 {
                     new SfTabItem()
                     {
-                        Title = "Calls",
+                        Title = "OneSms",
                         Content = allContactsGrid
                     },
                     new SfTabItem()
                     {
-                        Title = "Contacts",
-                        Content = contactsGrid
+                        Title = "Servers",
+                        Content = serverView
                     },
                      new SfTabItem()
                     {
@@ -81,6 +106,7 @@ namespace OneSms.Droid.Server
             tabView.ContentTransitionDuration = 200;
             tabView.EnableSwiping = true;
         }
+
         private void CheckForIncommingSMS()
         {
             System.Diagnostics.Debug.WriteLine("Sms Receiver registered");

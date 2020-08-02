@@ -1,0 +1,107 @@
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using OneSms.Online.Data;
+using OneSms.Online.Hubs;
+using OneSms.Online.Services;
+using OneSms.Web.Shared.Constants;
+using OneSms.Web.Shared.Dtos;
+using OneSms.Web.Shared.Models;
+using ReactiveUI;
+using ReactiveUI.Fody.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace OneSms.Online.ViewModels
+{
+    public class SmsAdminViewModel:ReactiveObject
+    {
+        private OneSmsDbContext _oneSmsDbContext;
+        private ServerConnectionService _serverConnectionService;
+        private IHubContext<OneSmsHub> _oneSmsHubContext;
+        private SmsHubEventService _smsHubEventService;
+
+        public SmsAdminViewModel(OneSmsDbContext oneSmsDbContext,ServerConnectionService serverConnectionService,IHubContext<OneSmsHub> oneSmsHubContext,SmsHubEventService smsHubEventService)
+        {
+            _oneSmsDbContext = oneSmsDbContext;
+            _serverConnectionService = serverConnectionService;
+            _oneSmsHubContext = oneSmsHubContext;
+            _smsHubEventService = smsHubEventService;
+            SmsTransactions = new ObservableCollection<SmsTransaction>();
+            Sims = new ObservableCollection<SimCard>();
+
+            LoadMobileServers = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.MobileServers.ToListAsync());
+
+            LoadSimCards = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Sims.Include(x => x.MobileServer).Include(x => x.Apps).ToListAsync());
+            LoadSimCards.Do(sims => Sims = new ObservableCollection<SimCard>(sims)).Subscribe();
+            AddSmsTransaction = ReactiveCommand.CreateFromTask<SmsTransaction,SmsTransaction>(async sms =>
+            {
+                sms.CreatedOn = DateTime.UtcNow;
+                sms.CompletedTime = DateTime.UtcNow;
+                Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<SmsTransaction> created = _oneSmsDbContext.SmsTransactions.Add(sms);
+                await _oneSmsDbContext.SaveChangesAsync();
+                sms.Id = created.Entity.Id;
+                var mobileServer = await _oneSmsDbContext.MobileServers.FirstAsync(x => x.Id == sms.MobileServerId);
+                sms.MobileServer = mobileServer;
+                return sms;
+            });
+            SendSmsToMobileServer = ReactiveCommand.CreateFromTask<SmsTransaction,Unit>(async sms =>
+            {
+                var serverKey = sms.MobileServer.Key.ToString();
+                LatestTransaction.SmsId = sms.Id;
+                var serverConnectionId = string.Empty;
+                if(_serverConnectionService.ConnectedServers.TryGetValue(serverKey, out serverConnectionId))
+                    await _oneSmsHubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendSms, LatestTransaction);
+                return Unit.Default;
+
+            });
+            AddSmsTransaction.InvokeCommand(SendSmsToMobileServer);
+            AddSmsTransaction.Do(transaction => SmsTransactions.Add(transaction)).Subscribe();
+
+            SendSmsToMobileServer.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            AddSmsTransaction.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            LoadSimCards.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+
+            _smsHubEventService.OnSmsStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(sms =>
+            {
+                var item = SmsTransactions.FirstOrDefault(x => x.Id == sms.SmsId);
+                if(item != null)
+                {
+                    item.CompletedTime = sms.TimeStamp;
+                    item.TransactionState = sms.TransactionState;
+                    SmsTransactions.Remove(item);
+                    SmsTransactions.Add(item);
+                    SmsTransactions = new ObservableCollection<SmsTransaction>(SmsTransactions.OrderByDescending(x => x.CompletedTime));
+                }
+            });
+        }
+
+        [Reactive]
+        public ObservableCollection<ServerMobile> MobileServers { get; set; }
+
+        [Reactive]
+        public ObservableCollection<SmsTransaction> SmsTransactions { get; set; }
+
+        [Reactive]
+        public ObservableCollection<SimCard> Sims { get; set; }
+
+        public string Errors { [ObservableAsProperty]get; }
+
+        public SimCard SelectedSimCard { get; set; }
+
+        public SmsTransactionDto LatestTransaction { get; set; }
+
+        public ReactiveCommand<Unit,List<ServerMobile>> LoadMobileServers { get; }
+
+        public ReactiveCommand<Unit, List<SimCard>> LoadSimCards { get; }
+
+        public ReactiveCommand<SmsTransaction,SmsTransaction> AddSmsTransaction { get; }
+
+        public ReactiveCommand<SmsTransaction,Unit> SendSmsToMobileServer { get; }
+    }
+}
