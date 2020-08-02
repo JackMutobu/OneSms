@@ -5,6 +5,7 @@
         Sending,
         Sent,
         Delivered,
-        Canceled
+        Canceled,
+        Retrying
     }
 }

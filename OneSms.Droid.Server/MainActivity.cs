@@ -59,10 +59,10 @@ namespace OneSms.Droid.Server
 
         private async Task InitializeSignalR()
         {
-            signalRService = new SignalRService("https://7b9b7bc4cce7.ngrok.io/");
+            signalRService = new SignalRService(this,"https://7b9b7bc4cce7.ngrok.io/");
             if (Preferences.ContainsKey(OneSmsAction.ServerUrl))
             {
-                signalRService = new SignalRService(Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
+                signalRService = new SignalRService(this,Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
                 await signalRService.ConnectToHub();
                 if (Preferences.ContainsKey(OneSmsAction.ServerKey))
                     await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));

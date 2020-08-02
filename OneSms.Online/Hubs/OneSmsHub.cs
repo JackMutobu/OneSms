@@ -35,12 +35,19 @@ namespace OneSms.Online.Hubs
 
         public void SmsStateChanged(SmsTransactionDto sms)
         {
-            var smsTransaction = _oneSmsDbContext.SmsTransactions.First(x => x.Id == sms.SmsId);
-            smsTransaction.CompletedTime = sms.TimeStamp;
-            smsTransaction.TransactionState = sms.TransactionState;
-            _oneSmsDbContext.Update(smsTransaction);
-            _oneSmsDbContext.SaveChangesAsync();
-            _smsHubEventService.OnSmsStateChanged.OnNext(sms);
+            try
+            {
+                var smsTransaction = _oneSmsDbContext.SmsTransactions.First(x => x.Id == sms.SmsId);
+                smsTransaction.CompletedTime = sms.TimeStamp;
+                smsTransaction.TransactionState = sms.TransactionState;
+                _oneSmsDbContext.Update(smsTransaction);
+                _oneSmsDbContext.SaveChangesAsync();
+                _smsHubEventService.OnSmsStateChanged.OnNext(sms);
+            }
+            catch(Exception ex)
+            {
+                Clients.Caller.SendAsync("OnException", ex);
+            }
         }
 
         public override Task OnDisconnectedAsync(Exception exception)

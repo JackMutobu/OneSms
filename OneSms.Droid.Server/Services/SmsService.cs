@@ -16,6 +16,7 @@ using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Text.Json;
+using OneSms.Web.Shared.Enumerations;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -23,20 +24,34 @@ namespace OneSms.Droid.Server.Services
     {
         private Context _context;
         private SignalRService _signalRService;
+        private Queue<SmsTransactionDto> _pendingSms;
         
         public SmsService(Context context,SignalRService signalRService)
         {
             _context = context;
             _signalRService = signalRService;
             OnSmsTransaction = new Subject<SmsTransactionDto>();
-            OnSmsTransaction.Subscribe(async sms => await signalRService.SendSmsStateChanged(sms),async ex => 
+            OnSmsTransaction.Subscribe(async sms => 
+            {
+                await signalRService.SendSmsStateChanged(sms);
+                if(_pendingSms.Count > 0 && sms.TransactionState == SmsTransactionState.Sent)
+                    await SendSms(_pendingSms.Dequeue());
+            },async ex => 
             {
                 var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsTransactionDto;
                 await signalRService.SendSmsStateChanged(transacton);
-
+                if (_pendingSms.Count > 0)
+                    await SendSms(_pendingSms.Dequeue());
             });
 
-            _signalRService.Connection.On<SmsTransactionDto>(SignalRKeys.SendSms, async sms => await SendSms(sms));
+            _signalRService.Connection.On<SmsTransactionDto>(SignalRKeys.SendSms, async sms => 
+            {
+                if (_pendingSms.Count == 0)
+                    await SendSms(sms);
+                else
+                    _pendingSms.Enqueue(sms);
+            });
+            _pendingSms = new Queue<SmsTransactionDto>();
         }
 
         public Subject<SmsTransactionDto> OnSmsTransaction { get; }

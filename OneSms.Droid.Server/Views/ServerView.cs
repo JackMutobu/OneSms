@@ -99,7 +99,7 @@ namespace OneSms.Droid.Server.Views
                     var url = $"{_serverUrlText.Text}/onesmshub";
                     Preferences.Set(OneSmsAction.ServerUrl, url);
                     _labelServerUrl.Text = url;
-                    _signalRService = new SignalRService(Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
+                    _signalRService = new SignalRService(_context,Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
                 }
             };
             _signalRService.Connection.Closed += _ => 

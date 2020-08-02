@@ -1,4 +1,5 @@
-﻿using Android.Widget;
+﻿using Android.Content;
+using Android.Widget;
 using Microsoft.AspNetCore.SignalR.Client;
 using OneSms.Web.Shared.Dtos;
 using System;
@@ -8,8 +9,9 @@ namespace OneSms.Droid.Server.Services
 {
     public class SignalRService
     {
-        public SignalRService(string url)
+        public SignalRService(Context context,string url)
         {
+            _context = context;
             Connection = new HubConnectionBuilder()
                .WithUrl(url)
                .Build();
@@ -23,8 +25,11 @@ namespace OneSms.Droid.Server.Services
             {
                 var id = conId;
             });
+            Connection.On<Exception>("OnException", ex => Toast.MakeText(_context, ex.Message, ToastLength.Long).Show());
         }
-        
+
+        private Context _context;
+
         public HubConnection Connection { get; }
 
         public bool IsConnected { get; private set; }
@@ -55,6 +60,8 @@ namespace OneSms.Droid.Server.Services
             if(Connection.State == HubConnectionState.Connected)
                 await Connection.InvokeAsync("SmsStateChanged", smsTransactionDto);
         }
+
+        
 
     }
 }
