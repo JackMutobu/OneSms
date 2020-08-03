@@ -24,6 +24,7 @@
     <Text Type="danger">@ViewModel.Errors</Text>
     <Table DataSource="@ViewModel.UssdActions" Class="table-responsive">
         <Column @bind-Field="@context.Name"></Column>
+        <Column @bind-Field="@context.UssdNumber"></Column>
         <Column @bind-Field="@context.ActionType"></Column>
         <Column @bind-Field="@context.KeyLogins"></Column>
         <Column @bind-Field="@context.KeyProblems"></Column>
@@ -53,6 +54,9 @@
             <FormItem Label="Name">
                 <Input @bind-Value="@context.Name" />
             </FormItem>
+            <FormItem Label="Ussd">
+                <Input @bind-Value="@context.UssdNumber" />
+            </FormItem>
             <FormItem Label="Key Logins">
                 <Input @bind-Value="@context.KeyLogins" />
             </FormItem>
@@ -60,7 +64,7 @@
                 <Input @bind-Value="@context.KeyProblems" />
             </FormItem>
             <FormItem Label="Network">
-                <Select DefaultValue=@(ViewModel.Networks.FirstOrDefault()?.Id.ToString() ?? "") OnChange="OnNetworkModalChange">
+                <Select DefaultValue="@(context.NetworkId.ToString())" OnChange="OnNetworkModalChange">
                     @foreach (var network in ViewModel.Networks)
                     {
                         <SelectOption Value="@network.Id.ToString()">@network.Name</SelectOption>
@@ -68,7 +72,7 @@
                 </Select>
             </FormItem>
             <FormItem Label="Action Type">
-                <Select DefaultValue=@("0") OnChange="OnUssdActionModalTypeChange">
+                <Select DefaultValue=@(((int)context.ActionType).ToString()) OnChange="OnUssdActionModalTypeChange">
                     @foreach (var ussd in ViewModel.UssdActionTypes)
                     {
                         <SelectOption Value="@(((int)ussd).ToString())">@ussd</SelectOption>

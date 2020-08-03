@@ -24,24 +24,27 @@ namespace OneSms.Droid.Server.Services
     {
         private Context _context;
         private SignalRService _signalRService;
+        private HttpClientService _httpClientService;
         private Queue<SmsTransactionDto> _pendingSms;
         
-        public SmsService(Context context,SignalRService signalRService)
+        public SmsService(Context context,SignalRService signalRService,HttpClientService httpClientService)
         {
             _context = context;
             _signalRService = signalRService;
+            _httpClientService = httpClientService;
             OnSmsTransaction = new Subject<SmsTransactionDto>();
-            OnSmsTransaction.Subscribe(async sms => 
+            OnSmsTransaction.Subscribe(sms => 
             {
-                await signalRService.SendSmsStateChanged(sms);
+                _httpClientService.PutAsync<string>(sms, "Sms/StatusChanged");
                 if(_pendingSms.Count > 0 && sms.TransactionState == SmsTransactionState.Sent)
-                    await SendSms(_pendingSms.Dequeue());
-            },async ex => 
+                     SendSms(_pendingSms.Dequeue());
+            },
+            async ex => 
             {
                 var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsTransactionDto;
-                await signalRService.SendSmsStateChanged(transacton);
+                _httpClientService.PutAsync<string>(transacton, "Sms/StatusChanged");
                 if (_pendingSms.Count > 0)
-                    await SendSms(_pendingSms.Dequeue());
+                    SendSms(_pendingSms.Dequeue());
             });
 
             _signalRService.Connection.On<SmsTransactionDto>(SignalRKeys.SendSms, async sms => 
@@ -141,7 +144,7 @@ namespace OneSms.Droid.Server.Services
                 iSent.PutExtra(OneSmsAction.SenderNumber, smsTransactionDto.SenderNumber);
                 iSent.PutExtra(OneSmsAction.MobileServerId, smsTransactionDto.MobileServerId);
 
-                PendingIntent piSent = PendingIntent.GetBroadcast(_context, 0, iSent, PendingIntentFlags.UpdateCurrent);
+                PendingIntent piSent = PendingIntent.GetBroadcast(_context, smsTransactionDto.SmsId, iSent, PendingIntentFlags.UpdateCurrent);
 
                 Intent iDel = new Intent(OneSmsAction.SmsDelivered);
                 iDel.PutExtra(OneSmsAction.SmsBundleId, bundle);
@@ -150,7 +153,7 @@ namespace OneSms.Droid.Server.Services
                 iDel.PutExtra(OneSmsAction.SenderNumber, smsTransactionDto.SenderNumber);
                 iDel.PutExtra(OneSmsAction.MobileServerId, smsTransactionDto.MobileServerId);
 
-                PendingIntent piDel = PendingIntent.GetBroadcast(_context, 0, iDel, PendingIntentFlags.UpdateCurrent);
+                PendingIntent piDel = PendingIntent.GetBroadcast(_context, smsTransactionDto.SmsId, iDel, PendingIntentFlags.UpdateCurrent);
 
                 if (Build.VERSION.SdkInt >= BuildVersionCodes.LollipopMr1)
                 {
@@ -198,7 +201,7 @@ namespace OneSms.Droid.Server.Services
             }
         }
 
-        public async Task<PermissionStatus> CheckAndRequestSmsPermission()
+        public static async Task<PermissionStatus> CheckAndRequestSmsPermission()
         {
             var status = await Permissions.CheckStatusAsync<Permissions.Sms>();
             if (status != PermissionStatus.Granted)
@@ -211,7 +214,7 @@ namespace OneSms.Droid.Server.Services
             return status;
         }
 
-        public async Task<PermissionStatus> CheckAndRequestReadPhoneStatePermission()
+        public static async Task<PermissionStatus> CheckAndRequestReadPhoneStatePermission()
         {
             var status = await Permissions.CheckStatusAsync<ReadPhoneStatePermission>();
             if (status != PermissionStatus.Granted)

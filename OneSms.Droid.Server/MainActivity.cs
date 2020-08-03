@@ -11,6 +11,7 @@ using OneSms.Droid.Server.Receivers;
 using OneSms.Droid.Server.Services;
 using OneSms.Droid.Server.ViewModels;
 using OneSms.Droid.Server.Views;
+using OneUssd;
 using Syncfusion.Android.TabView;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
@@ -28,6 +29,7 @@ namespace OneSms.Droid.Server
         private SmsReceiver smsReceiver;
         private SmsService smsService;
         private SignalRService signalRService;
+        private HttpClientService httpClientService;
 
         protected async override void OnCreate(Bundle savedInstanceState)
         {
@@ -36,12 +38,13 @@ namespace OneSms.Droid.Server
             //Register Syncfusion license
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mjk2NzM0QDMxMzgyZTMyMmUzMENBcnhhYldQMkZMbGorVlI4OXhBWUlYOFk1RVV6K0cvNHI2UFFvUGsyVHc9");
             tabView = new SfTabView(this.ApplicationContext);
+            httpClientService = new HttpClientService(Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/api/"));
             await InitializeSignalR();
             InitializeSmsServices();
             contactViewModel = new ContactViewModel();
-            settingsView = new SettingsView(this, smsService);
-            serverView = new ServerView(this, signalRService);
-            
+            settingsView = new SettingsView(this, smsService, signalRService, httpClientService);
+            serverView = new ServerView(this, signalRService, httpClientService);
+            await RequestPermissions();
             SetContentView(tabView);
             InitializeTab();
             var listView = new ListView(this);
@@ -50,16 +53,25 @@ namespace OneSms.Droid.Server
             allContactsGrid.AddView(listView);
         }
 
+        private async Task RequestPermissions()
+        {
+            UssdController.VerifyAccesibilityAccess(this);
+            UssdController.VerifyOverLay(this);
+            UssdController.RequestPermission(this);
+            await SmsService.CheckAndRequestReadPhoneStatePermission();
+            await SmsService.CheckAndRequestSmsPermission();
+        }
+
         private void InitializeSmsServices()
         {
-            smsService = new SmsService(this,signalRService);
+            smsService = new SmsService(this,signalRService,httpClientService);
             smsReceiver = new SmsReceiver(smsService);
             CheckForIncommingSMS();
         }
 
         private async Task InitializeSignalR()
         {
-            signalRService = new SignalRService(this,"https://7b9b7bc4cce7.ngrok.io/");
+            signalRService = new SignalRService(this,"https://7b9b7bc4cce7.ngrok.io/onesmshub");
             if (Preferences.ContainsKey(OneSmsAction.ServerUrl))
             {
                 signalRService = new SignalRService(this,Preferences.Get(OneSmsAction.ServerUrl, string.Empty));

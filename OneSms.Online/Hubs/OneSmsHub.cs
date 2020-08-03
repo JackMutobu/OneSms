@@ -13,9 +13,9 @@ namespace OneSms.Online.Hubs
     {
         private readonly OneSmsDbContext _oneSmsDbContext;
         private readonly ServerConnectionService _serverConnectionService;
-        private readonly SmsHubEventService _smsHubEventService;
+        private readonly HubEventService _smsHubEventService;
 
-        public OneSmsHub(OneSmsDbContext oneSmsDbContext,ServerConnectionService serverConnectionService, SmsHubEventService smsHubEventService)
+        public OneSmsHub(OneSmsDbContext oneSmsDbContext,ServerConnectionService serverConnectionService, HubEventService smsHubEventService)
         {
             _oneSmsDbContext = oneSmsDbContext;
             _serverConnectionService = serverConnectionService;
@@ -28,7 +28,11 @@ namespace OneSms.Online.Hubs
 
         public async Task SetServerId(string serverKey)
         {
-            _serverConnectionService.ConnectedServers.Add(serverKey, Context.ConnectionId);
+            if(_serverConnectionService.ConnectedServers.ContainsKey(serverKey))
+                _serverConnectionService.ConnectedServers[serverKey] = Context.ConnectionId;
+            else
+                _serverConnectionService.ConnectedServers.Add(serverKey, Context.ConnectionId);
+
             _serverConnectionService.ConnectedServersReverse.Add(Context.ConnectionId, serverKey);
             await Clients.Caller.SendAsync("OnConnected", Context.ConnectionId);
         }

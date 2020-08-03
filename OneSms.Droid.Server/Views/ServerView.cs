@@ -4,12 +4,15 @@ using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Services;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
+using System.Reactive.Linq;
+using System;
 
 namespace OneSms.Droid.Server.Views
 {
     public class ServerView:LinearLayout
     {
         private SignalRService _signalRService;
+        private HttpClientService _httpClientService;
         private TextView _label;
         private TextView _labelServer;
         private TextView _labelServerUrl;
@@ -21,10 +24,11 @@ namespace OneSms.Droid.Server.Views
         private TextView _labelConnected;
         private Button _reconnectToSignalR;
         private Context _context;
-        public ServerView(Context context,SignalRService signalRService) : base(context)
+        public ServerView(Context context,SignalRService signalRService,HttpClientService httpClientService) : base(context)
         {
             _context = context;
             _signalRService = signalRService;
+            _httpClientService = httpClientService;
             _label = new TextView(context)
             {
                 Text = "Server ID"
@@ -83,12 +87,7 @@ namespace OneSms.Droid.Server.Views
             _save.Click += OnServerIdSave;
             _reconnectToSignalR.Click += async (s, e) =>
             {
-                if(_signalRService.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
-                {
-                    await _signalRService.Connection.StopAsync(); 
-                }
-                await _signalRService.ConnectToHub();
-                await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
+                await _signalRService.ReconnectToHub();
                 _labelConnected.Text = _signalRService.IsConnected ? "Connected" : "Disconnected";
                 
             };
@@ -96,10 +95,12 @@ namespace OneSms.Droid.Server.Views
             {
                 if(!string.IsNullOrEmpty(_serverUrlText.Text))
                 {
-                    var url = $"{_serverUrlText.Text}/onesmshub";
-                    Preferences.Set(OneSmsAction.ServerUrl, url);
-                    _labelServerUrl.Text = url;
+                    Preferences.Set(OneSmsAction.ServerUrl, $"{_serverUrlText.Text}/onesmshub");
+                    Preferences.Set(OneSmsAction.BaseUrl, $"{_serverUrlText.Text}/api/");
+                    
+                    _labelServerUrl.Text = _serverUrlText.Text;
                     _signalRService = new SignalRService(_context,Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
+                    _httpClientService.HttpClient.BaseAddress = new System.Uri(Preferences.Get(OneSmsAction.BaseUrl, string.Empty));
                 }
             };
             _signalRService.Connection.Closed += _ => 
@@ -117,6 +118,7 @@ namespace OneSms.Droid.Server.Views
                 _labelConnected.Text = "Connected";
                 return Task.CompletedTask;
             };
+            _signalRService.OnConnectionChanged.Subscribe(con => MainThread.BeginInvokeOnMainThread(() => _labelConnected.Text = con ? "Connected" : "Disconnected"));
             
         }
 

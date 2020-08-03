@@ -1,31 +1,52 @@
 ﻿@page "/ussdtestadmin"
-@inherits ReactiveComponentBase<SimAdminViewModel>
+@inherits ReactiveComponentBase<UssdTestAdminViewModel>
 @attribute [Authorize(Roles = "SuperAdmin")]
 <PageHeader BackIcon="string.Empty">
-    <PageHeaderTitle>Sms Test</PageHeaderTitle>
+    <PageHeaderTitle>Ussd Test</PageHeaderTitle>
 </PageHeader>
-<div class="Gutter-example">
-    <Row Gutter="@Gutter1">
-        <Col class="Gutter-row" Span="6"><Input Placeholder="Receiver" Size="@InputSize.Large" @bind-Value="sender" /></Col>
+<Text Type="danger">@ViewModel.Errors</Text>
 
-        <Col class="Gutter-row" Span="6"><Input Placeholder="Message" Size="@InputSize.Large" @bind-Value="message" /></Col>
+<Form Layout="@FormLayout.Horizontal"
+      Model="@ussdTransactionDto"
+      OnFinish="OnFinish">
+    <FormItem Label="Title">
+        <Input Size="@InputSize.Large" @bind-Value="@context.Title" />
+    </FormItem>
+    <FormItem Label="Sim">
+        <Select Size="@InputSize.Large" Placeholder="Select Sim" OnChange="OnSimSelectChange">
+            @foreach (var sim in ViewModel.SimCards)
+            {
+                <SelectOption Value="@sim.Id.ToString()">@($"{sim.Name} - {sim.MobileServer.Name}")</SelectOption>
+            }
+        </Select>
+    </FormItem>
 
-        <Col class="Gutter-row" Span="6"><Input Placeholder="Number" Type="number" Size="@InputSize.Large" @bind-Value="numberOfMessageToSend" />
-        </Col>
-        <Col class="Gutter-row" Span="6"><Button Size="@ButtonSize.Large" Type="primary">Send test</Button></Col>
-    </Row>
-</div>
-@code{
-    string sender = "786408335";
-    string message = "Message test";
-    int numberOfMessageToSend = 5;
-    Dictionary<string, int> Gutter1 = new Dictionary<string, int>()
+    <FormItem Label="Action">
+        <Select Size="@InputSize.Large" Placeholder="Select Action" OnChange="OnUssdActionSelectChange">
+            @foreach (var item in ViewModel.UssdActions)
+            {
+                <SelectOption Value="@(((int)item).ToString())">@item</SelectOption>
+            }
+        </Select>
+    </FormItem>
+
+    <FormItem>
+        <Button Type="@ButtonType.Primary" Size="@InputSize.Large" HtmlType="submit">
+            Submit
+        </Button>
+    </FormItem>
+</Form>
+
+<Table DataSource="@ViewModel.UssdTransactions" Class="table-responsive">
+    <Column @bind-Field="@context.Title"></Column>
+    <Column @bind-Field="@context.ActionType"></Column>
+    <Column @bind-Field="@context.LastMessage"></Column>
+    <Column @bind-Field="@context.StartTime"></Column>
+    <Column @bind-Field="@context.CompletedTime"></Column>
+    <Column @bind-Field="@context.TransactionState"></Column>
+    @if (context.MobileServer != null)
     {
-        ["xs"] = 8,
-        ["sm"] = 64,
-        ["md"] = 24,
-        ["lg"] = 32,
-        ["xl"] = 48,
-        ["xxl"] = 64
-    };
-}
+        <Column @bind-Field="@context.MobileServer.Name"></Column>
+    }
+    <Column @bind-Field="@context.CreatedOn"></Column>
+</Table>

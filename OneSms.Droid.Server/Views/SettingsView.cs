@@ -23,14 +23,18 @@ namespace OneSms.Droid.Server.Views
         private EditText _ussdCode;
         private EditText _ussdData;
         private SmsService _smsService;
+        private SignalRService _signalRService;
+        private HttpClientService _httpClientService;
         private UssdService _ussdService;
 
         
-        public SettingsView(Context context,SmsService smsService) : base(context)
+        public SettingsView(Context context,SmsService smsService,SignalRService signalRService,HttpClientService httpClientService) : base(context)
         {
             Orientation = Orientation.Vertical;
             _smsService = smsService;
-            _ussdService = new UssdService(context);
+            _signalRService = signalRService;
+            _httpClientService = httpClientService;
+            _ussdService = new UssdService(context,_signalRService,_httpClientService);
             _label = new TextView(context)
             {
                 Text = "Envoyer un sms"

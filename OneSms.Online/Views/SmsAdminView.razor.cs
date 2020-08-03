@@ -31,7 +31,7 @@ namespace OneSms.Online.Views
         ServerConnectionService ServerConnectionService { get; set; }
 
         [Inject]
-        SmsHubEventService SmsHubEventService { get; set; }
+        HubEventService SmsHubEventService { get; set; }
 
         protected async override Task OnInitializedAsync()
         {

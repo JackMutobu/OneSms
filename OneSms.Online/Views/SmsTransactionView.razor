@@ -11,6 +11,10 @@
         <Column @bind-Field="@context.StartTime"></Column>
         <Column @bind-Field="@context.CompletedTime"></Column>
         <Column @bind-Field="@context.TransactionState"></Column>
+        <Column @bind-Field="@context.CreatedOn"></Column>
+        <ActionColumn Title="Time">
+            @((context.CompletedTime - context.StartTime).TotalSeconds) seconds
+        </ActionColumn>
         @if (context.MobileServer != null)
         {
             <Column @bind-Field="@context.MobileServer.Name"></Column>
@@ -21,7 +25,6 @@
                 <Column Title="Network name" @bind-Field="@context.OneSmsApp.Name"></Column>
             </ActionColumn>
         }
-        <Column @bind-Field="@context.CreatedOn"></Column>
         <ActionColumn Title="Action">
             <Space Size="middle">
                 <SpaceItem>

@@ -4,13 +4,16 @@ using Splat;
 
 namespace OneSms.Online.Services
 {
-    public class SmsHubEventService:IEnableLogger
+    public class HubEventService:IEnableLogger
     {
-        public SmsHubEventService()
+        public HubEventService()
         {
             OnSmsStateChanged = new Subject<SmsTransactionDto>();
+            OnUssdStateChanged = new Subject<UssdTransactionDto>();
         }
 
         public Subject<SmsTransactionDto> OnSmsStateChanged { get; }
+
+        public Subject<UssdTransactionDto> OnUssdStateChanged { get; }
     }
 }

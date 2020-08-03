@@ -35,7 +35,7 @@ namespace OneUssd
         {
             this.Context = context;
             _splashLoading = new Intent(context, typeof(SplashLoadingService));
-            RequestPermission();
+            RequestPermission(context);
             UssdService.UssdCompletedEventHandler += UssdService_UssdCompletedEventHandler;
             UssdService.UssdAbortedEventHandler += UssdService_UssdAbortedEventHandler;
             UssdService.UssdResponseRecievedEventHandler += UssdService_UssdResponseRecievedEventHandler;
@@ -250,15 +250,15 @@ namespace OneUssd
             return false;
         }
 
-        private void RequestPermission()
+        public static void RequestPermission(Context context)
         {
-            if (ContextCompat.CheckSelfPermission(Context, Manifest.Permission.CallPhone) != Permission.Granted)
+            if (ContextCompat.CheckSelfPermission(context, Manifest.Permission.CallPhone) != Permission.Granted)
             {
-                ActivityCompat.RequestPermissions(Context as Activity, new string[] { Manifest.Permission.CallPhone }, 1);
+                ActivityCompat.RequestPermissions(context as Activity, new string[] { Manifest.Permission.CallPhone }, 1);
             }
-            if (ContextCompat.CheckSelfPermission(Context, Manifest.Permission.ReadPhoneState) != Permission.Granted)
+            if (ContextCompat.CheckSelfPermission(context, Manifest.Permission.ReadPhoneState) != Permission.Granted)
             {
-                ActivityCompat.RequestPermissions(Context as Activity, new string[] { Manifest.Permission.ReadPhoneState }, 1);
+                ActivityCompat.RequestPermissions(context as Activity, new string[] { Manifest.Permission.ReadPhoneState }, 1);
             }
 
         }

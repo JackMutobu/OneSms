@@ -18,7 +18,7 @@ namespace OneSms.Online.Views
         IHubContext<OneSmsHub> OneSmsHubContext { get; set; }
 
         [Inject]
-        SmsHubEventService SmsHubEventService { get; set; }
+        HubEventService SmsHubEventService { get; set; }
 
         protected async override Task OnInitializedAsync()
         {

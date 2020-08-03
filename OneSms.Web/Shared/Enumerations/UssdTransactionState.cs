@@ -1,10 +1,10 @@
 ﻿namespace OneSms.Web.Shared.Enumerations
 {
-    public enum SmsTransactionState
+    public enum UssdTransactionState
     {
-        Sending,
         Sent,
-        Delivered,
+        Executing,
+        Done,
         Canceled,
         Retrying,
         Failed

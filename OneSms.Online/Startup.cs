@@ -88,7 +88,7 @@ namespace OneSms.Online
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<OneSmsUser>>();
             services.AddSingleton<WeatherForecastService>();
             services.AddSingleton<ServerConnectionService>();
-            services.AddSingleton<SmsHubEventService>();
+            services.AddSingleton<HubEventService>();
             services.AddHttpContextAccessor();
             
         }

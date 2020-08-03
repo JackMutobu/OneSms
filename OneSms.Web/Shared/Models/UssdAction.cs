@@ -13,8 +13,11 @@ namespace OneSms.Web.Shared.Models
         }
         [Required]
         public string Name { get; set; }
+        [Required]
+        public string UssdNumber { get; set; }
 
         public UssdActionType ActionType { get; set; }
+
 
         public string KeyLogins { get; set; }
 

@@ -24,9 +24,9 @@ namespace OneSms.Online.ViewModels
         private OneSmsDbContext _oneSmsDbContext;
         private ServerConnectionService _serverConnectionService;
         private IHubContext<OneSmsHub> _oneSmsHubContext;
-        private SmsHubEventService _smsHubEventService;
+        private HubEventService _smsHubEventService;
 
-        public SmsAdminViewModel(OneSmsDbContext oneSmsDbContext,ServerConnectionService serverConnectionService,IHubContext<OneSmsHub> oneSmsHubContext,SmsHubEventService smsHubEventService)
+        public SmsAdminViewModel(OneSmsDbContext oneSmsDbContext,ServerConnectionService serverConnectionService,IHubContext<OneSmsHub> oneSmsHubContext,HubEventService smsHubEventService)
         {
             _oneSmsDbContext = oneSmsDbContext;
             _serverConnectionService = serverConnectionService;

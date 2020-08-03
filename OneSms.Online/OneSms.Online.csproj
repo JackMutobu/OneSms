@@ -3,7 +3,15 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>aspnet-OneSms.Online-48479B79-74F0-4CD7-B93C-F67789F8389F</UserSecretsId>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\Migrations\20200803071501_AddUssdNumber.cs" />
+    <Compile Remove="Data\Migrations\20200803071501_AddUssdNumber.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200803074157_UssdUpdateTable.cs" />
+    <Compile Remove="Data\Migrations\20200803074157_UssdUpdateTable.Designer.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AntDesign" Version="0.2.0-nightly-200724150952" />
@@ -20,10 +28,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OneSms.Web\Shared\OneSms.Web.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>
