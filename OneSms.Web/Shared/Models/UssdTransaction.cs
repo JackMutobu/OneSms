@@ -1,6 +1,7 @@
 ﻿using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OneSms.Web.Shared.Models
 {
@@ -33,13 +34,16 @@ namespace OneSms.Web.Shared.Models
 
         public string LastMessage { get; set; }
 
-        public int SimId { get; set; }
+        public int? SimId { get; set; }
 
         public int MobileServerId { get; set; }
 
         public UssdTransactionState TransactionState { get; set; }
 
         public ServerMobile MobileServer{ get; set; }
+
+        [ForeignKey(nameof(SimId))]
+        public SimCard Sim { get; set; }
 
     }
 }

@@ -1,5 +1,25 @@
-﻿<h3>UssdTransactionView</h3>
-
-@code {
-
-}
+﻿@page "/ussdtransactions"
+@inherits ReactiveComponentBase<UssdTransactionViewModel>
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>USSD Transactions</PageHeaderTitle>
+</PageHeader>
+<Table DataSource="@ViewModel.Transactions" Class="table-responsive">
+    <Column @bind-Field="@context.Title"></Column>
+    <Column @bind-Field="@context.LastMessage"></Column>
+    <ActionColumn Title="Server">@context.MobileServer?.Name</ActionColumn>
+    <ActionColumn Title="Sim">@context.Sim?.Name</ActionColumn>
+    <Column @bind-Field="@context.StartTime"></Column>
+    <Column @bind-Field="@context.CompletedTime"></Column>
+    <Column @bind-Field="@context.TransactionState"></Column>
+    <Column @bind-Field="@context.CreatedOn"></Column>
+    <ActionColumn Title="Time">
+        @((context.CompletedTime - context.StartTime).TotalSeconds) seconds
+    </ActionColumn>
+    <ActionColumn Title="Action">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button Type="danger" @onclick="() => Delete(context)">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>

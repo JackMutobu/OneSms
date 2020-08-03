@@ -27,7 +27,7 @@ namespace OneSms.Online.ViewModels
             _oneSmsHubContext = oneSmsHubContext;
             _smsHubEventService = smsHubEventService;
             SmsTransactions = new ObservableCollection<SmsTransaction>();
-            LoadSmsTransactions = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.SmsTransactions.OrderByDescending(x => x.CompletedTime).ToListAsync());
+            LoadSmsTransactions = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.SmsTransactions.Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime).ToListAsync());
             LoadSmsTransactions.Do(sms => SmsTransactions = new ObservableCollection<SmsTransaction>(sms)).Subscribe();
 
             DeleteTransaction = ReactiveCommand.CreateFromTask<SmsTransaction, int>(sms =>

@@ -17,7 +17,9 @@
         </ActionColumn>
         @if (context.MobileServer != null)
         {
-            <Column @bind-Field="@context.MobileServer.Name"></Column>
+    <ActionColumn Title="Server">
+        @context.MobileServer.Name
+    </ActionColumn>
         }
         @if (context.OneSmsApp != null)
         {
