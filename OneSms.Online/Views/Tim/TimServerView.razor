@@ -1,10 +1,13 @@
-﻿@page "/mobileserveradmin"
-@inherits ReactiveComponentBase<MobileServerAdminViewModel>
-@attribute [Authorize(Roles = "SuperAdmin")]
+﻿@page "/timserver"
+@inherits ReactiveComponentBase<TimServerViewModel>
+@attribute [Authorize(Roles = "TimAccount")]
 <PageHeader BackIcon="string.Empty">
-    <PageHeaderTitle>Mobile Servers</PageHeaderTitle>
+    <PageHeaderTitle>Serveur</PageHeaderTitle>
     <PageHeaderExtra>
-        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(serverMobile)">Add</Button>
+        <Text>Serveur en ligne: @ViewModel.CurrentServerKey</Text>
+        <Button Type="primary" @onclick="() => Refresh()">Rafraîchir</Button>
+        <Button Type="primary" @onclick="() => ShowModal(serverMobile)">Ajouter</Button>
+        <Button Type="danger" @onclick="() => CancelUssdOperation(ViewModel.CurrentServerKey)">Annuler</Button>
     </PageHeaderExtra>
 </PageHeader>
 <Text Type="danger">@ViewModel.Errors</Text>
@@ -52,4 +55,3 @@
         </FormItem>
     </Form>
 </Modal>
-

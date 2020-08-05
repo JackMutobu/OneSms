@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneSms.Online.Data;
 
 namespace OneSms.Online.Data.Migrations
 {
     [DbContext(typeof(OneSmsDbContext))]
-    partial class OneSmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200805125852_Add-TimEntities")]
+    partial class AddTimEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -499,7 +501,7 @@ namespace OneSms.Online.Data.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int?>("ClientId")
+                    b.Property<int>("ClientId")
                         .HasColumnType("int");
 
                     b.Property<int>("Cost")
@@ -525,9 +527,6 @@ namespace OneSms.Online.Data.Migrations
 
                     b.Property<string>("Time")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TransactionState")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -765,7 +764,9 @@ namespace OneSms.Online.Data.Migrations
                 {
                     b.HasOne("OneSms.Web.Shared.Models.TimClient", "Client")
                         .WithMany("Transactions")
-                        .HasForeignKey("ClientId");
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("OneSms.Web.Shared.Models.UssdAction", b =>

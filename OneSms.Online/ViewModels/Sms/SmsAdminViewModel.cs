@@ -14,8 +14,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace OneSms.Online.ViewModels
 {

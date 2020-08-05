@@ -34,7 +34,9 @@ namespace OneSms.Web.Shared.Dtos
 
         public string LastMessage { get; set; }
 
+        public bool IsTimTransaction { get; set; }
 
+        public int ClientId { get; set; }
 
     }
 }

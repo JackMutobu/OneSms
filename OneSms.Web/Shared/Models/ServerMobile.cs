@@ -13,6 +13,8 @@ namespace OneSms.Web.Shared.Models
 
         public string UserEmail { get; set; }
 
+        public bool IsTimServer { get; set; }
+
         public ICollection<SimCard> Sims { get; set; }
     }
 }

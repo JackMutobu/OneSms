@@ -1,0 +1,63 @@
+﻿@page "/timclients"
+@inherits ReactiveComponentBase<TimClientViewModel>
+@attribute [Authorize(Roles = "TimAccount")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Clients</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(client)">Ajouter</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<Text Type="danger">@ViewModel.Errors</Text>
+<Table DataSource="@ViewModel.Clients" Class="table-responsive">
+    <Column @bind-Field="@context.Names"></Column>
+    <Column @bind-Field="@context.PhoneNumber"></Column>
+    <Column @bind-Field="@context.NumberOfMinutes"></Column>
+    <Column @bind-Field="@context.ClientState"></Column>
+    <Column @bind-Field="@context.ActivationTime"></Column>
+    <Column @bind-Field="@context.CreatedOn"></Column>
+    <ActionColumn Title="Acton">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button @onclick="() => ShowModal(context)">Edit</Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button @onclick="() => Delete(context)" Type="danger">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
+<Modal Title="@("Ajouter ou modifier un client")" OnCancel="HideModal" Visible="@modalVisible" Footer="null">
+    <Form Model="client" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+        <FormItem Label="Noms">
+            <Input @bind-Value="@context.Names" />
+        </FormItem>
+        <FormItem Label="Numero">
+            <Input @bind-Value="@context.PhoneNumber" />
+        </FormItem>
+        <FormItem Label="Minutes">
+            <Input @bind-Value="@context.NumberOfMinutes" />
+        </FormItem>
+        <Row >
+            <Col Span="24">
+            <Space Style="margin-bottom:30px;display: flex;justify-content: center;width:100%">
+                <SpaceItem>Date d'Activation</SpaceItem>
+                <SpaceItem>
+                    <DatePicker TValue="DateTime?" DefaultValue="@DateTime.UtcNow" DefaultPickerValue="@DateTime.UtcNow" ShowTime="@true" OnChange="OnChange" />
+                </SpaceItem>
+            </Space>
+            </Col>
+        </Row>
+        
+
+        <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => client = new TimClient()">Clear</Button>
+                </SpaceItem>
+            </Space>
+        </FormItem>
+    </Form>
+</Modal>

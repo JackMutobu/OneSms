@@ -85,6 +85,9 @@ namespace OneSms.Online.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    if (Input.Email == "tim@onesms.com")
+                        return RedirectToPage("timtransctions");
+                         
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

@@ -25,8 +25,18 @@ namespace OneSms.Online.Data
                 UserName = configuration!.GetSection("AdminSettings")["Email"],
                 Role = UserRoles.SuperAdmin
             };
+            var tim = new OneSmsUser
+            {
+                Email = "tim@onesms.com",
+                PhoneNumber = "+243997301017",
+                Fristname = "Timothe",
+                Lastname = "Muhindo",
+                UserName = "tim@onesms.com",
+                Role = UserRoles.TimAccount
+            };
 
             await CreateUserAsync(userManager, user, configuration.GetSection("AdminSettings")["Password"]);
+            await CreateUserAsync(userManager, tim, "tim@AdMin2020");
         }
 
         public static async Task SeedRoles(RoleManager<IdentityRole> roleManager)
@@ -35,8 +45,9 @@ namespace OneSms.Online.Data
             await CreateRoleAsync(roleManager, UserRoles.Client);
             await CreateRoleAsync(roleManager, UserRoles.Admin);
             await CreateRoleAsync(roleManager, UserRoles.SuperAdmin);
+            await CreateRoleAsync(roleManager, UserRoles.TimAccount);
         }
-        private static async Task CreateRoleAsync(RoleManager<IdentityRole> roleManager, string roleName)
+        public static async Task CreateRoleAsync(RoleManager<IdentityRole> roleManager, string roleName)
         {
 
             if (!await roleManager.RoleExistsAsync(roleName))
@@ -48,7 +59,7 @@ namespace OneSms.Online.Data
                 await roleManager.CreateAsync(role);
             }
         }
-        private static async Task CreateUserAsync(UserManager<OneSmsUser> userManager, OneSmsUser user, string password)
+        public static async Task CreateUserAsync(UserManager<OneSmsUser> userManager, OneSmsUser user, string password)
         {
             if (await userManager.FindByEmailAsync(user.Email) == null)
             {

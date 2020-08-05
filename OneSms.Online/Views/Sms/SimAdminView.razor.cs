@@ -12,7 +12,7 @@ using System.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 
-namespace OneSms.Online.Views
+namespace OneSms.Online.Views.Sms
 {
     public partial class SimAdminView
     {

@@ -8,6 +8,7 @@
         ActivateSms,
         RechargeAirtimeFromMobileMoney,
         ActivateCalls,
-        CallBalance
+        CallBalance,
+        TimTransaction
     }
 }

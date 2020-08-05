@@ -7,6 +7,7 @@
         Done,
         Canceled,
         Retrying,
-        Failed
+        Failed,
+        Confirmed
     }
 }

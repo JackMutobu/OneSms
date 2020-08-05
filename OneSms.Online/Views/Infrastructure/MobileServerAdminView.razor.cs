@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 
-namespace OneSms.Online.Views
+namespace OneSms.Online.Views.Infrastructure
 {
     public partial class MobileServerAdminView
     {
