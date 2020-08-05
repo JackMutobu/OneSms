@@ -77,6 +77,12 @@ namespace OneUssd
         {
             ClickOnButton(_event, 0);
         }
+        public static string CancelOperation()
+        {
+            ClickOnButton(_event, 0);
+            UssdController.Instance.IsRunning = false;
+            return _event?.Text[0]?.ToString() == "Carrier info" ? _event?.Text[1]?.ToString() : _event?.Text[0]?.ToString();
+        }
 
         private void OnUssdAborted(UssdEventArgs ussdEventArgs)
         {

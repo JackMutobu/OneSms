@@ -17,6 +17,7 @@ using OneSms.Web.Shared.Dtos;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Text.Json;
 using OneSms.Web.Shared.Enumerations;
+using OneSms.Web.Shared.Models;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -26,6 +27,11 @@ namespace OneSms.Droid.Server.Services
         private SignalRService _signalRService;
         private HttpClientService _httpClientService;
         private Queue<SmsTransactionDto> _pendingSms;
+
+        public SmsService()
+        {
+            _httpClientService = new HttpClientService(Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/"));
+        }
         
         public SmsService(Context context,SignalRService signalRService,HttpClientService httpClientService)
         {
@@ -200,6 +206,8 @@ namespace OneSms.Droid.Server.Services
                 }
             }
         }
+
+        public Task<Result<string>> SendReceivedSms(SmsReceivedDto smsReceivedDto) => _httpClientService.PutAsync<string>(smsReceivedDto, "Sms/SmsReceived");
 
         public static async Task<PermissionStatus> CheckAndRequestSmsPermission()
         {

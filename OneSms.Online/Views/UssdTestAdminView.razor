@@ -1,9 +1,19 @@
 ﻿@page "/ussdtestadmin"
 @inherits ReactiveComponentBase<UssdTestAdminViewModel>
 @attribute [Authorize(Roles = "SuperAdmin")]
-<PageHeader BackIcon="string.Empty">
-    <PageHeaderTitle>Ussd Test</PageHeaderTitle>
-</PageHeader>
+    <PageHeader BackIcon="string.Empty">
+        <PageHeaderTitle>Ussd Test</PageHeaderTitle>
+        <PageHeaderExtra>
+            <Text>CurrentServerKey: @ViewModel.CurrentServerKey</Text>
+            <Select DefaultValue=@(ViewModel.CurrentServerKey) Style="width:100px" OnChange="OnServerChange">
+                @foreach (var item in ViewModel.MobileServers)
+                {
+                    <SelectOption Value="@item.Key.ToString()">@item.Name</SelectOption>
+                }
+            </Select>
+            <Button Type="danger" @onclick="() => CancelUssdOperation(ViewModel.CurrentServerKey)">Cancel</Button>
+        </PageHeaderExtra>
+    </PageHeader>
 <Text Type="danger">@ViewModel.Errors</Text>
 
 <Form Layout="@FormLayout.Horizontal"

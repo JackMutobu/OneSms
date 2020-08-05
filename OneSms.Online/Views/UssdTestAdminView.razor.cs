@@ -35,7 +35,7 @@ namespace OneSms.Online.Views
         protected async override Task OnInitializedAsync()
         {
             ViewModel = new ViewModels.UssdTestAdminViewModel(OneSmsDbContext,HubEventService,ServerConnectionService, OneSmsHubContext);
-            await ViewModel.LoadSimCards.Execute().ToTask();
+            await ViewModel.LoadMobileServers.Execute().ToTask();
         }
 
         private void OnSimSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
@@ -50,6 +50,14 @@ namespace OneSms.Online.Views
             var ussdAction = ViewModel.UssdActions.First(x => (int)x == int.Parse(value.Value.ToString()));
             ussdTransactionDto.ActionType = ussdAction;
             ViewModel.SelectedAction = ussdAction;
+        }
+        private void OnServerChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
+        {
+            ViewModel.CurrentServerKey = value.Value.ToString();
+        }
+        private async Task CancelUssdOperation(string serverKey)
+        {
+            await ViewModel.CancelUssdSession.Execute(serverKey).ToTask();
         }
         private async Task OnFinish(EditContext editContext)
         {

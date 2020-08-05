@@ -19,6 +19,7 @@ namespace OneSms.Online.Data
         public DbSet<UssdTransaction> UssdTransactions { get; set; }
         public DbSet<SmsTransaction> SmsTransactions { get; set; }
         public DbSet<AppSim> AppSims { get; set; }
+        public DbSet<SmsDataExtractor> SmsDataExtractors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

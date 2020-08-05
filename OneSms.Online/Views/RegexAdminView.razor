@@ -1,0 +1,66 @@
+﻿@page "/regexadmin"
+@inherits ReactiveComponentBase<RegexAdminViewModel>
+@attribute [Authorize(Roles = "SuperAdmin")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Sms Data Extractor</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(smsDataExtractor)">Add</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<Table DataSource="@ViewModel.SmsDataExtractors" Class="table-responsive">
+    <Column @bind-Field="@context.Description"></Column>
+    <Column @bind-Field="@context.UssdAction"></Column>
+    <Column @bind-Field="@context.OriginatingAddress"></Column>
+    <ActionColumn Title="Network">@context.Network?.Name</ActionColumn>
+        <Column @bind-Field="@context.RegexPatern"></Column>
+        <Column @bind-Field="@context.CreatedOn"></Column>
+        <ActionColumn Title="Action">
+            <Space Size="middle">
+                <SpaceItem>
+                    <Button @onclick="() => ShowModal(context)">Edit</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => Delete(context)" Type="danger">Delete</Button>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+</Table>
+<Modal Title="@("Add or modify regex")" OnCancel="HideModal" Visible="@modalVisible" Footer="null">
+    <Form Model="smsDataExtractor" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+        <FormItem Label="Descritption">
+            <Input @bind-Value="@context.Description" />
+        </FormItem>
+        <FormItem Label="Originating Address">
+            <Input @bind-Value="@context.OriginatingAddress" />
+        </FormItem>
+        <FormItem Label="Regex Pattern">
+            <Input @bind-Value="@context.RegexPatern" />
+        </FormItem>
+        <FormItem Label="Network">
+            <Select DefaultValue="@(context.NetworkId.ToString())" OnChange="OnNetworkChange">
+                @foreach (var network in ViewModel.Networks)
+                {
+                    <SelectOption Value="@network.Id.ToString()">@network.Name</SelectOption>
+                }
+            </Select>
+        </FormItem>
+        <FormItem Label="Action Type">
+            <Select DefaultValue=@(((int)context.UssdAction).ToString()) OnChange="OnUssdActionTypeChange">
+                @foreach (var ussd in ViewModel.UssdActionTypes)
+                {
+                    <SelectOption Value="@(((int)ussd).ToString())">@ussd</SelectOption>
+                }
+            </Select>
+        </FormItem>
+        <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => smsDataExtractor = new SmsDataExtractor()">Clear</Button>
+                </SpaceItem>
+            </Space>
+        </FormItem>
+    </Form>
+</Modal>

@@ -115,9 +115,9 @@ namespace OneUssd
 
         private void UssdService_UssdAbortedEventHandler(object sender, UssdEventArgs e)
         {
-            Context.StopService(_splashLoading);
-            SessionAborted?.Invoke(this, e);
+            AbortUssd(e);
         }
+
 
         private void UssdService_UssdCompletedEventHandler(object sender, UssdEventArgs e)
         {
@@ -128,6 +128,18 @@ namespace OneUssd
         private void UssdService_UssdResponseRecievedEventHandler(object sender, UssdEventArgs e)
         {
             ResponseRecieved?.Invoke(this,e);
+        }
+
+        public void AbortUssd(UssdEventArgs e)
+        {
+            Context.StopService(_splashLoading);
+            SessionAborted?.Invoke(this, e);
+        }
+
+        public string StopOperation()
+        {
+            Context.StopService(_splashLoading);
+            return UssdService.CancelOperation();
         }
 
         public void SendData(string text)

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -26,6 +27,8 @@ namespace OneSms.Web.Shared.Models
 
         public string AirtimeBalance { get; set; }
 
+        public string CallBalance { get; set; }
+
         public NetworkOperator Network { get; set; }
 
         public ICollection<UssdTransaction> UssdTransactions { get; set; }
@@ -37,6 +40,8 @@ namespace OneSms.Web.Shared.Models
         public int MobileServerId { get; set; }
 
         public ServerMobile MobileServer { get; set; }
+
+        public DateTime UpdatedOn { get; set; }
 
     }
 }

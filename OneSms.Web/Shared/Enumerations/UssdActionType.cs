@@ -6,13 +6,8 @@
         MobileMoneyBalance,
         SmsBalance,
         ActivateSms,
-        RechargeFromMobileMoney,
-        ActivateSmsFor5Unit,
-        ActivateSmsFor10Unit,
-        ActivateSmsFor20Unit,
-        ActivateSmsFor25Unit,
-        ActivateSmsFor50Unit,
-        ActivateSmsFor100Unit,
-        ActivateSmsFor500Unit,
+        RechargeAirtimeFromMobileMoney,
+        ActivateCalls,
+        CallBalance
     }
 }

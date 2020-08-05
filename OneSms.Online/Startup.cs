@@ -45,7 +45,7 @@ namespace OneSms.Online
               .AddDefaultTokenProviders();
 
             services.AddRazorPages();
-            services.AddServerSideBlazor();
+            services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
             services.AddControllers();
             services.AddSignalR();
 
@@ -86,9 +86,10 @@ namespace OneSms.Online
             });
 
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<OneSmsUser>>();
-            services.AddSingleton<WeatherForecastService>();
             services.AddSingleton<ServerConnectionService>();
             services.AddSingleton<HubEventService>();
+            services.AddScoped<SmsDataExtractorService>();
+            services.AddScoped<SimService>();
             services.AddHttpContextAccessor();
             
         }
@@ -120,6 +121,11 @@ namespace OneSms.Online
             });
 
             app.UseRouting();
+
+            app.UseCors(x => x
+              .AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader());
 
             app.UseAuthentication();
             app.UseAuthorization();

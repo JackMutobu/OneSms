@@ -7,5 +7,6 @@
         public const string SendUssd = nameof(SendUssd);
 
         public const string SmsSent = nameof(SmsSent);
+        public const string CancelUssdSession = nameof(CancelUssdSession);
     }
 }

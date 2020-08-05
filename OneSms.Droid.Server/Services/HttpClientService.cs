@@ -8,16 +8,15 @@ namespace OneSms.Droid.Server.Services
 {
     public class HttpClientService
     {
-        private readonly HttpClient _httpClient;
         public HttpClientService(string url)
         {
-            _httpClient = new HttpClient
+            HttpClient = new HttpClient
             {
                 BaseAddress = new System.Uri(url)
             };
         }
 
-        public HttpClient HttpClient => _httpClient;
+        public HttpClient HttpClient { get; }
 
         public async Task<Result<T>> GetAsync<T>(object content, string uri) where T : class
         {
@@ -26,7 +25,7 @@ namespace OneSms.Droid.Server.Services
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
 
-            using var response = await _httpClient
+            using var response = await HttpClient
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
             return await GetResponse<T>(response);
@@ -39,7 +38,7 @@ namespace OneSms.Droid.Server.Services
             using var stringContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             request.Content = stringContent;
 
-            using var response = await _httpClient
+            using var response = await HttpClient
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
             return await GetResponse<T>(response);
@@ -52,7 +51,7 @@ namespace OneSms.Droid.Server.Services
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
 
-            using var response = await _httpClient
+            using var response = await HttpClient
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                 .ConfigureAwait(false);
             return await GetResponse<T>(response);

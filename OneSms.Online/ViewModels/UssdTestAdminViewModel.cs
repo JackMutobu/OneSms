@@ -33,6 +33,7 @@ namespace OneSms.Online.ViewModels
             _oneSmsHubContext = oneSmsHubContext;
             UssdTransactions = new ObservableCollection<UssdTransaction>();
             SimCards = new ObservableCollection<SimCard>();
+            MobileServers = new ObservableCollection<ServerMobile>();
             UssdActions = new ObservableCollection<UssdActionType>(Enum.GetValues(typeof(UssdActionType)).Cast<UssdActionType>());
             LoadSimCards = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Sims.Include(x => x.MobileServer).ToListAsync());
             LoadSimCards.Do(sims => SimCards = new ObservableCollection<SimCard>(sims)).Subscribe();
@@ -67,6 +68,7 @@ namespace OneSms.Online.ViewModels
                  var serverConnectionId = string.Empty;
                  if (_serverConnectionService.ConnectedServers.TryGetValue(serverKey, out serverConnectionId))
                      await _oneSmsHubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendUssd, ussd);
+                 CurrentServerKey = serverKey;
                  return Unit.Default;
              });
             AddUssdTransaction.Select(_ => LatestTransaction).InvokeCommand(SendUssdTransaction);
@@ -85,6 +87,20 @@ namespace OneSms.Online.ViewModels
                     UssdTransactions = new ObservableCollection<UssdTransaction>(UssdTransactions.OrderByDescending(x => x.CompletedTime));
                 }
             });
+
+            LoadMobileServers = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.MobileServers.ToListAsync());
+            LoadMobileServers.Do(servers => MobileServers = new ObservableCollection<ServerMobile>(servers));
+            LoadMobileServers.Select(_ => Unit.Default).InvokeCommand(LoadSimCards);
+            CancelUssdSession = ReactiveCommand.CreateFromTask<string,Unit>(async key =>
+            {
+                if(!string.IsNullOrEmpty(key))
+                {
+                    var serverConnectionId = string.Empty;
+                    if (_serverConnectionService.ConnectedServers.TryGetValue(key, out serverConnectionId))
+                        await _oneSmsHubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.CancelUssdSession);
+                }
+                return Unit.Default;
+            });
         }
         public SimCard  SelectedSimCard { get; set; }
 
@@ -95,19 +111,29 @@ namespace OneSms.Online.ViewModels
         public string Errors { [ObservableAsProperty]get; }
 
         [Reactive]
+        public string CurrentServerKey { get; set; }
+
+        [Reactive]
         public ObservableCollection<UssdActionType> UssdActions { get; set; } 
 
         [Reactive]
         public ObservableCollection<UssdTransaction> UssdTransactions { get; set; }
 
         [Reactive]
-        public ObservableCollection<SimCard> SimCards { get; set; } 
+        public ObservableCollection<SimCard> SimCards { get; set; }
+
+        [Reactive]
+        public ObservableCollection<ServerMobile> MobileServers { get; set; }
 
         public ReactiveCommand<Unit,List<SimCard>> LoadSimCards { get; }
+
+        public ReactiveCommand<Unit, List<ServerMobile>> LoadMobileServers { get; }
 
         public ReactiveCommand<UssdTransactionDto, UssdTransaction> AddUssdTransaction { get; }
 
         public ReactiveCommand<UssdTransactionDto, Unit> SendUssdTransaction { get; }
+
+        public ReactiveCommand<string,Unit> CancelUssdSession { get; }
 
 
     }

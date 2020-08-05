@@ -1,10 +1,12 @@
-﻿using Android.Content;
+﻿using Android.App;
+using Android.Content;
 using Android.Widget;
 using Javax.Security.Auth;
 using Microsoft.AspNetCore.SignalR.Client;
 using OneSms.Droid.Server.Constants;
 using OneSms.Web.Shared.Dtos;
 using System;
+using System.Net.Http;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -21,7 +23,17 @@ namespace OneSms.Droid.Server.Services
             OnConnectionChanged = new Subject<bool>();
             _url = Preferences.Get(OneSmsAction.ServerUrl, url);
             Connection = new HubConnectionBuilder()
-               .WithUrl(_url)
+               .WithUrl(_url, (opts) =>
+               {
+                   opts.HttpMessageHandlerFactory = (message) =>
+                   {
+                       if (message is HttpClientHandler clientHandler)
+                           // bypass SSL certificate
+                           clientHandler.ServerCertificateCustomValidationCallback +=
+                               (sender, certificate, chain, sslPolicyErrors) => { return true; };
+                       return message;
+                   };
+               })
                .Build();
             Connection.Reconnected += id => SendServerId(Preferences.Get(OneSmsAction.ServerKey,string.Empty));
             Connection.Closed += async (error) =>
@@ -60,8 +72,13 @@ namespace OneSms.Droid.Server.Services
                 await Connection.StartAsync();
                 IsConnected = true;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
+                AlertDialog alertDialog = new AlertDialog.Builder(_context).Create();
+                alertDialog.SetTitle("Exception");
+                alertDialog.SetMessage($"Message:{ex.Message}");
+                alertDialog.Show();
+
                 IsConnected = false;
             }
             OnConnectionChanged.OnNext(IsConnected);

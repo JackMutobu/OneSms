@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneSms.Online.Data;
 
 namespace OneSms.Online.Data.Migrations
 {
     [DbContext(typeof(OneSmsDbContext))]
-    partial class OneSmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200804114913_SmsExtractor")]
+    partial class SmsExtractor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -369,9 +371,6 @@ namespace OneSms.Online.Data.Migrations
                     b.Property<string>("AirtimeBalance")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CallBalance")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
@@ -397,9 +396,6 @@ namespace OneSms.Online.Data.Migrations
 
                     b.Property<string>("SmsBalance")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedOn")
-                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 

@@ -71,15 +71,14 @@ namespace OneSms.Droid.Server
 
         private async Task InitializeSignalR()
         {
-            signalRService = new SignalRService(this,"https://7b9b7bc4cce7.ngrok.io/onesmshub");
-            if (Preferences.ContainsKey(OneSmsAction.ServerUrl))
-            {
-                signalRService = new SignalRService(this,Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
-                await signalRService.ConnectToHub();
-                if (Preferences.ContainsKey(OneSmsAction.ServerKey))
-                    await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
-            }
-            
+            if (!Preferences.ContainsKey(OneSmsAction.ServerUrl))
+                Preferences.Set(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub");
+
+            signalRService = new SignalRService(this, Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
+            await signalRService.ConnectToHub();
+            if (Preferences.ContainsKey(OneSmsAction.ServerKey))
+                await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
+
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)

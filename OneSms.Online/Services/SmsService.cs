@@ -18,13 +18,7 @@ namespace OneSms.Online.Services
             _serverConnectionService = serverConnectionService;
             _oneSmsDbContext = oneSmsDbContext;
         }
-        public void SendSms(string userEmail,SmsTransaction smsTransaction)
-        {
-            var apps = _oneSmsDbContext.Apps.Where(x => x.UserEmail == userEmail);
-            if(apps.Count() == 0)
-            {
+        
 
-            }
-        }
     }
 }
