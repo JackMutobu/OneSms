@@ -48,7 +48,7 @@ namespace OneSms.Online.Views.Tim
 
         private void OnChange(DateTime value, string dateString)
         {
-            client.ActivationTime = value;
+            client.ActivationTime = value.ToUniversalTime();
         }
     }
 }

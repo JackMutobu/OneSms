@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OneSms.Online.Data;
 using OneSms.Online.Services;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
+using OneSms.Web.Shared.Models;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -59,13 +61,48 @@ namespace OneSms.Online.Controllers
                     case UssdActionType.SmsBalance:
                         sim.SmsBalance = smsData.Balance;
                         break;
+                    case UssdActionType.TimTransaction:
+                        var number = smsData.Number.Substring(3);
+                        var transaction = _oneSmsDbContext.TimTransactions.OrderByDescending(x=> x.StartTime).FirstOrDefault(x => x.Number == number);
+                        if(transaction?.ClientId != null)
+                        {
+                            var client = _oneSmsDbContext.TimClients.FirstOrDefault(x => x.Id == transaction.ClientId);
+                            client.ActivationTime = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(40)).AddDays(1);
+                            _oneSmsDbContext.Update(client);
+                        }
+                        if(transaction != null)
+                        {
+                            transaction.Minutes = smsData.Minutes;
+                            transaction.TransactionState = UssdTransactionState.Confirmed;
+                            transaction.EndTime = DateTime.UtcNow;
+                            transaction.Cost = int.Parse(smsData.Cost);
+                            _oneSmsDbContext.Update(transaction);
+                        }
+                        sim.AirtimeBalance = (int.Parse(sim.AirtimeBalance ?? "0") - transaction.Cost).ToString();
+                        break;
                 }
+
                 sim.UpdatedOn = DateTime.UtcNow;
                 _oneSmsDbContext.Update(sim);
                 await _oneSmsDbContext.SaveChangesAsync();
                 return Ok("Sim balance changed");
             }
             return Ok("Regex not found");
+        }
+
+        [HttpPost("Status")]
+        public async Task<IActionResult> StatusChanged([FromBody] SmsModel sms)
+        {
+            var smsRec = new SmsReceivedDto
+            {
+                Body = sms.MessageBody,
+                OriginatingAddress = sms.OriginatingAddress,
+                SimSlot = 0,
+                MobileServerKey = "57042d03-b322-4745-86d2-43487e515274"
+            };
+            var smsData = await _smsDataExtractorService.GetSmsData(smsRec);
+            
+            return Ok(smsData);
         }
     }
 }

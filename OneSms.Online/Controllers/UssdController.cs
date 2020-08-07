@@ -28,19 +28,33 @@ namespace OneSms.Online.Controllers
         [HttpPut("StatusChanged")]
         public async Task<IActionResult> SmsStatusChanged([FromBody] UssdTransactionDto ussd)
         {
-            var transaction = _oneSmsDbContext.UssdTransactions.First(x => x.Id == ussd.UssdTransactionId);
-            transaction.CompletedTime = ussd.TimeStamp;
-            transaction.TransactionState = ussd.TransactionState;
-            transaction.Balance = ussd.Balance;
-            transaction.LastMessage = ussd.LastMessage;
-            _oneSmsDbContext.Update(transaction);
+            if (ussd.ActionType == UssdActionType.TimTransaction)
+            {
+                var transaction = _oneSmsDbContext.TimTransactions.First(x => x.Id == ussd.UssdTransactionId && x.ClientId == ussd.ClientId);
+                transaction.TransactionState = ussd.TransactionState;
+                transaction.EndTime = ussd.TimeStamp;
+                _oneSmsDbContext.Update(transaction);
+            }
+            else
+            {
+                var transaction = _oneSmsDbContext.UssdTransactions.First(x => x.Id == ussd.UssdTransactionId);
+                transaction.CompletedTime = ussd.TimeStamp;
+                transaction.TransactionState = ussd.TransactionState;
+                transaction.Balance = ussd.Balance;
+                transaction.LastMessage = ussd.LastMessage;
+                _oneSmsDbContext.Update(transaction);
+                Debug.WriteLine($"UssdId:{ussd.UssdTransactionId},UssdNumber:{ussd.UssdNumber}, State:{ussd.TransactionState}, Time:{(transaction.CompletedTime - transaction.StartTime).TotalSeconds} seconds");
+            }
+
             await _oneSmsDbContext.SaveChangesAsync();
-            _hubEventService.OnUssdStateChanged.OnNext(ussd);
             await _simService.CheckIfIsBalanceUpdate(ussd.LastMessage, ussd.SimId).ConfigureAwait(false);
-            Debug.WriteLine($"UssdId:{ussd.UssdTransactionId},UssdNumber:{ussd.UssdNumber}, State:{ussd.TransactionState}, Time:{(transaction.CompletedTime - transaction.StartTime).TotalSeconds} seconds");
+            _hubEventService.OnUssdStateChanged.OnNext(ussd);
+           
             return Ok("Status changed");
         }
 
         
+
+
     }
 }

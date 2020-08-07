@@ -15,11 +15,13 @@
     <ActionColumn Title="Client">@context.Client?.Names</ActionColumn>
     <Column @bind-Field="@context.StartTime"></Column>
     <Column @bind-Field="@context.EndTime"></Column>
+    <Column @bind-Field="@context.TransactionState"></Column>
+    <Column @bind-Field="@context.LastMessage"></Column>
     <Column @bind-Field="@context.CreatedOn"></Column>
     <ActionColumn Title="Action">
         <Space Size="middle">
             <SpaceItem>
-                <Button @onclick="() => Delete(transaction)" Type="danger">Delete</Button>
+                <Button @onclick="() => Delete(context)" Type="danger">Delete</Button>
             </SpaceItem>
         </Space>
     </ActionColumn>

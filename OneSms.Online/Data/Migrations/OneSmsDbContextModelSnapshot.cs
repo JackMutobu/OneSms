@@ -514,6 +514,9 @@ namespace OneSms.Online.Data.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LastMessage")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Minutes")
                         .HasColumnType("nvarchar(max)");
 

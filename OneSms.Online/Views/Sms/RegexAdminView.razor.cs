@@ -31,7 +31,7 @@ namespace OneSms.Online.Views.Sms
             => await ViewModel.AddOrUpdateItem.Execute(item).ToTask();
 
         private async Task Delete(SmsDataExtractor item)
-            => await ViewModel.DeleteItem.Execute(smsDataExtractor).ToTask();
+            => await ViewModel.DeleteItem.Execute(item).ToTask();
 
         private async Task Save(EditContext editContext)
         {

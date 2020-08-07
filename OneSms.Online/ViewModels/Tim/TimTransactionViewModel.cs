@@ -32,7 +32,7 @@ namespace OneSms.Online.ViewModels
             _hubEventService = hubEventService;
             _serverConnectionService = serverConnectionService;
 
-            LoadTransactions = ReactiveCommand.CreateFromTask<Unit, List<TimTransaction>>(_ => _oneSmsDbContext.TimTransactions.Include(x => x.Client).ToListAsync());
+            LoadTransactions = ReactiveCommand.CreateFromTask<Unit, List<TimTransaction>>(_ => _oneSmsDbContext.TimTransactions.Include(x => x.Client).OrderByDescending(x => x.StartTime).ToListAsync());
             LoadTransactions.Do(transactions => Transactions = new ObservableCollection<TimTransaction>(transactions)).Subscribe();
             LoadTransactions.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
 
@@ -46,26 +46,29 @@ namespace OneSms.Online.ViewModels
 
             AddOrUpdate = ReactiveCommand.CreateFromTask<TimTransaction, TimTransaction>(async transaction =>
             {
+                transaction.StartTime = DateTime.UtcNow;
+                transaction.EndTime = DateTime.UtcNow;
                 Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TimTransaction> created = _oneSmsDbContext.TimTransactions.Add(transaction);
                 await _oneSmsDbContext.SaveChangesAsync();
                 return transaction;
             });
             AddOrUpdate.Select(_ => Unit.Default).InvokeCommand(LoadTransactions);
-            AddOrUpdate.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            AddOrUpdate.ThrownExceptions.Select(x => $"Message: {x.Message}, Stack Trace:{x.StackTrace}").ToPropertyEx(this, x => x.Errors);
 
             SendTransaction = ReactiveCommand.CreateFromTask<TimTransaction, Unit>(async transaction =>
              {
-                 var ussdAction = _oneSmsDbContext.UssdActions.FirstOrDefault(x => x.ActionType == UssdActionType.TimTransaction);
-                 var mobileServer = _oneSmsDbContext.MobileServers.Include(x => x.Sims).FirstOrDefault(x => x.IsTimServer);
+                 var ussdAction = await _oneSmsDbContext.UssdActions.Include(x => x.Steps).FirstOrDefaultAsync(x => x.ActionType == UssdActionType.TimTransaction);
+                 var mobileServer = await _oneSmsDbContext.MobileServers.Include(x => x.Sims).FirstOrDefaultAsync(x => x.IsTimServer);
                  var sims = mobileServer?.Sims;
 
                  if(ussdAction != null && mobileServer != null)
                  {
-                     var selectedSim = sims.FirstOrDefault(x => int.Parse(x.AirtimeBalance) > 0) ?? sims.FirstOrDefault();
+                     var selectedSim = sims.FirstOrDefault(x => int.Parse(x.AirtimeBalance ?? "0") > 0) ?? sims.FirstOrDefault();
+                     var inputs = GetInputs(transaction, ussdAction);
                      var ussd = new UssdTransactionDto()
                      {
                          ActionType = UssdActionType.TimTransaction,
-                         ClientId = (int)transaction.ClientId,
+                         ClientId = transaction.ClientId ?? 0,
                          IsTimTransaction = true,
                          KeyProblems = ussdAction.KeyProblems.Split(",").ToList(),
                          KeyWelcomes = ussdAction.KeyLogins.Split(",").ToList(),
@@ -73,7 +76,9 @@ namespace OneSms.Online.ViewModels
                          TimeStamp = DateTime.UtcNow,
                          UssdTransactionId = transaction.Id,
                          SimId = selectedSim.Id,
-                         SimSlot = selectedSim.SimSlot
+                         SimSlot = selectedSim.SimSlot,
+                         TransactionState = UssdTransactionState.Sent,
+                         UssdInputs = inputs
                      };
                      var serverConnectionId = string.Empty;
                      if (_serverConnectionService.ConnectedServers.TryGetValue(mobileServer.Key.ToString(), out serverConnectionId))
@@ -82,7 +87,7 @@ namespace OneSms.Online.ViewModels
                  return Unit.Default;
              });
             AddOrUpdate.InvokeCommand(SendTransaction);
-            SendTransaction.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            SendTransaction.ThrownExceptions.Select(x => $"Message: {x.Message}, Stack Trace:{x.StackTrace}").ToPropertyEx(this, x => x.Errors);
 
             _hubEventService.OnUssdStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ussd =>
             {
@@ -96,6 +101,32 @@ namespace OneSms.Online.ViewModels
                     Transactions = new ObservableCollection<TimTransaction>(Transactions.OrderByDescending(x => x.EndTime));
                 }
             });
+        }
+
+        private List<string> GetInputs(TimTransaction transaction, UssdAction ussdAction)
+        {
+            var inputs = new List<string>();
+            var placeHolderData = new Queue<string>();
+            placeHolderData.Enqueue(transaction.Number);
+            placeHolderData.Enqueue(GetMinuteIndex(int.Parse(transaction.Minutes)).ToString());
+            foreach (var step in ussdAction.Steps)
+            {
+                if (step.IsPlaceHolder)
+                    step.Value = placeHolderData.Dequeue();
+                inputs.Add(step.Value);
+            }
+            return inputs;
+        }
+
+        private int GetMinuteIndex(int minutes)
+        {
+            if (minutes >= 0 && minutes < 3)
+                return 5;
+            if (minutes >= 3 && minutes < 8)
+                return 4;
+            if (minutes >= 8 && minutes < 16)
+                return 2;
+            return 1;
         }
 
         public string Errors { [ObservableAsProperty]get; }

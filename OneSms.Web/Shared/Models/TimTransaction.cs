@@ -13,6 +13,8 @@ namespace OneSms.Web.Shared.Models
 
         public string Minutes { get; set; }
 
+        public string LastMessage { get; set; }
+
         public int Cost { get; set; }
 
         public int? ClientId { get; set; }

@@ -88,6 +88,7 @@ namespace OneSms.Online
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<OneSmsUser>>();
             services.AddSingleton<ServerConnectionService>();
             services.AddSingleton<HubEventService>();
+            services.AddScoped<TimService>();
             services.AddScoped<SmsDataExtractorService>();
             services.AddScoped<SimService>();
             services.AddHttpContextAccessor();

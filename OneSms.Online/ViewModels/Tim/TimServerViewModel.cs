@@ -65,9 +65,7 @@ namespace OneSms.Online.ViewModels
             {
                 if (!string.IsNullOrEmpty(key))
                 {
-                    var serverConnectionId = string.Empty;
-                    if (_serverConnectionService.ConnectedServers.TryGetValue(key, out serverConnectionId))
-                        await _oneSmsHubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.CancelUssdSession);
+                    await _oneSmsHubContext.Clients.Client(key).SendAsync(SignalRKeys.CancelUssdSession);
                 }
                 return Unit.Default;
             });

@@ -38,9 +38,9 @@ namespace OneSms.Online.ViewModels
             });
             AddOrUpdateItem.Where(rows => rows > 0).Select(_ => Unit.Default).InvokeCommand(LoadSmsExtractors);
 
-            DeleteItem = ReactiveCommand.CreateFromTask<SmsDataExtractor, int>(network =>
+            DeleteItem = ReactiveCommand.CreateFromTask<SmsDataExtractor, int>(data =>
             {
-                _oneSmsDbContext.Remove(network);
+                _oneSmsDbContext.SmsDataExtractors.Remove(data);
                 return _oneSmsDbContext.SaveChangesAsync();
             });
             DeleteItem.Where(rows => rows > 0).Select(_ => Unit.Default).InvokeCommand(LoadSmsExtractors);

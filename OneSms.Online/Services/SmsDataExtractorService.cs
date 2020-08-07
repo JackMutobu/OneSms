@@ -20,6 +20,7 @@ namespace OneSms.Online.Services
         {
             _oneSmsDbContext = oneSmsDbContext;
         }
+
         public async Task<SmsDataToExtract> GetSmsData(SmsReceivedDto smsReceivedDto)
         {
             var sim = (await _oneSmsDbContext.MobileServers.Include(x => x.Sims).FirstAsync(x => x.Key == new Guid(smsReceivedDto.MobileServerKey)))
@@ -36,7 +37,18 @@ namespace OneSms.Online.Services
             return Extract(message, sim, extractors)?.Balance;
         }
 
-        private SmsDataToExtract Extract(string message, SimCard sim, List<SmsDataExtractor> extractors)
+        public async Task<SmsDataToExtract> GetTimTransactionAsync(SmsReceivedDto smsReceivedDto)
+        {
+            var extractors = await _oneSmsDbContext.SmsDataExtractors.Where(x => x.UssdAction == UssdActionType.TimTransaction && x.OriginatingAddress == smsReceivedDto.OriginatingAddress).ToListAsync();
+            var sim = (await _oneSmsDbContext.MobileServers.Include(x => x.Sims).FirstAsync(x => x.Key == new Guid(smsReceivedDto.MobileServerKey)))
+                .Sims.First(x => x.SimSlot == smsReceivedDto.SimSlot);
+            var smsData = Extract(smsReceivedDto.Body, sim,extractors);
+            smsData.SimId = sim.Id;
+            smsData.MobileServerId = sim.MobileServerId;
+            return smsData;
+        }
+
+        public SmsDataToExtract Extract(string message, SimCard sim, List<SmsDataExtractor> extractors)
         {
             SmsDataToExtract smsData = new SmsDataToExtract();
             foreach (var extractor in extractors)
@@ -52,6 +64,27 @@ namespace OneSms.Online.Services
                     };
                     smsData.SimId = sim.Id;
                     smsData.MobileServerId = sim.MobileServerId;
+                    smsData.UssdActionType = extractor.UssdAction;
+                    break;
+                }
+            }
+            return smsData;
+        }
+
+        private SmsDataToExtract Extract(string message, List<SmsDataExtractor> extractors)
+        {
+            SmsDataToExtract smsData = new SmsDataToExtract();
+            foreach (var extractor in extractors)
+            {
+                if (Regex.IsMatch(message, extractor.RegexPatern, RegexOptions.None))
+                {
+                    foreach (Match match in Regex.Matches(message, extractor.RegexPatern, RegexOptions.None))
+                    {
+                        smsData.Minutes = match.Groups["minutes"].Value;
+                        smsData.Number = match.Groups["number"].Value;
+                        smsData.Cost = match.Groups["cost"].Value;
+                        smsData.Balance = match.Groups["balance"].Value;
+                    };
                     smsData.UssdActionType = extractor.UssdAction;
                     break;
                 }
