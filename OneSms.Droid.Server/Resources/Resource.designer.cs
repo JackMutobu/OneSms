@@ -4825,22 +4825,28 @@ namespace OneSms.Droid.Server
 			public const int app_name = 2131558428;
 			
 			// aapt resource value: 0x7F0D001D
-			public const int hello = 2131558429;
+			public const int channel_description = 2131558429;
 			
 			// aapt resource value: 0x7F0D001E
-			public const int search_menu_title = 2131558430;
+			public const int channel_name = 2131558430;
 			
 			// aapt resource value: 0x7F0D001F
-			public const int status_bar_notification_info_overflow = 2131558431;
+			public const int hello = 2131558431;
 			
 			// aapt resource value: 0x7F0D0020
-			public const int title_dashboard = 2131558432;
+			public const int search_menu_title = 2131558432;
 			
 			// aapt resource value: 0x7F0D0021
-			public const int title_home = 2131558433;
+			public const int status_bar_notification_info_overflow = 2131558433;
 			
 			// aapt resource value: 0x7F0D0022
-			public const int title_notifications = 2131558434;
+			public const int title_dashboard = 2131558434;
+			
+			// aapt resource value: 0x7F0D0023
+			public const int title_home = 2131558435;
+			
+			// aapt resource value: 0x7F0D0024
+			public const int title_notifications = 2131558436;
 			
 			static String()
 			{
@@ -7853,7 +7859,10 @@ namespace OneSms.Droid.Server
 			public const int ussd_service = 2131755009;
 			
 			// aapt resource value: 0x7F100002
-			public const int xamarin_essentials_fileprovider_file_paths = 2131755010;
+			public const int whatsapp_service = 2131755010;
+			
+			// aapt resource value: 0x7F100003
+			public const int xamarin_essentials_fileprovider_file_paths = 2131755011;
 			
 			static Xml()
 			{

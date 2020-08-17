@@ -45,7 +45,7 @@ namespace OneSms.Droid.Server.Services
                 if(_pendingSms.Count > 0 && sms.TransactionState == SmsTransactionState.Sent)
                      SendSms(_pendingSms.Dequeue());
             },
-            async ex => 
+            ex => 
             {
                 var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsTransactionDto;
                 _httpClientService.PutAsync<string>(transacton, "Sms/StatusChanged");

@@ -37,6 +37,8 @@
     <AndroidUseSharedRuntime>True</AndroidUseSharedRuntime>
     <AndroidLinkMode>None</AndroidLinkMode>
     <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
+    <MandroidI18n />
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -51,6 +53,7 @@
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -64,18 +67,22 @@
     <Compile Include="Adapters\TabContentListAdapter.cs" />
     <Compile Include="Constants\OneSmsAction.cs" />
     <Compile Include="Enumerations\TransactionState.cs" />
+    <Compile Include="Extensions\ContextExtensions.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Models\ContactInfo.cs" />
     <Compile Include="Models\SimInfo.cs" />
     <Compile Include="ExtendedPermissions\ReadPhoneStatePermission.cs" />
     <Compile Include="Receivers\SmsReceiver.cs" />
+    <Compile Include="Receivers\StartReceiver.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\HttpClientService.cs" />
+    <Compile Include="Services\OneForegroundService.cs" />
     <Compile Include="Services\SignalRService.cs" />
     <Compile Include="Services\SimService.cs" />
     <Compile Include="Services\SmsService.cs" />
     <Compile Include="Services\UssdService.cs" />
+    <Compile Include="Services\WhatsappAccessibilityService.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Views\ServerView.cs" />
@@ -160,6 +167,9 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\xml\network_security_config.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\xml\whatsapp_service.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

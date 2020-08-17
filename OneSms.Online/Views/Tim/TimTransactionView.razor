@@ -4,6 +4,7 @@
 <PageHeader BackIcon="string.Empty">
     <PageHeaderTitle>Transactions</PageHeaderTitle>
     <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" @onclick="() => Refresh()">Refresh</Button>
         <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(transaction)">Executer</Button>
     </PageHeaderExtra>
 </PageHeader>

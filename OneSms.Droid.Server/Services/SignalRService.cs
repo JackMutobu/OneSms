@@ -17,6 +17,8 @@ namespace OneSms.Droid.Server.Services
     public class SignalRService
     {
         private string _url;
+        private Context _context;
+
         public SignalRService(Context context,string url)
         {
             _context = context;
@@ -42,6 +44,7 @@ namespace OneSms.Droid.Server.Services
                 await Task.Delay(new Random().Next(0, 5) * 1000);
                 await ConnectToHub();
             };
+
             Connection.On<string>("OnConnected", conId =>
             {
                 var id = conId;
@@ -56,8 +59,6 @@ namespace OneSms.Droid.Server.Services
 
             Connectivity.ConnectivityChanged += async (s, e) => await ReconnectToHub();
         }
-
-        private Context _context;
 
         public HubConnection Connection { get; private set; }
 

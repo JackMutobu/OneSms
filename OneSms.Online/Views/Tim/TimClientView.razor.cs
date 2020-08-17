@@ -20,6 +20,7 @@ namespace OneSms.Online.Views.Tim
         protected async override Task OnInitializedAsync()
         {
             base.OnInitialized();
+            client.ActivationTime = DateTime.UtcNow;
             ViewModel = new TimClientViewModel(OneSmsDbContext);
             await ViewModel.LoadClients.Execute().ToTask();
         }
@@ -48,7 +49,7 @@ namespace OneSms.Online.Views.Tim
 
         private void OnChange(DateTime value, string dateString)
         {
-            client.ActivationTime = value.ToUniversalTime();
+            client.ActivationTime = value.Subtract(TimeSpan.FromHours(2));
         }
     }
 }

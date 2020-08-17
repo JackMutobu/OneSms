@@ -25,7 +25,6 @@ namespace OneSms.Droid.Server.Services
         private UssdTransactionDto _currentTransactionDto;
         private Queue<UssdTransactionDto> _pendingUssdTransactions;
         private Subject<Unit> _ussdTimer;
-        private IDisposable _ussdTimerSubscription;
         
         public UssdService(Context context,SignalRService signalRService,HttpClientService httpClientService)
         {
@@ -45,14 +44,12 @@ namespace OneSms.Droid.Server.Services
             }));
 
             _signalRService.Connection.On(SignalRKeys.CancelUssdSession, () => CancelSession());
-        }
 
-        private void StartTimer()
-        {
-            _ussdTimerSubscription = _ussdTimer.Select(_ => Observable.Timer(TimeSpan.FromSeconds(20)))
+            _ussdTimer.Select(_ => Observable.Timer(TimeSpan.FromSeconds(30)))
                 .Switch()
                 .Subscribe(_ => CancelSession());
         }
+
 
         private void Execute(UssdTransactionDto ussd)
         {
@@ -64,7 +61,7 @@ namespace OneSms.Droid.Server.Services
             _currentTransactionDto = ussd;
             Execute(ussd.UssdNumber, ussd.SimSlot, map, ussd.UssdInputs);
             SendTransactionState("Started", UssdTransactionState.Executing);
-            StartTimer();
+            _ussdTimer.OnNext(Unit.Default);
         }
 
         public void Execute(string ussdNumber,int sim,Dictionary<string,HashSet<string>> keyMpas,List<string> inputData)
@@ -90,7 +87,6 @@ namespace OneSms.Droid.Server.Services
 
         private void OnSessionCompleted(object sender, UssdEventArgs e)
         {
-            _ussdTimerSubscription?.Dispose();
             SendTransactionState(e.ResponseMessage, UssdTransactionState.Done);
             UnRegisterEvents();
             ExecuteNextTransactionOrReset();
@@ -98,7 +94,6 @@ namespace OneSms.Droid.Server.Services
 
         private void OnSessionAborted(object sender, UssdEventArgs e)
         {
-            _ussdTimerSubscription?.Dispose();
             SendTransactionState(e.ResponseMessage, UssdTransactionState.Canceled);
             UnRegisterEvents();
             ExecuteNextTransactionOrReset();
@@ -111,9 +106,7 @@ namespace OneSms.Droid.Server.Services
                 var lastMessage = _ussdController.StopOperation();
                 SendTransactionState(lastMessage, UssdTransactionState.Canceled);
             }
-            _ussdTimerSubscription?.Dispose();
-            _currentTransactionDto = null;
-            ExecuteNextTransactionOrReset();
+            MainActivity.RestartActivity(_context);
         }
 
         private void OnResponseRecieved(object sender, UssdEventArgs e)

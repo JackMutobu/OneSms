@@ -28,13 +28,25 @@ namespace OneSms.Online.Hubs
 
         public async Task SetServerId(string serverKey)
         {
-            if(_serverConnectionService.ConnectedServers.ContainsKey(serverKey))
-                _serverConnectionService.ConnectedServers[serverKey] = Context.ConnectionId;
-            else
-                _serverConnectionService.ConnectedServers.Add(serverKey, Context.ConnectionId);
+            try
+            {
+                if (_serverConnectionService.ConnectedServers.ContainsKey(serverKey))
+                    _serverConnectionService.ConnectedServers[serverKey] = Context.ConnectionId;
+                else
+                    _serverConnectionService.ConnectedServers.Add(serverKey, Context.ConnectionId);
 
-            _serverConnectionService.ConnectedServersReverse.Add(Context.ConnectionId, serverKey);
-            await Clients.Caller.SendAsync("OnConnected", Context.ConnectionId);
+                if(_serverConnectionService.ConnectedServersReverse.ContainsKey(Context.ConnectionId))
+                    _serverConnectionService.ConnectedServersReverse[Context.ConnectionId] = serverKey;
+                else
+                    _serverConnectionService.ConnectedServersReverse.Add(Context.ConnectionId, serverKey);
+
+                await Clients.Caller.SendAsync("OnConnected", Context.ConnectionId);
+            }
+            catch(Exception ex)
+            {
+                await Clients.Caller.SendAsync("OnException", ex);
+            }
+            
         }
 
         public void SmsStateChanged(SmsTransactionDto sms)

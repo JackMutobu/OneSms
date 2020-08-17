@@ -3,6 +3,7 @@ using OneSms.Online.Data;
 using OneSms.Online.Services;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
+using OneSms.Web.Shared.Models;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -30,8 +31,9 @@ namespace OneSms.Online.Controllers
         {
             if (ussd.ActionType == UssdActionType.TimTransaction)
             {
-                var transaction = _oneSmsDbContext.TimTransactions.First(x => x.Id == ussd.UssdTransactionId && x.ClientId == ussd.ClientId);
+                var transaction = _oneSmsDbContext.TimTransactions.First(x => x.Id == ussd.UssdTransactionId && (ussd.ClientId == 0 || x.ClientId == ussd.ClientId));
                 transaction.TransactionState = ussd.TransactionState;
+                transaction.LastMessage = ussd.LastMessage;
                 transaction.EndTime = ussd.TimeStamp;
                 _oneSmsDbContext.Update(transaction);
             }

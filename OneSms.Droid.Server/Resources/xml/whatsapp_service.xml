@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+android:accessibilityFeedbackType="feedbackGeneric|feedbackAllMask"
+android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews"
+android:canRetrieveWindowContent="true"
+android:canRequestTouchExplorationMode="true"
+android:description="Service to monitior and interact with Whatsapp"
+android:notificationTimeout="1000"
+android:packageNames="com.whatsapp.w4b,com.whatsapp" />

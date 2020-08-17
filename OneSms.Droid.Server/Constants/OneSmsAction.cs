@@ -16,5 +16,10 @@
         public const string MobileServerId = nameof(MobileServerId);
         public const string ServerUrl = nameof(ServerUrl);
         public const string BaseUrl = nameof(BaseUrl);
+        public const string StartForegoundService = nameof(StartForegoundService);
+        public const string StopForegoundService = nameof(StopForegoundService);
+        public const string ForegroundServiceState = nameof(ForegroundServiceState);
+        public const string ServiceStarted = nameof(ServiceStarted);
+        public const string ServiceStopped = nameof(ServiceStopped);
     }
 }

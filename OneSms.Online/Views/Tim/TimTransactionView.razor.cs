@@ -53,5 +53,7 @@ namespace OneSms.Online.Views.Tim
 
         private async Task AddOrUpdate(TimTransaction transaction)
            => await ViewModel.AddOrUpdate.Execute(transaction).ToTask();
+
+        private async Task Refresh() => await ViewModel.LoadTransactions.ToTask();
     }
 }

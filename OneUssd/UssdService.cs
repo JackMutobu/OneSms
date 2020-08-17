@@ -22,9 +22,12 @@ namespace OneUssd
 
         private static readonly string TAG = nameof(UssdService);
         private static AccessibilityEvent _event;
+        
+        public static UssdService Instance;
 
         public override void OnAccessibilityEvent(AccessibilityEvent e)
         {
+            Instance = this;
             _event = e;
             Log.Debug(TAG, "onAccessibilityEvent");
 
@@ -77,6 +80,7 @@ namespace OneUssd
         {
             ClickOnButton(_event, 0);
         }
+
         public static string CancelOperation()
         {
             ClickOnButton(_event, 0);
@@ -150,7 +154,7 @@ namespace OneUssd
         private static List<AccessibilityNodeInfo> GetLeaves(AccessibilityEvent e)
         {
             List<AccessibilityNodeInfo> leaves = new List<AccessibilityNodeInfo>();
-            if (e.Source != null)
+            if (e != null && e.Source != null)
                 GetLeaves(leaves, e.Source);
             return leaves;
         }

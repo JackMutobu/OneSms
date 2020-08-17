@@ -15,6 +15,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
 
 namespace OneSms.Online.ViewModels
 {
@@ -32,7 +34,7 @@ namespace OneSms.Online.ViewModels
             _hubEventService = hubEventService;
             _serverConnectionService = serverConnectionService;
 
-            LoadTransactions = ReactiveCommand.CreateFromTask<Unit, List<TimTransaction>>(_ => _oneSmsDbContext.TimTransactions.Include(x => x.Client).OrderByDescending(x => x.StartTime).ToListAsync());
+            LoadTransactions = ReactiveCommand.CreateFromTask<Unit, List<TimTransaction>>(_ => _oneSmsDbContext.TimTransactions.Include(x => x.Client).OrderByDescending(x => x.EndTime).ToListAsync());
             LoadTransactions.Do(transactions => Transactions = new ObservableCollection<TimTransaction>(transactions)).Subscribe();
             LoadTransactions.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
 
@@ -91,11 +93,12 @@ namespace OneSms.Online.ViewModels
 
             _hubEventService.OnUssdStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ussd =>
             {
-                var item = Transactions.FirstOrDefault(x => x.Id == ussd.UssdTransactionId);
+                var item = Transactions.FirstOrDefault();
                 if (item != null)
                 {
                     item.EndTime = ussd.TimeStamp;
                     item.TransactionState = ussd.TransactionState;
+                    item.LastMessage = ussd.LastMessage;
                     Transactions.Remove(item);
                     Transactions.Add(item);
                     Transactions = new ObservableCollection<TimTransaction>(Transactions.OrderByDescending(x => x.EndTime));

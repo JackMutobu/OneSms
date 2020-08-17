@@ -13,7 +13,7 @@
     <Column @bind-Field="@context.PhoneNumber"></Column>
     <Column @bind-Field="@context.NumberOfMinutes"></Column>
     <Column @bind-Field="@context.ClientState"></Column>
-    <Column @bind-Field="@context.ActivationTime"></Column>
+    <ActionColumn Title="Temps d'activation">@context.ActivationTime</ActionColumn>
     <Column @bind-Field="@context.CreatedOn"></Column>
     <ActionColumn Title="Acton">
         <Space Size="middle">
@@ -42,7 +42,7 @@
             <Space Style="margin-bottom:30px;display: flex;justify-content: center;width:100%">
                 <SpaceItem>Date d'Activation</SpaceItem>
                 <SpaceItem>
-                    <DatePicker TValue="DateTime?" DefaultValue="@DateTime.UtcNow" DefaultPickerValue="@DateTime.UtcNow" ShowTime="@true" OnChange="OnChange" />
+                    <DatePicker TValue="DateTime?" DefaultValue="@client.ActivationTime" DefaultPickerValue="@client.ActivationTime" ShowTime="@true" OnChange="OnChange" />
                 </SpaceItem>
             </Space>
             </Col>

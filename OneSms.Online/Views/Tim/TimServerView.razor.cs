@@ -67,6 +67,11 @@ namespace OneSms.Online.Views.Tim
             await ViewModel.CancelUssdSession.Execute(serverKey).ToTask();
         }
 
+        private async Task CheckAirtimeBalance(SimCard sim)
+        {
+            await ViewModel.CheckAirtimeBalance.Execute(sim).ToTask();
+        }
+
         private async Task Refresh()
         {
             await ViewModel.GetOnlineServer.Execute(ViewModel.MobileServers.ToList()).ToTask();

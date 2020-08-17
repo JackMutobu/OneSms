@@ -20,11 +20,29 @@
     {
         @if (context.Sims.Count() > 0)
         {
-            <Column Title="Sim 1" @bind-Field="@context.Sims.First().Name"></Column>
+            <ActionColumn Title="Sim 1">@context.Sims.First().Name</ActionColumn>
+            <ActionColumn Title="Balance">@context.Sims.First().AirtimeBalance</ActionColumn>
+            <ActionColumn>
+                <Space Size="middle">
+                    <SpaceItem>
+                        <Button @onclick="() => CheckAirtimeBalance(context.Sims.First())">Vérifier</Button>
+                    </SpaceItem>
+                </Space>
+            </ActionColumn>
+            
         }
         @if (context.Sims.Count > 1)
         {
-            <Column Title="Sim 2" @bind-Field="@context.Sims.Last().Name"></Column>
+            <ActionColumn Title="Sim 2">@context.Sims.Last().Name</ActionColumn>
+            <ActionColumn Title="Balance">@context.Sims.Last().AirtimeBalance</ActionColumn>
+            <ActionColumn>
+                <Space Size="middle">
+                    <SpaceItem>
+                        <Button @onclick="() => CheckAirtimeBalance(context.Sims.Last())">Vérifier</Button>
+                    </SpaceItem>
+                </Space>
+            </ActionColumn>
+            
         }
     }
     <ActionColumn Title="Action">

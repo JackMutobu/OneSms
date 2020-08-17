@@ -14,6 +14,9 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Linq;
+using OneSms.Web.Shared.Enumerations;
+using OneSms.Web.Shared.Dtos;
+using AntDesign;
 
 namespace OneSms.Online.ViewModels
 {
@@ -69,6 +72,31 @@ namespace OneSms.Online.ViewModels
                 }
                 return Unit.Default;
             });
+
+            CheckAirtimeBalance = ReactiveCommand.CreateFromTask<SimCard, Unit>(async sim =>
+             {
+                 if(!string.IsNullOrEmpty(CurrentServerKey))
+                 {
+                     var ussdAction = _oneSmsDbContext.UssdActions.Include(x => x.Steps).FirstOrDefault(x => x.ActionType == UssdActionType.AirtimeBalance && x.NetworkId == sim.NetworkId);
+                     if(ussdAction != null)
+                     {
+                         var ussd = new UssdTransactionDto
+                         {
+                             ActionType = UssdActionType.AirtimeBalance,
+                             KeyProblems = ussdAction.KeyProblems.Split(",").ToList(),
+                             KeyWelcomes = ussdAction.KeyLogins.Split(",").ToList(),
+                             SimId = sim.Id,
+                             SimSlot = sim.SimSlot,
+                             TimeStamp = DateTime.Now,
+                             TransactionState = UssdTransactionState.Sent,
+                             UssdNumber = ussdAction.UssdNumber
+                         };
+                         await _oneSmsHubContext.Clients.Client(CurrentServerKey).SendAsync(SignalRKeys.SendUssd, ussd);
+                     }
+                     
+                 }
+                 return Unit.Default;
+             });
         }
 
         [Reactive]
@@ -91,5 +119,7 @@ namespace OneSms.Online.ViewModels
         public ReactiveCommand<ServerMobile, int> Delete { get; }
 
         public ReactiveCommand<string, Unit> CancelUssdSession { get; }
+
+        public ReactiveCommand<SimCard, Unit> CheckAirtimeBalance { get; }
     }
 }

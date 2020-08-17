@@ -19,6 +19,7 @@ namespace OneUssd
     public class UssdController : IUssdController
     {
         private Intent _splashLoading;
+        private Intent _callIntent;
 
         public event EventHandler<UssdEventArgs> ResponseRecieved;
         public event EventHandler<UssdEventArgs> SessionCompleted;
@@ -84,8 +85,9 @@ namespace OneUssd
             Uri uriPhone = Uri.Parse("tel:" + ussdPhoneNumber);
             if (uriPhone != null)
                 IsRunning = true;
+            _callIntent = GetActionCallIntent(uriPhone, simSlot);
             Context.StartService(_splashLoading);
-            Context.StartActivity(GetActionCallIntent(uriPhone, simSlot));
+            Context.StartActivity(_callIntent);
         }
 
         private Intent GetActionCallIntent(Uri uri, int simSlot)

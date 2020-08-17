@@ -1,12 +1,16 @@
 ﻿using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
+using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
+using Java.Lang;
 using OneSms.Droid.Server.Adapters;
 using OneSms.Droid.Server.Constants;
+using OneSms.Droid.Server.Extensions;
 using OneSms.Droid.Server.Receivers;
 using OneSms.Droid.Server.Services;
 using OneSms.Droid.Server.ViewModels;
@@ -19,6 +23,7 @@ using Xamarin.Essentials;
 namespace OneSms.Droid.Server
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
+    [IntentFilter(new string[] { "android.intent.action.MAIN" },Categories = new string[] { "android.intent.category.HOME", "android.intent.category.DEFAULT", "android.intent.category.MONKEY" }, Priority = int.MaxValue)]
     public class MainActivity : AppCompatActivity
     {
         private SfTabView tabView;
@@ -34,6 +39,7 @@ namespace OneSms.Droid.Server
         protected async override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            this.Window.AddFlags(WindowManagerFlags.KeepScreenOn);
             Platform.Init(this, savedInstanceState);
             //Register Syncfusion license
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mjk2NzM0QDMxMzgyZTMyMmUzMENBcnhhYldQMkZMbGorVlI4OXhBWUlYOFk1RVV6K0cvNHI2UFFvUGsyVHc9");
@@ -47,10 +53,7 @@ namespace OneSms.Droid.Server
             await RequestPermissions();
             SetContentView(tabView);
             InitializeTab();
-            var listView = new ListView(this);
-            TabContentListAdapter tabContentListAdapter = new TabContentListAdapter(this, contactViewModel.ContactList);
-            listView.Adapter = tabContentListAdapter;
-            allContactsGrid.AddView(listView);
+            ActionOnOneForegroundService(OneSmsAction.ServiceStarted);
         }
 
         private async Task RequestPermissions()
@@ -91,6 +94,7 @@ namespace OneSms.Droid.Server
         public void InitializeTab()
         {
             allContactsGrid = new FrameLayout(ApplicationContext);
+            allContactsGrid.AddView(new TextView(this) { Text = "Bienvenu",TextSize = 25,TextAlignment = TextAlignment.Gravity,Gravity = GravityFlags.CenterHorizontal});
             var contactsGrid = new FrameLayout(ApplicationContext);
             allContactsGrid.SetBackgroundColor(Color.White);
             contactsGrid.SetBackgroundColor(Color.Blue);
@@ -127,6 +131,31 @@ namespace OneSms.Droid.Server
             this.RegisterReceiver(smsReceiver, intent);
         }
 
+        public static void RestartActivity(Context context)
+        {
+            PackageManager packageManager = context.PackageManager;
+            Intent intent = packageManager.GetLaunchIntentForPackage(context.PackageName);
+            ComponentName componentName = intent.Component;
+            Intent mainIntent = Intent.MakeRestartActivityTask(componentName);
+            context.StartActivity(mainIntent);
+            Runtime.GetRuntime().Exit(0);
+        }
+
+        public void StartOneForegroundService()
+        {
+            var it = new Intent(this, typeof(OneForegroundService));
+            it.SetAction(OneSmsAction.StartForegoundService);
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+                this.StartForegroundService(it);
+            else
+                this.StartService(it);
+        }
+
+        private void ActionOnOneForegroundService(string serviceState)
+        {
+            if (this.GetServiceState() == OneSmsAction.ServiceStopped && serviceState == OneSmsAction.ServiceStopped) return;
+            StartOneForegroundService();
+        }
     }
 }
 
