@@ -85,6 +85,7 @@
     <Compile Include="Services\WhatsappAccessibilityService.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Views\HomeView.cs" />
     <Compile Include="Views\ServerView.cs" />
     <Compile Include="Views\SettingsView.cs" />
   </ItemGroup>

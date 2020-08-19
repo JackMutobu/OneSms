@@ -4,6 +4,7 @@ using Android.App;
 using Android.Util;
 using Android.Views.Accessibility;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -14,7 +15,14 @@ namespace OneSms.Droid.Server.Services
     {
         public override void OnAccessibilityEvent(AccessibilityEvent e)
         {
-            throw new System.NotImplementedException();
+            var eventTye = e.EventType;
+            var currentNode = RootInActiveWindow;
+            var nodes = GetLeaves(e);
+            var buttons = nodes.Where(x => x.ClassName == "android.widget.Button" || x.ClassName == "android.widget.ImageButton");
+            var editText = nodes.FirstOrDefault(x => x.ClassName == "android.widget.EditText");
+            var sendButton = buttons.FirstOrDefault(x => x.ContentDescription == "Send");
+            if (!string.IsNullOrEmpty(editText?.Text) && sendButton != null)
+                sendButton.PerformAction(Action.Click);
         }
 
         public override void OnInterrupt()
@@ -29,11 +37,34 @@ namespace OneSms.Droid.Server.Services
             AccessibilityServiceInfo info = new AccessibilityServiceInfo
             {
                 Flags = AccessibilityServiceFlags.Default,
-                PackageNames = new List<string> { "com.whatsapp.w4b,com.whatsapp" },
+                //com.whatsapp
+                PackageNames = new List<string> { "com.whatsapp.w4b" },
                 EventTypes = EventTypes.WindowStateChanged | EventTypes.WindowContentChanged,
                 FeedbackType = FeedbackFlags.Generic
             };
             SetServiceInfo(info);
+        }
+
+        private List<AccessibilityNodeInfo> GetLeaves(AccessibilityEvent e)
+        {
+            List<AccessibilityNodeInfo> leaves = new List<AccessibilityNodeInfo>();
+            if (e != null && e.Source != null)
+                GetLeaves(leaves, e.Source);
+            return leaves;
+        }
+
+        private void GetLeaves(List<AccessibilityNodeInfo> leaves, AccessibilityNodeInfo node)
+        {
+            if (node.ChildCount == 0)
+            {
+                leaves.Add(node);
+                return;
+            }
+
+            for (int i = 0; i < node.ChildCount; i++)
+            {
+                GetLeaves(leaves, node.GetChild(i));
+            }
         }
     }
 }

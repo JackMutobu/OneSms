@@ -30,7 +30,7 @@ namespace OneSms.Droid.Server
         private FrameLayout allContactsGrid;
         private SettingsView settingsView;
         private ServerView serverView;
-        private ContactViewModel contactViewModel;
+        private HomeView homeView;
         private SmsReceiver smsReceiver;
         private SmsService smsService;
         private SignalRService signalRService;
@@ -47,7 +47,7 @@ namespace OneSms.Droid.Server
             httpClientService = new HttpClientService(Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/api/"));
             await InitializeSignalR();
             InitializeSmsServices();
-            contactViewModel = new ContactViewModel();
+            homeView = new HomeView(this);
             settingsView = new SettingsView(this, smsService, signalRService, httpClientService);
             serverView = new ServerView(this, signalRService, httpClientService);
             await RequestPermissions();
@@ -93,17 +93,12 @@ namespace OneSms.Droid.Server
         
         public void InitializeTab()
         {
-            allContactsGrid = new FrameLayout(ApplicationContext);
-            allContactsGrid.AddView(new TextView(this) { Text = "Bienvenu",TextSize = 25,TextAlignment = TextAlignment.Gravity,Gravity = GravityFlags.CenterHorizontal});
-            var contactsGrid = new FrameLayout(ApplicationContext);
-            allContactsGrid.SetBackgroundColor(Color.White);
-            contactsGrid.SetBackgroundColor(Color.Blue);
             var tabItems = new TabItemCollection
                 {
                     new SfTabItem()
                     {
                         Title = "OneSms",
-                        Content = allContactsGrid
+                        Content = homeView
                     },
                     new SfTabItem()
                     {

@@ -5,6 +5,5 @@ android:accessibilityFeedbackType="feedbackGeneric|feedbackAllMask"
 android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews"
 android:canRetrieveWindowContent="true"
 android:canRequestTouchExplorationMode="true"
-android:description="Service to monitior and interact with Whatsapp"
 android:notificationTimeout="1000"
-android:packageNames="com.whatsapp.w4b,com.whatsapp" />
+android:packageNames="com.whatsapp.w4b" />
