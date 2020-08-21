@@ -21,7 +21,15 @@ namespace OneSms.Droid.Server.Services
             var buttons = nodes.Where(x => x.ClassName == "android.widget.Button" || x.ClassName == "android.widget.ImageButton");
             var editText = nodes.FirstOrDefault(x => x.ClassName == "android.widget.EditText");
             var sendButton = buttons.FirstOrDefault(x => x.ContentDescription == "Send");
+            var viewPager = nodes.FirstOrDefault(x => x.ClassName == "androidx.viewpager.widget.ViewPager");
+            var textViewPager = nodes.FirstOrDefault(x => x.ClassName == "android.widget.ImageView" && x.ContentDescription == "Add text");
+
+            //Send simple text message
             if (!string.IsNullOrEmpty(editText?.Text) && sendButton != null)
+                sendButton.PerformAction(Action.Click);
+
+            //Send Image
+            if (viewPager != null && textViewPager != null)
                 sendButton.PerformAction(Action.Click);
         }
 
