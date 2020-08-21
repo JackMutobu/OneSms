@@ -7856,13 +7856,16 @@ namespace OneSms.Droid.Server
 			public const int network_security_config = 2131755008;
 			
 			// aapt resource value: 0x7F100001
-			public const int ussd_service = 2131755009;
+			public const int provider_paths = 2131755009;
 			
 			// aapt resource value: 0x7F100002
-			public const int whatsapp_service = 2131755010;
+			public const int ussd_service = 2131755010;
 			
 			// aapt resource value: 0x7F100003
-			public const int xamarin_essentials_fileprovider_file_paths = 2131755011;
+			public const int whatsapp_service = 2131755011;
+			
+			// aapt resource value: 0x7F100004
+			public const int xamarin_essentials_fileprovider_file_paths = 2131755012;
 			
 			static Xml()
 			{

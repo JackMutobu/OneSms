@@ -68,6 +68,7 @@
     <Compile Include="Constants\OneSmsAction.cs" />
     <Compile Include="Enumerations\TransactionState.cs" />
     <Compile Include="Extensions\ContextExtensions.cs" />
+    <Compile Include="Extensions\UriExtensions.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Models\ContactInfo.cs" />
     <Compile Include="Models\SimInfo.cs" />
@@ -171,6 +172,12 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\xml\whatsapp_service.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Helpers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\xml\provider_paths.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

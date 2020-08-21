@@ -1,33 +1,35 @@
-﻿using Android.App;
+﻿using Android;
+using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
+using Android.Provider;
 using Android.Runtime;
+using Android.Support.V4.App;
+using Android.Support.V4.Content;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using Java.Lang;
-using OneSms.Droid.Server.Adapters;
 using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Extensions;
 using OneSms.Droid.Server.Receivers;
 using OneSms.Droid.Server.Services;
-using OneSms.Droid.Server.ViewModels;
 using OneSms.Droid.Server.Views;
 using OneUssd;
 using Syncfusion.Android.TabView;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 
 namespace OneSms.Droid.Server
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
-    [IntentFilter(new string[] { "android.intent.action.MAIN" },Categories = new string[] { "android.intent.category.HOME", "android.intent.category.DEFAULT", "android.intent.category.MONKEY" }, Priority = int.MaxValue)]
+    [IntentFilter(new string[] { "android.intent.action.MAIN" }, Priority = int.MaxValue)]
     public class MainActivity : AppCompatActivity
     {
         private SfTabView tabView;
-        private FrameLayout allContactsGrid;
         private SettingsView settingsView;
         private ServerView serverView;
         private HomeView homeView;
@@ -63,7 +65,11 @@ namespace OneSms.Droid.Server
             UssdController.RequestPermission(this);
             await SmsService.CheckAndRequestReadPhoneStatePermission();
             await SmsService.CheckAndRequestSmsPermission();
+            await HomeView.CheckAndRequestReadContactPermission();
+            await HomeView.CheckAndRequestWriteContactPermission();
         }
+
+        
 
         private void InitializeSmsServices()
         {
@@ -150,6 +156,44 @@ namespace OneSms.Droid.Server
         {
             if (this.GetServiceState() == OneSmsAction.ServiceStopped && serviceState == OneSmsAction.ServiceStopped) return;
             StartOneForegroundService();
+        }
+
+        protected override void OnActivityResult(int requestCode, [GeneratedEnum] Result resultCode, Intent data)
+        {
+            base.OnActivityResult(requestCode, resultCode, data);
+
+            if (requestCode == 71 && resultCode == Result.Ok && data != null && data.Data != null)
+            {
+                var filePath = data.Data;
+                try
+                {
+                    homeView.BitmapImage = MediaStore.Images.Media.GetBitmap(ContentResolver, filePath);
+                    byte[] bitmapData;
+                    using var stream = new MemoryStream();
+                    homeView.BitmapImage.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
+                    bitmapData = stream.ToArray();
+                }
+                catch (IOException ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                }
+            }
+            else if (requestCode == 0 && resultCode == Result.Ok && data != null)
+            {
+                try
+                {
+                   homeView.BitmapImage = (Bitmap)data.Extras.Get("data");
+                    byte[] bitmapData;
+                    using var stream = new MemoryStream();
+                    homeView.BitmapImage.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
+                    bitmapData = stream.ToArray();
+                }
+                catch (IOException ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                }
+            }
+            homeView.SetImageView(homeView.BitmapImage);
         }
     }
 }

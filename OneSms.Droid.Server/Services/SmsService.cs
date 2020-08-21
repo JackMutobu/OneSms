@@ -226,13 +226,10 @@ namespace OneSms.Droid.Server.Services
         {
             var status = await Permissions.CheckStatusAsync<ReadPhoneStatePermission>();
             if (status != PermissionStatus.Granted)
-            {
                 status = await Permissions.RequestAsync<ReadPhoneStatePermission>();
-            }
-
-            // Additionally could prompt the user to turn on in settings
-
             return status;
         }
+
+        
     }
 }
