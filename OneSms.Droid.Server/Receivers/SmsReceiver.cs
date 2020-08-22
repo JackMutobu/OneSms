@@ -46,7 +46,7 @@ namespace OneSms.Droid.Server.Receivers
                     Title = "Prevent Serialization Failure",
                     Message = "Prevent Serialization Failure"
                 };
-                smsTransaction.TransactionState = intent.Action == OneSmsAction.SmsSent ? SmsTransactionState.Sent : SmsTransactionState.Delivered;
+                smsTransaction.TransactionState = intent.Action == OneSmsAction.SmsSent ? MessageTransactionState.Sent : MessageTransactionState.Delivered;
 
                 switch (ResultCode)
                 {
@@ -55,7 +55,7 @@ namespace OneSms.Droid.Server.Receivers
                         break;
                     case Result.Canceled:
                         var exception = new Exception("Transaction canceled");
-                        smsTransaction.TransactionState = SmsTransactionState.Canceled;
+                        smsTransaction.TransactionState = MessageTransactionState.Canceled;
                         exception.Data.Add(OneSmsAction.SmsTransaction, smsTransaction);
                         _smsService.OnSmsTransaction.OnError(exception);
                         break;

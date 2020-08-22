@@ -1,13 +1,14 @@
 ﻿using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
-using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace OneSms.Web.Shared.Models
 {
-    public class SmsTransaction:BaseModel
+    public class SmsTransaction:MessageTransaction
     {
-        public SmsTransaction() { }
+        public SmsTransaction() 
+        {
+            MessageTransactionProcessor = MessageTransactionProcessor.SMS;
+        }
 
         public SmsTransaction(SmsTransactionDto smsTransactionDto)
         {
@@ -18,30 +19,10 @@ namespace OneSms.Web.Shared.Models
             OneSmsAppId = smsTransactionDto.AppId;
             MobileServerId = smsTransactionDto.MobileServerId;
             Title = smsTransactionDto.Title;
+
+            MessageTransactionProcessor = MessageTransactionProcessor.SMS;
         }
-        public string Title { get; set; }
+        
 
-        [Required]
-        public string Body { get; set; }
-
-        public DateTime StartTime { get; set; }
-
-        public DateTime CompletedTime { get; set; }
-
-        [Required]
-        public string RecieverNumber { get; set; }
-
-        [Required]
-        public string SenderNumber { get; set; }
-
-        public int MobileServerId { get; set; }
-
-        public SmsTransactionState TransactionState { get; set; }
-
-        public ServerMobile MobileServer{ get; set; }
-
-        public Guid OneSmsAppId { get; set; }
-
-        public OneSmsApp OneSmsApp { get; set; }
     }
 }

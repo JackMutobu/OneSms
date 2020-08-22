@@ -8,5 +8,7 @@
 
         public const string SmsSent = nameof(SmsSent);
         public const string CancelUssdSession = nameof(CancelUssdSession);
+
+        public const string SendWhatsapp = nameof(SendWhatsapp);
     }
 }

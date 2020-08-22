@@ -1,0 +1,38 @@
+﻿@page "/whatsapptransactions"
+@using OneSms.Online.ViewModels.Whatsapp
+@inherits ReactiveComponentBase<WhastappTransactionViewModel>
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Whatsapp Transactions</PageHeaderTitle>
+</PageHeader>
+<Table DataSource="@ViewModel.Transactions" Class="table-responsive">
+    <Column @bind-Field="@context.Title"></Column>
+    <Column @bind-Field="@context.SenderNumber"></Column>
+    <Column @bind-Field="@context.RecieverNumber"></Column>
+    <Column @bind-Field="@context.Body"></Column>
+    <Column @bind-Field="@context.StartTime"></Column>
+    <Column @bind-Field="@context.CompletedTime"></Column>
+    <Column @bind-Field="@context.TransactionState"></Column>
+    <Column @bind-Field="@context.CreatedOn"></Column>
+    <ActionColumn Title="Time">
+        @((context.CompletedTime - context.StartTime).TotalSeconds) seconds
+    </ActionColumn>
+    @if (context.MobileServer != null)
+    {
+        <ActionColumn Title="Server">
+            @context.MobileServer.Name
+        </ActionColumn>
+    }
+    @if (context.OneSmsApp != null)
+    {
+        <ActionColumn Title="Network name">
+            <Column Title="Network name" @bind-Field="@context.OneSmsApp.Name"></Column>
+        </ActionColumn>
+    }
+    <ActionColumn Title="Action">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button Type="danger" @onclick="() => Delete(context)">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>

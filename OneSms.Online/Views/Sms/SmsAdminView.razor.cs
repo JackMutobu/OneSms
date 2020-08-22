@@ -42,7 +42,7 @@ namespace OneSms.Online.Views.Sms
         private async Task OnFinish(EditContext editContext)
         {
             smsTransactionDto.SimSlot = ViewModel.SelectedSimCard.SimSlot;
-            smsTransactionDto.TransactionState = SmsTransactionState.Sending;
+            smsTransactionDto.TransactionState = MessageTransactionState.Sending;
             smsTransactionDto.TimeStamp = DateTime.UtcNow;
             smsTransactionDto.AppId = ViewModel.SelectedSimCard.Apps.First().AppId;
             smsTransactionDto.MobileServerId = ViewModel.SelectedSimCard.MobileServerId;

@@ -10,10 +10,13 @@ namespace OneSms.Online.Services
         {
             OnSmsStateChanged = new Subject<SmsTransactionDto>();
             OnUssdStateChanged = new Subject<UssdTransactionDto>();
+            OnMessageStateChanged = new Subject<MessageTransactionProcessDto>();
         }
 
         public Subject<SmsTransactionDto> OnSmsStateChanged { get; }
 
         public Subject<UssdTransactionDto> OnUssdStateChanged { get; }
+
+        public Subject<MessageTransactionProcessDto> OnMessageStateChanged { get; }
     }
 }

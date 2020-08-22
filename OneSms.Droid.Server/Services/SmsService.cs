@@ -52,7 +52,7 @@ namespace OneSms.Droid.Server.Services
             OnSmsTransaction.Subscribe(sms =>
             {
                 _httpClientService.PutAsync<string>(sms, "Sms/StatusChanged");
-                if (_pendingSms.Count > 0 && sms.TransactionState == SmsTransactionState.Sent)
+                if (_pendingSms.Count > 0 && sms.TransactionState == MessageTransactionState.Sent)
                     SendSms(_pendingSms.Dequeue());
             },
             ex =>

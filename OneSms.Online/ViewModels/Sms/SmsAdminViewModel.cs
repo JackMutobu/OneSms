@@ -41,6 +41,7 @@ namespace OneSms.Online.ViewModels
             {
                 sms.CreatedOn = DateTime.UtcNow;
                 sms.CompletedTime = DateTime.UtcNow;
+                sms.TransactionId = Guid.NewGuid();
                 Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<SmsTransaction> created = _oneSmsDbContext.SmsTransactions.Add(sms);
                 await _oneSmsDbContext.SaveChangesAsync();
                 sms.Id = created.Entity.Id;

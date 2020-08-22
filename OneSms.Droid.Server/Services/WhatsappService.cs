@@ -4,9 +4,14 @@ using Android.OS;
 using Android.Provider;
 using Android.Widget;
 using Java.Net;
+using Microsoft.AspNetCore.SignalR.Client;
+using OneSms.Web.Shared.Constants;
+using OneSms.Web.Shared.Dtos;
+using Splat;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using File = Java.IO.File;
@@ -33,10 +38,17 @@ namespace OneSms.Droid.Server.Services
     public class WhatsappService : IWhatsappService
     {
         public Context Context { get; set; }
+        ISignalRService _signalRService;
 
         public WhatsappService(Context context)
         {
             Context = context;
+            _signalRService = Locator.Current.GetService<ISignalRService>();
+            _signalRService.Connection.On<MessageTransactionProcessDto>(SignalRKeys.SendWhatsapp, transaction =>
+            {
+                if (transaction.ImageLinks.FirstOrDefault(x => string.IsNullOrEmpty(x)) == null)
+                    SendText(transaction.ReceiverNumber, transaction.Message);
+            });
         }
 
         public void SendText(string number, string message)

@@ -20,6 +20,7 @@ namespace OneSms.Online.Data
         public DbSet<SmsTransaction> SmsTransactions { get; set; }
         public DbSet<AppSim> AppSims { get; set; }
         public DbSet<SmsDataExtractor> SmsDataExtractors { get; set; }
+        public DbSet<WhatsappTransaction> WhatsappTransactions { get; set; }
 
         public DbSet<TimClient> TimClients { get; set; }
         public DbSet<TimTransaction> TimTransactions { get; set; }
