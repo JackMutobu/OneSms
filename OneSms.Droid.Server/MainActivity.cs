@@ -1,13 +1,10 @@
-﻿using Android;
-using Android.App;
+﻿using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Provider;
 using Android.Runtime;
-using Android.Support.V4.App;
-using Android.Support.V4.Content;
 using Android.Views;
 using AndroidX.AppCompat.App;
 using Java.Lang;
@@ -17,9 +14,9 @@ using OneSms.Droid.Server.Receivers;
 using OneSms.Droid.Server.Services;
 using OneSms.Droid.Server.Views;
 using OneUssd;
+using Splat;
 using Syncfusion.Android.TabView;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 
@@ -34,9 +31,9 @@ namespace OneSms.Droid.Server
         private ServerView serverView;
         private HomeView homeView;
         private SmsReceiver smsReceiver;
-        private SmsService smsService;
-        private SignalRService signalRService;
-        private HttpClientService httpClientService;
+        private ISmsService smsService;
+        private ISignalRService signalRService;
+        private IWhatsappService whatsappService;
 
         protected async override void OnCreate(Bundle savedInstanceState)
         {
@@ -44,18 +41,28 @@ namespace OneSms.Droid.Server
             this.Window.AddFlags(WindowManagerFlags.KeepScreenOn);
             Platform.Init(this, savedInstanceState);
             //Register Syncfusion license
-            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mjk2NzM0QDMxMzgyZTMyMmUzMENBcnhhYldQMkZMbGorVlI4OXhBWUlYOFk1RVV6K0cvNHI2UFFvUGsyVHc9");
+            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(OneSmsAction.SyncfusionKey);
             tabView = new SfTabView(this.ApplicationContext);
-            httpClientService = new HttpClientService(Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/api/"));
-            await InitializeSignalR();
-            InitializeSmsServices();
+            await InitializeServices();
+
             homeView = new HomeView(this);
-            settingsView = new SettingsView(this, smsService, signalRService, httpClientService);
-            serverView = new ServerView(this, signalRService, httpClientService);
+            settingsView = new SettingsView(this);
+            serverView = new ServerView(this);
             await RequestPermissions();
             SetContentView(tabView);
             InitializeTab();
             ActionOnOneForegroundService(OneSmsAction.ServiceStarted);
+        }
+
+        private async Task InitializeServices()
+        {
+            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/api/"), Preferences.Get(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub"));
+            signalRService = Locator.Current.GetService<ISignalRService>();
+            smsService = Locator.Current.GetService<ISmsService>();
+            whatsappService = Locator.Current.GetService<IWhatsappService>();
+
+            InitializeSmsServices();
+            await InitializeSignalR();
         }
 
         private async Task RequestPermissions()
@@ -63,31 +70,23 @@ namespace OneSms.Droid.Server
             UssdController.VerifyAccesibilityAccess(this);
             UssdController.VerifyOverLay(this);
             UssdController.RequestPermission(this);
-            await SmsService.CheckAndRequestReadPhoneStatePermission();
-            await SmsService.CheckAndRequestSmsPermission();
-            await HomeView.CheckAndRequestReadContactPermission();
-            await HomeView.CheckAndRequestWriteContactPermission();
+            await smsService.CheckAndRequestSmsPermission();
+            await smsService.CheckAndRequestReadPhoneStatePermission();
+            await whatsappService.CheckAndRequestReadContactPermission();
+            await whatsappService.CheckAndRequestWriteContactPermission();
         }
-
-        
 
         private void InitializeSmsServices()
         {
-            smsService = new SmsService(this,signalRService,httpClientService);
-            smsReceiver = new SmsReceiver(smsService);
+            smsReceiver = new SmsReceiver();
             CheckForIncommingSMS();
         }
 
         private async Task InitializeSignalR()
         {
-            if (!Preferences.ContainsKey(OneSmsAction.ServerUrl))
-                Preferences.Set(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub");
-
-            signalRService = new SignalRService(this, Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
             await signalRService.ConnectToHub();
             if (Preferences.ContainsKey(OneSmsAction.ServerKey))
                 await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
-
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)

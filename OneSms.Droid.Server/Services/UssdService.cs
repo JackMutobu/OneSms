@@ -1,5 +1,4 @@
 ﻿using Android.Content;
-using Android.Widget;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
 using OneUssd;
@@ -8,31 +7,39 @@ using System;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Threading.Tasks;
 using OneSms.Web.Shared.Enumerations;
-using Microsoft.Win32.SafeHandles;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
+using Splat;
 
 namespace OneSms.Droid.Server.Services
 {
-    public class UssdService
+    public interface IUssdService
     {
-        private Context _context;
+        void Execute(string ussdNumber, int sim, Dictionary<string, HashSet<string>> keyMpas, List<string> inputData);
+        Task SendUssdStateChanged(UssdTransactionDto ussd);
+        Context Context { get; set; }
+    }
+
+    public class UssdService : IUssdService
+    {
         private UssdController _ussdController;
-        private SignalRService _signalRService;
-        private HttpClientService _httpClientService;
+        private ISignalRService _signalRService;
+        private IHttpClientService _httpClientService;
         private Queue<string> _inputData;
         private UssdTransactionDto _currentTransactionDto;
         private Queue<UssdTransactionDto> _pendingUssdTransactions;
         private Subject<Unit> _ussdTimer;
-        
-        public UssdService(Context context,SignalRService signalRService,HttpClientService httpClientService)
+
+        public Context Context { get; set; }
+
+        public UssdService(Context context)
         {
-            _context = context;
+            Context = context;
             _ussdController = UssdController.GetInstance(context);
             _pendingUssdTransactions = new Queue<UssdTransactionDto>();
-            _signalRService = signalRService;
-            _httpClientService = httpClientService;
+            _signalRService = Locator.Current.GetService<ISignalRService>();
+            _httpClientService = Locator.Current.GetService<IHttpClientService>();
             _ussdTimer = new Subject<Unit>();
 
             _signalRService.Connection.On(SignalRKeys.SendUssd, (Action<UssdTransactionDto>)(ussd =>
@@ -64,7 +71,7 @@ namespace OneSms.Droid.Server.Services
             _ussdTimer.OnNext(Unit.Default);
         }
 
-        public void Execute(string ussdNumber,int sim,Dictionary<string,HashSet<string>> keyMpas,List<string> inputData)
+        public void Execute(string ussdNumber, int sim, Dictionary<string, HashSet<string>> keyMpas, List<string> inputData)
         {
             RegisterEvents();
             _inputData = new Queue<string>(inputData);
@@ -106,12 +113,12 @@ namespace OneSms.Droid.Server.Services
                 var lastMessage = _ussdController.StopOperation();
                 SendTransactionState(lastMessage, UssdTransactionState.Canceled);
             }
-            MainActivity.RestartActivity(_context);
+            MainActivity.RestartActivity(Context);
         }
 
         private void OnResponseRecieved(object sender, UssdEventArgs e)
         {
-            if(_inputData.Count != 0)
+            if (_inputData.Count != 0)
             {
                 var input = _inputData.Dequeue();
                 _ussdController.SendData(input);

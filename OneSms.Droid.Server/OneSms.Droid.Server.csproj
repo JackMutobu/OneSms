@@ -84,6 +84,8 @@
     <Compile Include="Services\SmsService.cs" />
     <Compile Include="Services\UssdService.cs" />
     <Compile Include="Services\WhatsappAccessibilityService.cs" />
+    <Compile Include="Services\WhatsappService.cs" />
+    <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Views\HomeView.cs" />
@@ -131,6 +133,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client">
       <Version>3.1.6</Version>
+    </PackageReference>
+    <PackageReference Include="Splat">
+      <Version>9.5.20</Version>
+    </PackageReference>
+    <PackageReference Include="Splat.Serilog">
+      <Version>9.5.20</Version>
     </PackageReference>
     <PackageReference Include="Syncfusion.Xamarin.SfTabView.Android">
       <Version>18.2.0.47</Version>

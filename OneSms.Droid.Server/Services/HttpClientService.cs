@@ -6,7 +6,16 @@ using System.Threading.Tasks;
 
 namespace OneSms.Droid.Server.Services
 {
-    public class HttpClientService
+    public interface IHttpClientService
+    {
+        HttpClient HttpClient { get; }
+
+        Task<Result<T>> GetAsync<T>(object content, string uri) where T : class;
+        Task<Result<T>> PostAsync<T>(object content, string uri) where T : class;
+        Task<Result<T>> PutAsync<T>(object content, string uri) where T : class;
+    }
+
+    public class HttpClientService : IHttpClientService
     {
         public HttpClientService(string url)
         {

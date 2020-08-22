@@ -1,13 +1,10 @@
 ﻿using Android.Content;
 using Android.Widget;
-using Java.Util;
 using OneSms.Droid.Server.Services;
 using OneUssd;
+using Splat;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Xamarin.Essentials;
-using UssdService = OneSms.Droid.Server.Services.UssdService;
 
 namespace OneSms.Droid.Server.Views
 {
@@ -22,19 +19,19 @@ namespace OneSms.Droid.Server.Views
         private EditText _simNumber;
         private EditText _ussdCode;
         private EditText _ussdData;
-        private SmsService _smsService;
-        private SignalRService _signalRService;
-        private HttpClientService _httpClientService;
-        private UssdService _ussdService;
+        private ISmsService _smsService;
+        private ISignalRService _signalRService;
+        private IHttpClientService _httpClientService;
+        private IUssdService _ussdService;
 
         
-        public SettingsView(Context context,SmsService smsService,SignalRService signalRService,HttpClientService httpClientService) : base(context)
+        public SettingsView(Context context) : base(context)
         {
             Orientation = Orientation.Vertical;
-            _smsService = smsService;
-            _signalRService = signalRService;
-            _httpClientService = httpClientService;
-            _ussdService = new UssdService(context,_signalRService,_httpClientService);
+            _smsService = Locator.Current.GetService<ISmsService>();
+            _signalRService = Locator.Current.GetService<ISignalRService>();
+            _httpClientService = Locator.Current.GetService<IHttpClientService>(); ;
+            _ussdService = Locator.Current.GetService<IUssdService>();
             _label = new TextView(context)
             {
                 Text = "Envoyer un sms"

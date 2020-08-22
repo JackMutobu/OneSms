@@ -7,6 +7,7 @@ using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Services;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
+using Splat;
 using System;
 using Xamarin.Essentials;
 using Debug = System.Diagnostics.Debug;
@@ -17,13 +18,12 @@ namespace OneSms.Droid.Server.Receivers
     [IntentFilter(new string[] { "android.provider.Telephony.SMS_RECEIVED" }, Priority = int.MaxValue)]
     public class SmsReceiver : BroadcastReceiver
     {
-        private  SmsService _smsService;
+        private ISmsService _smsService;
 
-        public SmsReceiver(SmsService smsService)
+        public SmsReceiver()
         {
-            _smsService = smsService;
+            _smsService = Locator.Current.GetService<ISmsService>();
         }
-        public SmsReceiver() { }
 
         public override void OnReceive(Context context, Intent intent)
         {

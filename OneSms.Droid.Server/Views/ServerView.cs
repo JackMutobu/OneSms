@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using Xamarin.Essentials;
 using System.Reactive.Linq;
 using System;
+using Splat;
 
 namespace OneSms.Droid.Server.Views
 {
     public class ServerView:LinearLayout
     {
-        private SignalRService _signalRService;
-        private HttpClientService _httpClientService;
+        private ISignalRService _signalRService;
+        private IHttpClientService _httpClientService;
         private TextView _label;
         private TextView _labelServer;
         private TextView _labelServerUrl;
@@ -24,11 +25,11 @@ namespace OneSms.Droid.Server.Views
         private TextView _labelConnected;
         private Button _reconnectToSignalR;
         private Context _context;
-        public ServerView(Context context,SignalRService signalRService,HttpClientService httpClientService) : base(context)
+        public ServerView(Context context) : base(context)
         {
             _context = context;
-            _signalRService = signalRService;
-            _httpClientService = httpClientService;
+            _signalRService = Locator.Current.GetService<ISignalRService>();
+            _httpClientService = Locator.Current.GetService<IHttpClientService>();
             _label = new TextView(context)
             {
                 Text = "Server ID"

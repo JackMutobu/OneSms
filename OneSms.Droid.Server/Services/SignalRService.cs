@@ -1,7 +1,6 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.Widget;
-using Javax.Security.Auth;
 using Microsoft.AspNetCore.SignalR.Client;
 using OneSms.Droid.Server.Constants;
 using OneSms.Web.Shared.Dtos;
@@ -14,14 +13,27 @@ using Xamarin.Essentials;
 
 namespace OneSms.Droid.Server.Services
 {
-    public class SignalRService
+    public interface ISignalRService
+    {
+        HubConnection Connection { get; }
+        bool IsConnected { get; }
+        Subject<bool> OnConnectionChanged { get; }
+
+        Task<bool> ConnectToHub();
+        Task ReconnectToHub();
+        Task SendServerId(string serverId);
+        Task SendSmsStateChanged(SmsTransactionDto smsTransactionDto);
+        Task SendUssdStateChanged(UssdTransactionDto ussdTransactionDto);
+        Context Context { get; set; }
+    }
+
+    public class SignalRService : ISignalRService
     {
         private string _url;
-        private Context _context;
 
-        public SignalRService(Context context,string url)
+        public SignalRService(Context context, string url)
         {
-            _context = context;
+            Context = context;
             OnConnectionChanged = new Subject<bool>();
             _url = Preferences.Get(OneSmsAction.ServerUrl, url);
             Connection = new HubConnectionBuilder()
@@ -37,7 +49,7 @@ namespace OneSms.Droid.Server.Services
                    };
                })
                .Build();
-            Connection.Reconnected += id => SendServerId(Preferences.Get(OneSmsAction.ServerKey,string.Empty));
+            Connection.Reconnected += id => SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
             Connection.Closed += async (error) =>
             {
                 IsConnected = false;
@@ -49,7 +61,7 @@ namespace OneSms.Droid.Server.Services
             {
                 var id = conId;
             });
-            Connection.On<Exception>("OnException", ex => Toast.MakeText(_context, ex.Message, ToastLength.Long).Show());
+            Connection.On<Exception>("OnException", ex => Toast.MakeText(Context, ex.Message, ToastLength.Long).Show());
 
             Observable.Interval(TimeSpan.FromMinutes(5)).Subscribe(async number =>
                 {
@@ -65,6 +77,7 @@ namespace OneSms.Droid.Server.Services
         public bool IsConnected { get; private set; }
 
         public Subject<bool> OnConnectionChanged { get; }
+        public Context Context { get; set; }
 
         public async Task<bool> ConnectToHub()
         {
@@ -73,9 +86,9 @@ namespace OneSms.Droid.Server.Services
                 await Connection.StartAsync();
                 IsConnected = true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                AlertDialog alertDialog = new AlertDialog.Builder(_context).Create();
+                AlertDialog alertDialog = new AlertDialog.Builder(Context).Create();
                 alertDialog.SetTitle("Exception");
                 alertDialog.SetMessage($"Message:{ex.Message}");
                 alertDialog.Show();
@@ -96,7 +109,7 @@ namespace OneSms.Droid.Server.Services
                 if (isConnected)
                     await SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
                 else
-                    MainThread.BeginInvokeOnMainThread(() => Toast.MakeText(_context, "Reconnecting failed", ToastLength.Long).Show());
+                    MainThread.BeginInvokeOnMainThread(() => Toast.MakeText(Context, "Reconnecting failed", ToastLength.Long).Show());
             }
 
         }
@@ -110,7 +123,7 @@ namespace OneSms.Droid.Server.Services
 
         public async Task SendSmsStateChanged(SmsTransactionDto smsTransactionDto)
         {
-            if(Connection.State == HubConnectionState.Connected)
+            if (Connection.State == HubConnectionState.Connected)
                 await Connection.InvokeAsync("SmsStateChanged", smsTransactionDto);
         }
 

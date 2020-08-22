@@ -6,7 +6,6 @@ using Android.Runtime;
 using Android.Widget;
 using OneSms.Droid.Server.Constants;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using OneSms.Droid.Server.Extensions;
 using static Android.Provider.Settings;
@@ -26,6 +25,7 @@ namespace OneSms.Droid.Server.Services
         public OneForegroundService()
         {
             _httpClientService = new HttpClientService("https://jsonplaceholder.typicode.com/");
+            
         }
 
         public override IBinder OnBind(Intent intent)
