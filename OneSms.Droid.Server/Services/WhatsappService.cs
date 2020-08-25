@@ -1,4 +1,5 @@
-﻿using Android.Content;
+﻿using Akavache;
+using Android.Content;
 using Android.Graphics;
 using Android.OS;
 using Android.Provider;
@@ -7,21 +8,29 @@ using Java.Net;
 using Microsoft.AspNetCore.SignalR.Client;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
+using OneSms.Web.Shared.Enumerations;
+using OneSms.Web.Shared.Models;
 using Splat;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using File = Java.IO.File;
 using Uri = Android.Net.Uri;
+using System.Reactive.Linq;
+using Akavache.Core;
+using OneSms.Droid.Server.Constants;
 
 namespace OneSms.Droid.Server.Services
 {
     public interface IWhatsappService
     {
         Context Context { get; set; }
+        MessageTransactionProcessDto CurrentTransaction { get; }
+        Subject<MessageTransactionProcessDto> OnMessageSent { get; }
 
         Task<PermissionStatus> CheckAndRequestReadContactPermission();
         Task<PermissionStatus> CheckAndRequestWriteContactPermission();
@@ -31,24 +40,81 @@ namespace OneSms.Droid.Server.Services
         Uri GetLocalBitmapUri(Context context, Bitmap bitmap);
         Uri GetUriFromFile(Context context, File file);
         Task<string> GetWhatsappNumber(Context context, string contactId);
+        Task SendAsync(MessageTransactionProcessDto transaction);
         void SendImage(Context context, Bitmap bitmap, string number, string message);
         void SendText(string number, string message);
     }
 
     public class WhatsappService : IWhatsappService
     {
-        public Context Context { get; set; }
-        ISignalRService _signalRService;
-
+        private Queue<MessageTransactionProcessDto> _transactionQueue;
+        private ISignalRService _signalRService;
+        private IHttpClientService _httpClientService;
+        private bool _isBusy;
         public WhatsappService(Context context)
         {
             Context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
-            _signalRService.Connection.On<MessageTransactionProcessDto>(SignalRKeys.SendWhatsapp, transaction =>
+            _httpClientService = Locator.Current.GetService<IHttpClientService>();
+            OnMessageSent = new Subject<MessageTransactionProcessDto>();
+            _transactionQueue = new Queue<MessageTransactionProcessDto>();
+            _signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(async transaction => await Execute(transaction)));
+
+            OnMessageSent.Subscribe(transaction =>
             {
-                if (transaction.ImageLinks.FirstOrDefault(x => string.IsNullOrEmpty(x)) == null)
-                    SendText(transaction.ReceiverNumber, transaction.Message);
+                _isBusy = false;
+                if (_transactionQueue.Count > 0)
+                {
+                    CurrentTransaction = _transactionQueue.Dequeue();
+                    Execute(CurrentTransaction);
+                }
+                else
+                    CurrentTransaction = null;
+                transaction.TimeStamp = DateTime.UtcNow;
+                transaction.TransactionState = MessageTransactionState.Sent;
+                _httpClientService.PutAsync<string>(transaction, "Transaction/StatusChanged");
             });
+        }
+
+        public Context Context { get; set; }
+
+        public MessageTransactionProcessDto CurrentTransaction { get; private set; }
+
+        public Subject<MessageTransactionProcessDto> OnMessageSent { get; }
+
+        private async Task Execute(MessageTransactionProcessDto transaction)
+        {
+            if (_isBusy)
+                _transactionQueue.Enqueue(transaction);
+            else
+            {
+                await SendAsync(transaction);
+                _isBusy = true;
+            }
+        }
+
+        public async Task SendAsync(MessageTransactionProcessDto transaction)
+        {
+            CurrentTransaction = transaction;
+            var imageLink = transaction.ImageLinks.FirstOrDefault(x => string.IsNullOrEmpty(x));
+            if (string.IsNullOrEmpty(imageLink))
+                  SendText(transaction.ReceiverNumber, transaction.Message);
+            else
+            {
+                var imageBytes = await BlobCache.LocalMachine.DownloadUrl(imageLink);
+                var image = await BitmapFactory.DecodeByteArrayAsync(imageBytes,0,imageBytes.Length);
+                SendImage(Context, image, transaction.ReceiverNumber, transaction.Message);
+                Preferences.Set(OneSmsAction.ImageTransaction, transaction.WhatsappId);
+            }
+        }
+
+        private Bitmap ImageByteToBitmap(byte[] imageBytes)
+        {
+            Bitmap bitmapImage = default;
+            using var stream = new MemoryStream();
+            bitmapImage.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
+            imageBytes = stream.ToArray();
+            return bitmapImage;
         }
 
         public void SendText(string number, string message)
@@ -58,13 +124,12 @@ namespace OneSms.Droid.Server.Services
 
             try
             {
-                var url = "https://api.whatsapp.com/send?phone=" + number + "&text=" + URLEncoder.Encode(message, "UTF-8");
+                var url = $"https://api.whatsapp.com/send?phone={number}&text={URLEncoder.Encode(message, "UTF-8")}";
                 i.SetPackage("com.whatsapp.w4b");
                 i.SetData(Uri.Parse(url));
+                i.SetFlags(ActivityFlags.NewTask | ActivityFlags.ClearTask);
                 if (i.ResolveActivity(packageManager) != null)
-                {
                     Context.StartActivity(i);
-                }
             }
             catch (Exception e)
             {
@@ -111,7 +176,7 @@ namespace OneSms.Droid.Server.Services
             whatsappIntent.PutExtra(Intent.ExtraStream, imgUri);
             whatsappIntent.PutExtra("jid", $"{number}@s.whatsapp.net");
             whatsappIntent.SetType("image/jpeg");
-            whatsappIntent.AddFlags(ActivityFlags.GrantReadUriPermission);
+            whatsappIntent.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.NewTask);
 
             try
             {
@@ -272,5 +337,7 @@ namespace OneSms.Droid.Server.Services
                 status = await Permissions.RequestAsync<Permissions.ContactsWrite>();
             return status;
         }
+
+       
     }
 }

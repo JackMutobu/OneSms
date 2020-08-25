@@ -24,7 +24,7 @@ namespace OneSms.Web.Shared.Dtos
 
         public MessageTransactionState TransactionState { get; set; }
 
-        public MessageTransactionProcessor MessageTransactionProcessor { get; protected set; }
+        public MessageTransactionProcessor MessageTransactionProcessor { get; set; }
 
         public List<string> ImageLinks { get; set; }
     }

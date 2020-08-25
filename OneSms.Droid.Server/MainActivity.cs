@@ -2,6 +2,7 @@
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
+using Android.Net;
 using Android.OS;
 using Android.Provider;
 using Android.Runtime;
@@ -23,7 +24,7 @@ using Xamarin.Essentials;
 namespace OneSms.Droid.Server
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
-    [IntentFilter(new string[] { "android.intent.action.MAIN" }, Priority = int.MaxValue)]
+    [IntentFilter(new string[] { "android.intent.action.MAIN" },Categories = new string[] { "android.intent.category.LAUNCHER", "android.intent.category.DEFAULT", "android.intent.category.HOME" }, Priority = int.MaxValue)]
     public class MainActivity : AppCompatActivity
     {
         private SfTabView tabView;
@@ -35,6 +36,7 @@ namespace OneSms.Droid.Server
         private ISignalRService signalRService;
         private IWhatsappService whatsappService;
 
+
         protected async override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -42,6 +44,8 @@ namespace OneSms.Droid.Server
             Platform.Init(this, savedInstanceState);
             //Register Syncfusion license
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(OneSmsAction.SyncfusionKey);
+            //Register Akavache
+            Akavache.Registrations.Start("OneSmsDb");
             tabView = new SfTabView(this.ApplicationContext);
             await InitializeServices();
 
@@ -51,7 +55,6 @@ namespace OneSms.Droid.Server
             await RequestPermissions();
             SetContentView(tabView);
             InitializeTab();
-            ActionOnOneForegroundService(OneSmsAction.ServiceStarted);
         }
 
         private async Task InitializeServices()
@@ -151,11 +154,11 @@ namespace OneSms.Droid.Server
                 this.StartService(it);
         }
 
-        private void ActionOnOneForegroundService(string serviceState)
-        {
-            if (this.GetServiceState() == OneSmsAction.ServiceStopped && serviceState == OneSmsAction.ServiceStopped) return;
-            StartOneForegroundService();
-        }
+        //private void ActionOnOneForegroundService(string serviceState)
+        //{
+        //    if (this.GetServiceState() == OneSmsAction.ServiceStopped && serviceState == OneSmsAction.ServiceStopped) return;
+        //    StartOneForegroundService();
+        //}
 
         protected override void OnActivityResult(int requestCode, [GeneratedEnum] Result resultCode, Intent data)
         {
@@ -193,6 +196,13 @@ namespace OneSms.Droid.Server
                 }
             }
             homeView.SetImageView(homeView.BitmapImage);
+        }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+            if (whatsappService.CurrentTransaction != null)
+                whatsappService.OnMessageSent.OnNext(whatsappService.CurrentTransaction);
         }
     }
 }

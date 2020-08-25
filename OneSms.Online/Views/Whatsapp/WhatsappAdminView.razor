@@ -3,7 +3,7 @@
 @inherits ReactiveComponentBase<WhatsappAdminViewModel>
 @attribute [Authorize(Roles = "SuperAdmin")]
 <PageHeader BackIcon="string.Empty">
-    <PageHeaderTitle>Sms Test</PageHeaderTitle>
+    <PageHeaderTitle>Whatsapp Test</PageHeaderTitle>
 </PageHeader>
 
 <Text Type="danger">@ViewModel.Errors</Text>
@@ -30,7 +30,9 @@
     <FormItem Label="Message">
         <Input Size="@InputSize.Large" @bind-Value="@context.Body" />
     </FormItem>
-
+    <Upload @attributes="attrs" FileList="fileList" OnChange="HandleChange">
+        <Button Icon="upload"><span>Select Image</span></Button>
+    </Upload>
     <FormItem>
         <Button Type="@ButtonType.Primary" Size="@InputSize.Large" HtmlType="submit">
             Submit

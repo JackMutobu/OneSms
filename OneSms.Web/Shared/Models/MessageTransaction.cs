@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OneSms.Web.Shared.Models
 {
-    public abstract class  MessageTransaction:BaseModel
+    public class  MessageTransaction:BaseModel
     {
         public string Title { get; set; }
 

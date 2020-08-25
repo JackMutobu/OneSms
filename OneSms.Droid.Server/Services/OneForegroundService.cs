@@ -9,6 +9,12 @@ using System;
 using System.Threading.Tasks;
 using OneSms.Droid.Server.Extensions;
 using static Android.Provider.Settings;
+using Splat;
+using OneSms.Web.Shared.Dtos;
+using OneSms.Web.Shared.Constants;
+using Microsoft.AspNetCore.SignalR.Client;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -21,11 +27,46 @@ namespace OneSms.Droid.Server.Services
         static readonly int NOTIFICATION_ID = 1000;
         static readonly string CHANNEL_ID = "location_notification";
         internal static readonly string COUNT_KEY = "count";
+        private ISignalRService _signalRService;
+        private IWhatsappService _whatsappService;
+        private Queue<MessageTransactionProcessDto> _transactionQueue;
 
         public OneForegroundService()
         {
             _httpClientService = new HttpClientService("https://jsonplaceholder.typicode.com/");
-            
+            _signalRService = Locator.Current.GetService<ISignalRService>();
+            _signalRService.Context = this;
+            _whatsappService = Locator.Current.GetService<IWhatsappService>();
+            _whatsappService.Context = this;
+            _transactionQueue = new Queue<MessageTransactionProcessDto>();
+            _signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(transaction =>
+            {
+                CheckScreenInteractivity();
+                Execute(transaction);
+            }));
+
+            _whatsappService.OnMessageSent.Subscribe(transaction => 
+            {
+                if (_transactionQueue.Count > 0)
+                    Execute(_transactionQueue.Dequeue());
+            });
+
+        }
+
+        private void Execute(MessageTransactionProcessDto transaction)
+        {
+            if (_transactionQueue.Count > 0)
+                _transactionQueue.Enqueue(transaction);
+            else
+                _whatsappService.SendAsync(transaction);
+        }
+
+        private void CheckScreenInteractivity()
+        {
+            if (IsInteractive())
+                KeepScreenOn();
+            else
+                TurnOnScreen();
         }
 
         public override IBinder OnBind(Intent intent)
@@ -171,5 +212,42 @@ namespace OneSms.Droid.Server.Services
 
         }
 
+        private void TurnOnScreen()
+        {
+            if ((GetSystemService(PowerService)) != null)
+            {
+                PowerManager.WakeLock screenLock = ((PowerManager)GetSystemService(PowerService)).NewWakeLock(WakeLockFlags.ScreenBright | WakeLockFlags.AcquireCausesWakeup, "TAG");
+
+                screenLock.Acquire(10 * 60 * 1000L /*10 minutes*/);
+
+                screenLock.Release();
+            }
+        }
+
+        public void KeepScreenOn()
+        {
+            var pm = (PowerManager)GetSystemService(Context.PowerService);
+            var wakeLock = pm.NewWakeLock(WakeLockFlags.ScreenDim, "My Tag");
+            wakeLock.Acquire();
+        }
+
+        public bool IsInteractive()
+        {
+            var powerManager = (PowerManager)GetSystemService(Context.PowerService);
+            return Build.VERSION.SdkInt >= BuildVersionCodes.KitkatWatch
+                ? powerManager.IsInteractive
+                : powerManager.IsScreenOn;
+        }
+
+        public void OpenMainActivity(Context context)
+        {
+            var intent = new Intent(context, typeof(MainActivity));
+            intent.SetFlags(ActivityFlags.NewTask);
+            intent.SetAction(Intent.ActionMain);
+            intent.AddCategory(Intent.CategoryLauncher);
+            context.StartActivity(intent);
+        }
+    
     }
+
 }

@@ -20,6 +20,8 @@ namespace OneSms.Online.Views.Whatsapp
     public partial class WhatsappAdminView
     {
         WhatsappTransaction transaction = new WhatsappTransaction();
+        Dictionary<string, object> attrs = new Dictionary<string, object>();
+        List<UploadFileItem> fileList = new List<UploadFileItem>();
 
         [Inject]
         OneSmsDbContext OneSmsDbContext { get; set; }
@@ -51,6 +53,19 @@ namespace OneSms.Online.Views.Whatsapp
         {
             var server = ViewModel.MobileServers.First(x => x.Id == int.Parse(value.Value.ToString()));
             ViewModel.MobileServer = server;
+        }
+
+        void HandleChange(UploadInfo fileinfo)
+        {
+            //var length = fileinfo.File.FileName.Length;
+            //if (fileList.Count > 2)
+            //{
+            //    fileList.RemoveRange(0, fileList.Count - 2);
+            //}
+            //fileList.Where(file => file.State == UploadState.Success && !string.IsNullOrWhiteSpace(file.Response)).ForEach(file => {
+            //    var result = file.GetResponse<ResponseModel>();
+            //    file.Url = result.url;
+            //});
         }
     }
 }

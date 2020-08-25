@@ -62,6 +62,7 @@ namespace OneSms.Online.ViewModels.Whatsapp
                 LatestTransaction.ImageLinks = new List<string> { transaction.ImageLinkOne, transaction.ImageLinkTwo, transaction.ImageLinkThree };
                 LatestTransaction.MobileServerId = transaction.MobileServerId;
                 LatestTransaction.ReceiverNumber = transaction.RecieverNumber;
+                LatestTransaction.MessageTransactionProcessor = MessageTransactionProcessor.Whatsapp;
                 var serverConnectionId = string.Empty;
                 if (_serverConnectionService.ConnectedServers.TryGetValue(serverKey, out serverConnectionId))
                     await _oneSmsHubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, LatestTransaction);

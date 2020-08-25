@@ -1,12 +1,16 @@
 ﻿using Android;
 using Android.AccessibilityServices;
 using Android.App;
+using Android.Content;
 using Android.Util;
 using Android.Views.Accessibility;
 using Android.Widget;
+using OneSms.Droid.Server.Constants;
 using Splat;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Xamarin.Essentials;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -15,6 +19,11 @@ namespace OneSms.Droid.Server.Services
     [MetaData("android.accessibilityservice", Resource = "@xml/whatsapp_service")]
     public class WhatsappAccessibilityService : AccessibilityService,IEnableLogger
     {
+        private IWhatsappService _whatsappService;
+        public WhatsappAccessibilityService()
+        {
+            _whatsappService = Locator.Current.GetService<IWhatsappService>();
+        }
         public override void OnAccessibilityEvent(AccessibilityEvent e)
         {
             var eventTye = e.EventType;
@@ -36,8 +45,13 @@ namespace OneSms.Droid.Server.Services
             if (sendPagerButton != null && viewPager != null && textViewPager != null && navigateViewPager != null)
             {
                 sendPagerButton.PerformAction(Action.Click);
-                Toast.MakeText(this, "Image sent", ToastLength.Short);
                 System.Diagnostics.Debug.WriteLine("Image sent");
+                //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
+                var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
+                if (_whatsappService.CurrentTransaction.WhatsappId == transactionId)
+                    Preferences.Set(OneSmsAction.ImageTransaction, 0);
+                else
+                    PerformGlobalAction(GlobalAction.Home);
             }
         }
 
@@ -48,8 +62,8 @@ namespace OneSms.Droid.Server.Services
             if (!string.IsNullOrEmpty(editText?.Text) && sendButton != null)
             {
                 sendButton.PerformAction(Action.Click);
-                Toast.MakeText(this, "Text sent", ToastLength.Short);
                 System.Diagnostics.Debug.WriteLine("Text sent");
+                this.PerformGlobalAction(GlobalAction.Home);
             }
         }
 
@@ -95,6 +109,14 @@ namespace OneSms.Droid.Server.Services
             {
                 GetLeaves(leaves, node?.GetChild(i));
             }
+        }
+        public void OpenMainActivity(Context context)
+        {
+            var intent = new Intent(context, typeof(MainActivity));
+            intent.SetFlags(ActivityFlags.NewTask);
+            intent.SetAction(Intent.ActionMain);
+            intent.AddCategory(Intent.CategoryLauncher);
+            context.StartActivity(intent);
         }
     }
 }
