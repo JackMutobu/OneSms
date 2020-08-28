@@ -46,6 +46,7 @@ namespace OneSms.Online.Views.Sms
             transaction.OneSmsAppId = ViewModel.SelectedSimCard.Apps.First().AppId;
             transaction.MobileServerId = ViewModel.SelectedSimCard.MobileServerId;
             await ViewModel.AddSmsTransaction.Execute(transaction).ToTask();
+            transaction = new SmsTransaction { Body = transaction.Body,SenderNumber =  transaction.SenderNumber, RecieverNumber = transaction.RecieverNumber, Title = transaction.Title };
         }
 
         private void OnSimSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)

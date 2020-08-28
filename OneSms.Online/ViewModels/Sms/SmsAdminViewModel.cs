@@ -103,7 +103,7 @@ namespace OneSms.Online.ViewModels
 
         public SimCard SelectedSimCard { get; set; }
 
-        public MessageTransactionProcessDto LatestTransaction { get; set; }
+        public MessageTransactionProcessDto LatestTransaction { get; set; } = new MessageTransactionProcessDto();
 
         public ReactiveCommand<Unit,List<ServerMobile>> LoadMobileServers { get; }
 

@@ -22,7 +22,7 @@ namespace OneSms.Droid.Server.Services
         Task<bool> ConnectToHub();
         Task ReconnectToHub();
         Task SendServerId(string serverId);
-        Task SendSmsStateChanged(SmsTransactionDto smsTransactionDto);
+        Task SendSmsStateChanged(MessageTransactionProcessDto smsTransactionDto);
         Task SendUssdStateChanged(UssdTransactionDto ussdTransactionDto);
         Context Context { get; set; }
     }
@@ -121,7 +121,7 @@ namespace OneSms.Droid.Server.Services
                 await Connection.InvokeAsync("SetServerId", serverId);
         }
 
-        public async Task SendSmsStateChanged(SmsTransactionDto smsTransactionDto)
+        public async Task SendSmsStateChanged(MessageTransactionProcessDto smsTransactionDto)
         {
             if (Connection.State == HubConnectionState.Connected)
                 await Connection.InvokeAsync("SmsStateChanged", smsTransactionDto);

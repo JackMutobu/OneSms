@@ -51,14 +51,14 @@ namespace OneSms.Droid.Server.Services
             OnSmsTransaction = new Subject<MessageTransactionProcessDto>();
             OnSmsTransaction.Subscribe(sms =>
             {
-                _httpClientService.PutAsync<string>(sms, "Sms/StatusChanged");
+                _httpClientService.PutAsync<string>(sms, "Transaction/StatusChanged");
                 if (_pendingSms.Count > 0 && sms.TransactionState == MessageTransactionState.Sent)
                     SendSms(_pendingSms.Dequeue());
             },
             ex =>
             {
                 var transacton = ex.Data[OneSmsAction.SmsTransaction] as MessageTransactionProcessDto;
-                _httpClientService.PutAsync<string>(transacton, "Sms/StatusChanged");
+                _httpClientService.PutAsync<string>(transacton, "Transaction/StatusChanged");
                 if (_pendingSms.Count > 0)
                     SendSms(_pendingSms.Dequeue());
             });

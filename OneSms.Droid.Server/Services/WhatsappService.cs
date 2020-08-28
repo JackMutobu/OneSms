@@ -137,7 +137,7 @@ namespace OneSms.Droid.Server.Services
                 var whatsappNumber = await GetWhatsappNumber(context, contactId);
                 if (string.IsNullOrEmpty(whatsappNumber))
                 {
-                    _httpClientService.PutAsync<string>(CurrentTransaction, "Sms/Send");
+                    _httpClientService.PostAsync<string>(CurrentTransaction, "Sms/Send");
                 }
                 SendImage(context, bitmap, toNumber, message);
             }
@@ -151,7 +151,7 @@ namespace OneSms.Droid.Server.Services
                 }
                 else
                 {
-                    _httpClientService.PutAsync<string>(CurrentTransaction, "Sms/Send");
+                    _httpClientService.PostAsync<string>(CurrentTransaction, "Sms/Send");
                 }
             }
 
