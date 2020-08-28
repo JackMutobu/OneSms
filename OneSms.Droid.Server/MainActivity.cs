@@ -201,6 +201,10 @@ namespace OneSms.Droid.Server
         protected override void OnResume()
         {
             base.OnResume();
+            //var whatsappId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
+            //if (whatsappService.CurrentTransaction != null && whatsappId == 0)
+            //    whatsappService.OnMessageSent.OnNext(whatsappService.CurrentTransaction);
+
             if (whatsappService.CurrentTransaction != null)
                 whatsappService.OnMessageSent.OnNext(whatsappService.CurrentTransaction);
         }

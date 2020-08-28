@@ -48,7 +48,7 @@ namespace OneSms.Droid.Server.Services
                 System.Diagnostics.Debug.WriteLine("Image sent");
                 //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
                 var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
-                if (_whatsappService.CurrentTransaction.WhatsappId == transactionId)
+                if (_whatsappService.CurrentTransaction?.WhatsappId == transactionId)
                     Preferences.Set(OneSmsAction.ImageTransaction, 0);
                 else
                     PerformGlobalAction(GlobalAction.Home);

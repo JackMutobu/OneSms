@@ -60,13 +60,13 @@ namespace OneSms.Droid.Server.Services
             _transactionQueue = new Queue<MessageTransactionProcessDto>();
             _signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(async transaction => await Execute(transaction)));
 
-            OnMessageSent.Subscribe(transaction =>
+            OnMessageSent.Subscribe(async transaction =>
             {
                 _isBusy = false;
                 if (_transactionQueue.Count > 0)
                 {
                     CurrentTransaction = _transactionQueue.Dequeue();
-                    Execute(CurrentTransaction);
+                    await Execute(CurrentTransaction);
                 }
                 else
                     CurrentTransaction = null;
@@ -88,33 +88,24 @@ namespace OneSms.Droid.Server.Services
                 _transactionQueue.Enqueue(transaction);
             else
             {
-                await SendAsync(transaction);
                 _isBusy = true;
+                await SendAsync(transaction);
             }
         }
 
         public async Task SendAsync(MessageTransactionProcessDto transaction)
         {
             CurrentTransaction = transaction;
-            var imageLink = transaction.ImageLinks.FirstOrDefault(x => string.IsNullOrEmpty(x));
+            var imageLink = transaction.ImageLinks.Where(x => !string.IsNullOrEmpty(x)).FirstOrDefault();
             if (string.IsNullOrEmpty(imageLink))
                   SendText(transaction.ReceiverNumber, transaction.Message);
             else
             {
                 var imageBytes = await BlobCache.LocalMachine.DownloadUrl(imageLink);
                 var image = await BitmapFactory.DecodeByteArrayAsync(imageBytes,0,imageBytes.Length);
-                SendImage(Context, image, transaction.ReceiverNumber, transaction.Message);
+                await CheckContactAndSendImage(Context, image, transaction.ReceiverNumber, transaction.Message);
                 Preferences.Set(OneSmsAction.ImageTransaction, transaction.WhatsappId);
             }
-        }
-
-        private Bitmap ImageByteToBitmap(byte[] imageBytes)
-        {
-            Bitmap bitmapImage = default;
-            using var stream = new MemoryStream();
-            bitmapImage.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
-            imageBytes = stream.ToArray();
-            return bitmapImage;
         }
 
         public void SendText(string number, string message)
@@ -176,7 +167,7 @@ namespace OneSms.Droid.Server.Services
             whatsappIntent.PutExtra(Intent.ExtraStream, imgUri);
             whatsappIntent.PutExtra("jid", $"{number}@s.whatsapp.net");
             whatsappIntent.SetType("image/jpeg");
-            whatsappIntent.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.NewTask);
+            whatsappIntent.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.NewTask | ActivityFlags.ClearTask);
 
             try
             {

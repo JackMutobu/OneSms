@@ -1,16 +1,17 @@
 ﻿using AntDesign;
+using BlazorInputFile;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using OneOf;
 using OneSms.Online.Data;
 using OneSms.Online.Hubs;
 using OneSms.Online.Services;
-using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Models;
-using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
@@ -20,8 +21,8 @@ namespace OneSms.Online.Views.Whatsapp
     public partial class WhatsappAdminView
     {
         WhatsappTransaction transaction = new WhatsappTransaction();
-        Dictionary<string, object> attrs = new Dictionary<string, object>();
-        List<UploadFileItem> fileList = new List<UploadFileItem>();
+        IFileListEntry fileImage;
+        string imageUrl;
 
         [Inject]
         OneSmsDbContext OneSmsDbContext { get; set; }
@@ -34,6 +35,10 @@ namespace OneSms.Online.Views.Whatsapp
 
         [Inject]
         HubEventService HubEventService { get; set; }
+        [Inject]
+        IWebHostEnvironment Environment { get; set; }
+        [Inject]
+        NavigationManager UriHelper { get; set; }
 
         protected async override Task OnInitializedAsync()
         {
@@ -43,10 +48,19 @@ namespace OneSms.Online.Views.Whatsapp
 
         private async Task OnFinish(EditContext editContext)
         {
+            var numbers = transaction.RecieverNumber;
+            var recipients = transaction.RecieverNumber.Split(",");
             transaction.TransactionState = MessageTransactionState.Sending;
             transaction.MobileServerId = ViewModel.MobileServer.Id;
-            await ViewModel.AddTransaction.Execute(transaction).ToTask();
-            transaction = new WhatsappTransaction() { RecieverNumber = transaction.RecieverNumber, Title = transaction.Title, Body = transaction.Body };
+            transaction.ImageLinkOne = imageUrl;
+            foreach (var number in recipients)
+            {
+                transaction.RecieverNumber = number;
+                await ViewModel.AddTransaction.Execute(transaction).ToTask();
+                transaction = new WhatsappTransaction() { RecieverNumber = transaction.RecieverNumber, Title = transaction.Title, Body = transaction.Body, MobileServerId = transaction.MobileServerId, ImageLinkOne = imageUrl,TransactionState = transaction.TransactionState};
+            }
+            transaction.RecieverNumber = numbers;
+            
         }
 
         private void OnServerSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
@@ -55,17 +69,30 @@ namespace OneSms.Online.Views.Whatsapp
             ViewModel.MobileServer = server;
         }
 
-        void HandleChange(UploadInfo fileinfo)
+        async Task HandleFileSelected(IFileListEntry[] files)
         {
-            //var length = fileinfo.File.FileName.Length;
-            //if (fileList.Count > 2)
-            //{
-            //    fileList.RemoveRange(0, fileList.Count - 2);
-            //}
-            //fileList.Where(file => file.State == UploadState.Success && !string.IsNullOrWhiteSpace(file.Response)).ForEach(file => {
-            //    var result = file.GetResponse<ResponseModel>();
-            //    file.Url = result.url;
-            //});
+            fileImage = files.FirstOrDefault();
+            imageUrl = await UploadImage(fileImage);
+        }
+
+        public async Task<string> UploadImage(IFileListEntry file)
+        {
+            var profileUploads = Path.Combine(Environment.WebRootPath, $"uploads/images");
+            if (!Directory.Exists(profileUploads))
+                Directory.CreateDirectory(profileUploads);
+            if (file.Data.Length > 0)
+            {
+                var fileNameArray = file.Name.Split(".");
+                var fileName = fileNameArray.FirstOrDefault() + $".{fileNameArray.LastOrDefault() ?? "png"}";
+                using var fileStream = new FileStream(Path.Combine(profileUploads, fileName), FileMode.OpenOrCreate);
+                await file.Data.CopyToAsync(fileStream);
+                var baseUrl = UriHelper.BaseUri.Substring(0, UriHelper.BaseUri.Length - 1);
+                if (baseUrl.Contains("localhost"))
+                    baseUrl = "https://b13d5d8dc2fc.ngrok.io";
+                var filePath = fileStream.Name.Replace(Environment.WebRootPath, baseUrl);
+                return filePath.Replace("\\", "/");
+            }
+            return string.Empty;
         }
     }
 }
