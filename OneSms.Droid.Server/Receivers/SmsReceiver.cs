@@ -35,7 +35,7 @@ namespace OneSms.Droid.Server.Receivers
                 var appId = intent.Extras.GetString(OneSmsAction.AppId);
                 var serverId = intent.Extras.GetInt(OneSmsAction.MobileServerId);
                 var smsId = smsIdBundle.GetInt(OneSmsAction.SmsTransactionId);
-                var smsTransaction = new SmsTransactionDto
+                var smsTransaction = new MessageTransactionProcessDto
                 {
                     AppId = new Guid(appId),
                     SenderNumber = senderNumber,
@@ -43,7 +43,6 @@ namespace OneSms.Droid.Server.Receivers
                     SmsId = smsId,
                     TimeStamp = DateTime.UtcNow,
                     MobileServerId = serverId,
-                    Title = "Prevent Serialization Failure",
                     Message = "Prevent Serialization Failure"
                 };
                 smsTransaction.TransactionState = intent.Action == OneSmsAction.SmsSent ? MessageTransactionState.Sent : MessageTransactionState.Delivered;

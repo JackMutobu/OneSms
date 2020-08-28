@@ -19,7 +19,7 @@ namespace OneSms.Online.Views.Sms
 {
     public partial class SmsAdminView
     {
-        SmsTransactionDto smsTransactionDto = new SmsTransactionDto();
+        SmsTransaction transaction = new SmsTransaction();
 
         [Inject]
         OneSmsDbContext OneSmsDbContext { get; set; }
@@ -41,21 +41,18 @@ namespace OneSms.Online.Views.Sms
 
         private async Task OnFinish(EditContext editContext)
         {
-            smsTransactionDto.SimSlot = ViewModel.SelectedSimCard.SimSlot;
-            smsTransactionDto.TransactionState = MessageTransactionState.Sending;
-            smsTransactionDto.TimeStamp = DateTime.UtcNow;
-            smsTransactionDto.AppId = ViewModel.SelectedSimCard.Apps.First().AppId;
-            smsTransactionDto.MobileServerId = ViewModel.SelectedSimCard.MobileServerId;
-            var smsTransaction = new SmsTransaction(smsTransactionDto);
-            ViewModel.LatestTransaction = smsTransactionDto;
-            await ViewModel.AddSmsTransaction.Execute(smsTransaction).ToTask();
+            transaction.TransactionState = MessageTransactionState.Sending;
+            transaction.StartTime = DateTime.UtcNow;
+            transaction.OneSmsAppId = ViewModel.SelectedSimCard.Apps.First().AppId;
+            transaction.MobileServerId = ViewModel.SelectedSimCard.MobileServerId;
+            await ViewModel.AddSmsTransaction.Execute(transaction).ToTask();
         }
 
         private void OnSimSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
         {
             var sim = ViewModel.Sims.First(x => x.Id == int.Parse(value.Value.ToString()));
             ViewModel.SelectedSimCard = sim;
-            smsTransactionDto.SenderNumber = sim.Number;
+            transaction.SenderNumber = sim.Number;
         }
     }
 }

@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.SignalR.Client;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
-using OneSms.Web.Shared.Models;
 using Splat;
 using System;
 using System.Collections.Generic;
@@ -21,7 +20,6 @@ using Xamarin.Essentials;
 using File = Java.IO.File;
 using Uri = Android.Net.Uri;
 using System.Reactive.Linq;
-using Akavache.Core;
 using OneSms.Droid.Server.Constants;
 
 namespace OneSms.Droid.Server.Services
@@ -89,6 +87,8 @@ namespace OneSms.Droid.Server.Services
             else
             {
                 _isBusy = true;
+                transaction.TransactionState = MessageTransactionState.Executing;
+                _httpClientService.PutAsync<string>(transaction, "Transaction/StatusChanged");
                 await SendAsync(transaction);
             }
         }
@@ -137,7 +137,7 @@ namespace OneSms.Droid.Server.Services
                 var whatsappNumber = await GetWhatsappNumber(context, contactId);
                 if (string.IsNullOrEmpty(whatsappNumber))
                 {
-                    //Report number not on whatsapp, send sms
+                    _httpClientService.PutAsync<string>(CurrentTransaction, "Sms/Send");
                 }
                 SendImage(context, bitmap, toNumber, message);
             }
@@ -151,7 +151,7 @@ namespace OneSms.Droid.Server.Services
                 }
                 else
                 {
-                    //Send sms
+                    _httpClientService.PutAsync<string>(CurrentTransaction, "Sms/Send");
                 }
             }
 

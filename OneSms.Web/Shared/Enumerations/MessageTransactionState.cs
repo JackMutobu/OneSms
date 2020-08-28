@@ -7,6 +7,7 @@
         Delivered,
         Canceled,
         Retrying,
-        Failed
+        Failed,
+        Executing
     }
 }

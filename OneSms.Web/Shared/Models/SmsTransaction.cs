@@ -10,16 +10,16 @@ namespace OneSms.Web.Shared.Models
             MessageTransactionProcessor = MessageTransactionProcessor.SMS;
         }
 
-        public SmsTransaction(SmsTransactionDto smsTransactionDto)
+        public SmsTransaction(MessageTransactionProcessDto transaction)
         {
-            Body = smsTransactionDto.Message;
-            StartTime = smsTransactionDto.TimeStamp;
-            RecieverNumber = smsTransactionDto.ReceiverNumber;
-            SenderNumber = smsTransactionDto.SenderNumber;
-            OneSmsAppId = smsTransactionDto.AppId;
-            MobileServerId = smsTransactionDto.MobileServerId;
-            Title = smsTransactionDto.Title;
-
+            Body = transaction.Message;
+            StartTime = transaction.TimeStamp;
+            RecieverNumber = transaction.ReceiverNumber;
+            SenderNumber = transaction.SenderNumber;
+            OneSmsAppId = transaction.AppId;
+            MobileServerId = transaction.MobileServerId;
+            TransactionId = transaction.TransactionId;
+            TransactionState = transaction.TransactionState;
             MessageTransactionProcessor = MessageTransactionProcessor.SMS;
         }
         

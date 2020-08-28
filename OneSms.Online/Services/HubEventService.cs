@@ -8,12 +8,9 @@ namespace OneSms.Online.Services
     {
         public HubEventService()
         {
-            OnSmsStateChanged = new Subject<SmsTransactionDto>();
             OnUssdStateChanged = new Subject<UssdTransactionDto>();
             OnMessageStateChanged = new Subject<MessageTransactionProcessDto>();
         }
-
-        public Subject<SmsTransactionDto> OnSmsStateChanged { get; }
 
         public Subject<UssdTransactionDto> OnUssdStateChanged { get; }
 

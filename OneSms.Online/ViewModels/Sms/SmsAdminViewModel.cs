@@ -52,7 +52,17 @@ namespace OneSms.Online.ViewModels
             SendSmsToMobileServer = ReactiveCommand.CreateFromTask<SmsTransaction,Unit>(async sms =>
             {
                 var serverKey = sms.MobileServer.Key.ToString();
+                LatestTransaction.SimSlot = SelectedSimCard.SimSlot;
                 LatestTransaction.SmsId = sms.Id;
+                LatestTransaction.AppId = sms.OneSmsAppId;
+                LatestTransaction.Message = sms.Body;
+                LatestTransaction.MessageTransactionProcessor = sms.MessageTransactionProcessor;
+                LatestTransaction.MobileServerId = sms.MobileServerId;
+                LatestTransaction.ReceiverNumber = sms.RecieverNumber;
+                LatestTransaction.SenderNumber = sms.SenderNumber;
+                LatestTransaction.TimeStamp = sms.StartTime;
+                LatestTransaction.TransactionState = sms.TransactionState;
+                LatestTransaction.TransactionId = sms.TransactionId;
                 var serverConnectionId = string.Empty;
                 if(_serverConnectionService.ConnectedServers.TryGetValue(serverKey, out serverConnectionId))
                     await _oneSmsHubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendSms, LatestTransaction);
@@ -66,7 +76,7 @@ namespace OneSms.Online.ViewModels
             AddSmsTransaction.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
             LoadSimCards.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
 
-            _smsHubEventService.OnSmsStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(sms =>
+            _smsHubEventService.OnMessageStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(sms =>
             {
                 var item = SmsTransactions.FirstOrDefault(x => x.Id == sms.SmsId);
                 if(item != null)
@@ -93,7 +103,7 @@ namespace OneSms.Online.ViewModels
 
         public SimCard SelectedSimCard { get; set; }
 
-        public SmsTransactionDto LatestTransaction { get; set; }
+        public MessageTransactionProcessDto LatestTransaction { get; set; }
 
         public ReactiveCommand<Unit,List<ServerMobile>> LoadMobileServers { get; }
 

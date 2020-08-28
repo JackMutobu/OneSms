@@ -49,7 +49,7 @@ namespace OneSms.Online.Hubs
             
         }
 
-        public void SmsStateChanged(SmsTransactionDto sms)
+        public void SmsStateChanged(MessageTransactionProcessDto sms)
         {
             try
             {
@@ -58,7 +58,7 @@ namespace OneSms.Online.Hubs
                 smsTransaction.TransactionState = sms.TransactionState;
                 _oneSmsDbContext.Update(smsTransaction);
                 _oneSmsDbContext.SaveChangesAsync();
-                _smsHubEventService.OnSmsStateChanged.OnNext(sms);
+                _smsHubEventService.OnMessageStateChanged.OnNext(sms);
             }
             catch(Exception ex)
             {

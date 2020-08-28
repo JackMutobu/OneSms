@@ -37,7 +37,7 @@ namespace OneSms.Online.ViewModels
                  return _oneSmsDbContext.SaveChangesAsync();
              });
             DeleteTransaction.Select(_ => Unit.Default).InvokeCommand(LoadSmsTransactions);
-            _smsHubEventService.OnSmsStateChanged.Select(_ => Unit.Default).InvokeCommand(LoadSmsTransactions);
+            _smsHubEventService.OnMessageStateChanged.Select(_ => Unit.Default).InvokeCommand(LoadSmsTransactions);
         }
 
         [Reactive]

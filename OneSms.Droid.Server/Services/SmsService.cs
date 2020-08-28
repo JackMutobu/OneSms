@@ -22,12 +22,12 @@ namespace OneSms.Droid.Server.Services
 {
     public interface ISmsService
     {
-        Subject<SmsTransactionDto> OnSmsTransaction { get; }
+        Subject<MessageTransactionProcessDto> OnSmsTransaction { get; }
 
         Task<PermissionStatus> CheckAndRequestReadPhoneStatePermission();
         Task<PermissionStatus> CheckAndRequestSmsPermission();
         Task<Result<string>> SendReceivedSms(SmsReceivedDto smsReceivedDto);
-        Task SendSms(SmsTransactionDto smsTransactionDto);
+        Task SendSms(MessageTransactionProcessDto smsTransactionDto);
         Task SendSms(string number, string message, int sim);
         Context Context { get; set; }
     }
@@ -36,11 +36,11 @@ namespace OneSms.Droid.Server.Services
     {
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
-        private Queue<SmsTransactionDto> _pendingSms;
+        private Queue<MessageTransactionProcessDto> _pendingSms;
 
         public SmsService()
         {
-            _httpClientService = new HttpClientService(Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/"));
+            _httpClientService = Locator.Current.GetService<IHttpClientService>();
         }
 
         public SmsService(Context context)
@@ -48,7 +48,7 @@ namespace OneSms.Droid.Server.Services
             Context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
-            OnSmsTransaction = new Subject<SmsTransactionDto>();
+            OnSmsTransaction = new Subject<MessageTransactionProcessDto>();
             OnSmsTransaction.Subscribe(sms =>
             {
                 _httpClientService.PutAsync<string>(sms, "Sms/StatusChanged");
@@ -57,23 +57,24 @@ namespace OneSms.Droid.Server.Services
             },
             ex =>
             {
-                var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsTransactionDto;
+                var transacton = ex.Data[OneSmsAction.SmsTransaction] as MessageTransactionProcessDto;
                 _httpClientService.PutAsync<string>(transacton, "Sms/StatusChanged");
                 if (_pendingSms.Count > 0)
                     SendSms(_pendingSms.Dequeue());
             });
 
-            _signalRService.Connection.On<SmsTransactionDto>(SignalRKeys.SendSms, async sms =>
+            _signalRService.Connection.On<MessageTransactionProcessDto>(SignalRKeys.SendSms,sms =>
             {
                 if (_pendingSms.Count == 0)
-                    await SendSms(sms);
+                     SendSms(sms);
                 else
                     _pendingSms.Enqueue(sms);
             });
-            _pendingSms = new Queue<SmsTransactionDto>();
+            _pendingSms = new Queue<MessageTransactionProcessDto>();
         }
 
-        public Subject<SmsTransactionDto> OnSmsTransaction { get; }
+        public Subject<MessageTransactionProcessDto> OnSmsTransaction { get; }
+
         public Context Context { get; set; }
 
         public async Task SendSms(string number, string message, int sim)
@@ -144,7 +145,7 @@ namespace OneSms.Droid.Server.Services
 
         }
 
-        public async Task SendSms(SmsTransactionDto smsTransactionDto)
+        public async Task SendSms(MessageTransactionProcessDto smsTransactionDto)
         {
             var smsPermission = await CheckAndRequestSmsPermission();
             var readPhoneStatePermission = await CheckAndRequestReadPhoneStatePermission();

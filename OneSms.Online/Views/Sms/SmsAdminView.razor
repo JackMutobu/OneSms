@@ -8,7 +8,7 @@
 <Text Type="danger">@ViewModel.Errors</Text>
 
 <Form Layout="@FormLayout.Horizontal"
-      Model="@smsTransactionDto"
+      Model="@transaction"
       OnFinish="OnFinish">
     <FormItem Label="Title">
         <Input Size="@InputSize.Large" @bind-Value="@context.Title" />
@@ -23,15 +23,11 @@
     </FormItem>
 
     <FormItem Label="Receiver">
-        <Input Size="@InputSize.Large" @bind-Value="@context.ReceiverNumber" />
+        <Input Size="@InputSize.Large" @bind-Value="@context.RecieverNumber" />
     </FormItem>
 
     <FormItem Label="Message">
-        <Input Size="@InputSize.Large" @bind-Value="@context.Message" />
-    </FormItem>
-
-    <FormItem Label="Number of Sms">
-        <Input Size="@InputSize.Large" @bind-Value="@context.NumberOfSmsToSend" />
+        <Input Size="@InputSize.Large" @bind-Value="@context.Body" />
     </FormItem>
 
     <FormItem>

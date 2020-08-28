@@ -6,6 +6,8 @@ namespace OneSms.Web.Shared.Dtos
 {
     public class MessageTransactionProcessDto
     {
+        public Guid TransactionId { get; set; }
+
         public DateTime TimeStamp { get; set; }
 
         public string Message { get; set; }
@@ -17,6 +19,8 @@ namespace OneSms.Web.Shared.Dtos
         public int WhatsappId { get; set; }
 
         public string ReceiverNumber { get; set; }
+
+        public string SenderNumber { get; set; }
 
         public Guid AppId { get; set; }
 

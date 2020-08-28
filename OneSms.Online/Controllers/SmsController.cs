@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using OneSms.Online.Data;
+using OneSms.Online.Hubs;
 using OneSms.Online.Services;
+using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Models;
@@ -17,27 +20,16 @@ namespace OneSms.Online.Controllers
     public class SmsController : ControllerBase
     {
         private OneSmsDbContext _oneSmsDbContext;
-        private HubEventService _smsHubEventService;
         private SmsDataExtractorService _smsDataExtractorService;
+        private IHubContext<OneSmsHub> _oneSmsHub;
+        private ServerConnectionService _serverConnectionService;
 
-        public SmsController(OneSmsDbContext oneSmsDbContext,HubEventService smsHubEventService,SmsDataExtractorService smsDataExtractorService)
+        public SmsController(OneSmsDbContext oneSmsDbContext,SmsDataExtractorService smsDataExtractorService, IHubContext<OneSmsHub> oneSmsHub, ServerConnectionService serverConnectionService)
         {
             _oneSmsDbContext = oneSmsDbContext;
-            _smsHubEventService = smsHubEventService;
             _smsDataExtractorService = smsDataExtractorService;
-        }
-
-        [HttpPut("StatusChanged")]
-        public async Task<IActionResult> SmsStatusChanged([FromBody]SmsTransactionDto sms)
-        {
-            var smsTransaction = _oneSmsDbContext.SmsTransactions.First(x => x.Id == sms.SmsId);
-            smsTransaction.CompletedTime = sms.TimeStamp;
-            smsTransaction.TransactionState = sms.TransactionState;
-            _oneSmsDbContext.Update(smsTransaction);
-            await _oneSmsDbContext.SaveChangesAsync();
-            _smsHubEventService.OnSmsStateChanged.OnNext(sms);
-            Debug.WriteLine($"SmsId:{sms.SmsId}, State:{sms.TransactionState}, Time:{(smsTransaction.CompletedTime - smsTransaction.StartTime).TotalSeconds} seconds");
-            return Ok("Status changed");
+            _oneSmsHub = oneSmsHub;
+            _serverConnectionService = serverConnectionService;
         }
 
         [HttpPut("SmsReceived")]
@@ -103,6 +95,26 @@ namespace OneSms.Online.Controllers
             var smsData = await _smsDataExtractorService.GetSmsData(smsRec);
             
             return Ok(smsData);
+        }
+
+        [HttpPost("Send")]
+        public async Task<IActionResult> SendSms([FromBody] MessageTransactionProcessDto messageTransaction)
+        {
+            var smsTransaction = new SmsTransaction(messageTransaction)
+            {
+                Title = "SMS sent from controller"
+            };
+            var mobileServer = _oneSmsDbContext.MobileServers.Include(x => x.Sims).FirstOrDefault(x => x.Id == messageTransaction.MobileServerId);
+            var simCard = mobileServer?.Sims?.FirstOrDefault();
+            smsTransaction.SenderNumber = simCard?.Number;
+            messageTransaction.SenderNumber = simCard?.Number;
+            messageTransaction.SimSlot = simCard?.SimSlot ?? 1;
+            var serverConnectionId = string.Empty;
+            if (_serverConnectionService.ConnectedServers.TryGetValue(mobileServer.Key.ToString(), out serverConnectionId))
+                await _oneSmsHub.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendSms, messageTransaction);
+            else
+                return Ok("Mobile server not conencted");
+            return Ok("sms sent");
         }
     }
 }
