@@ -23,5 +23,7 @@
         public const string ServiceStopped = nameof(ServiceStopped);
         public const string SyncfusionKey = "Mjk2NzM0QDMxMzgyZTMyMmUzMENBcnhhYldQMkZMbGorVlI4OXhBWUlYOFk1RVV6K0cvNHI2UFFvUGsyVHc9";
         public const string ImageTransaction = nameof(ImageTransaction);
+        public const string WhatsappTransaction = nameof(WhatsappTransaction);
+        public const string TransactionState = nameof(TransactionState);
     }
 }

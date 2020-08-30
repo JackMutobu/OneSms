@@ -1,0 +1,43 @@
+﻿@page "/networkadmin"
+@inherits ReactiveComponentBase<NetworkAdminViewModel>
+@attribute [Authorize(Roles = "SuperAdmin")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Networks</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(network)">Add</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<Table DataSource="@ViewModel.Networks" Class="table-responsive">
+    <Column @bind-Field="@context.Name"></Column>
+    <Column @bind-Field="@context.Alias"></Column>
+    <ActionColumn Title="Acton">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button @onclick="() => ShowModal(context)">Edit</Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button @onclick="() => Delete(context)" Type="danger">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
+<Modal Title="@("Add or modify network")"   OnCancel="HideModal" Visible="@modalVisible"   Footer="null">
+    <Form Model="network" OnFinish="Save"  LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+        <FormItem Label="Name">
+            <Input  @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Alias">
+            <Input @bind-Value="@context.Alias" />
+        </FormItem>
+        <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => network = new Domain.NetworkOperator()">Clear</Button>
+                </SpaceItem>
+            </Space>
+        </FormItem>
+    </Form>
+</Modal>

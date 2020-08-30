@@ -1,4 +1,5 @@
-﻿using Android;
+﻿using Akavache;
+using Android;
 using Android.AccessibilityServices;
 using Android.App;
 using Android.Content;
@@ -6,11 +7,16 @@ using Android.Util;
 using Android.Views.Accessibility;
 using Android.Widget;
 using OneSms.Droid.Server.Constants;
+using OneSms.Web.Shared.Enumerations;
 using Splat;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
+using Action = Android.Views.Accessibility.Action;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -24,16 +30,30 @@ namespace OneSms.Droid.Server.Services
         {
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
         }
-        public override void OnAccessibilityEvent(AccessibilityEvent e)
+        public async override void OnAccessibilityEvent(AccessibilityEvent e)
         {
             var eventTye = e.EventType;
             var currentNode = RootInActiveWindow;
             var nodes = GetLeaves(e);
             var buttons = nodes.Where(x => x.ClassName == "android.widget.Button" || x.ClassName == "android.widget.ImageButton");
+            var textViews = nodes.Where(x => x.ClassName == "android.widget.TextView");
+            
+           
+            await NumberNotFoundOnWhatsapp(textViews, buttons);
 
             SendTextMessage(nodes, buttons);
 
             SendImage(nodes, buttons);
+        }
+
+        private async Task NumberNotFoundOnWhatsapp(IEnumerable<AccessibilityNodeInfo> textViews, IEnumerable<AccessibilityNodeInfo> buttons)
+        {
+            if ((textViews.Any(x => x.Text?.Contains("The phone number") ?? false) && buttons.Any(x => x.Text?.Contains("OK") ?? false)) ||
+              (textViews.Any(x => x.Text?.Contains("Send to") ?? false) && textViews.Any(x => x.ContentDescription?.Contains("Search") ?? false)))
+            {
+                await BlobCache.LocalMachine.InsertObject(OneSmsAction.TransactionState, MessageTransactionState.Failed);
+                PerformGlobalAction(GlobalAction.Home);
+            }
         }
 
         private void SendImage(List<AccessibilityNodeInfo> nodes, IEnumerable<AccessibilityNodeInfo> buttons)
@@ -46,6 +66,7 @@ namespace OneSms.Droid.Server.Services
             {
                 sendPagerButton.PerformAction(Action.Click);
                 System.Diagnostics.Debug.WriteLine("Image sent");
+                BlobCache.LocalMachine.InsertObject(OneSmsAction.TransactionState, MessageTransactionState.Sent);
                 //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
                 var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
                 if (_whatsappService.CurrentTransaction?.WhatsappId == transactionId)
@@ -63,6 +84,7 @@ namespace OneSms.Droid.Server.Services
             {
                 sendButton.PerformAction(Action.Click);
                 System.Diagnostics.Debug.WriteLine("Text sent");
+                BlobCache.LocalMachine.InsertObject(OneSmsAction.TransactionState, MessageTransactionState.Sent);
                 this.PerformGlobalAction(GlobalAction.Home);
             }
         }

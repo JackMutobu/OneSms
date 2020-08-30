@@ -1,0 +1,108 @@
+﻿@page "/simadmin"
+@inherits ReactiveComponentBase<SimAdminViewModel>
+@attribute [Authorize(Roles = "SuperAdmin")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Sims</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(new Domain.SimCard())">Add</Button>
+    </PageHeaderExtra>
+</PageHeader>
+
+<Table DataSource="@ViewModel.Sims" Class="table-responsive">
+    <Column @bind-Field="@context.Name"></Column>
+    <Column @bind-Field="@context.Number"></Column>
+    <Column @bind-Field="@context.SmsBalance"></Column>
+    <Column @bind-Field="@context.AirtimeBalance"></Column>
+    <Column @bind-Field="@context.MobileMoneyBalance"></Column>
+    <Column @bind-Field="@context.SimSlot"></Column>
+    @if (context.MobileServer != null)
+    {
+        <ActionColumn Title="Server">@context.MobileServer.Name</ActionColumn>
+    }
+    @if (context.Network != null)
+    {
+        <ActionColumn Title="Network">@context.Network.Name</ActionColumn>
+    }
+    <ActionColumn Title="Action">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button Type="primary" @onclick="() => ShowAppsModal(context)">Apps</Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button @onclick="() => ShowModal(context)">Edit</Button>
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="danger" @onclick="() => Delete(context)">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
+<Modal Title="@("Add or modify sim")" OnCancel="HideModal" Visible="@modalVisible" Footer="null">
+    <Form Model="sim" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+        <FormItem Label="Name">
+            <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Number">
+            <Input @bind-Value="@context.Number" />
+        </FormItem>
+        <FormItem Label="Sim Slot">
+            <Input @bind-Value="@context.SimSlot" />
+        </FormItem>
+        <FormItem Label="Network">
+            <Select Placeholder="Select network" DefaultValue="@context.NetworkId.ToString()" OnChange="OnNetworkChange">
+                @foreach (var network in ViewModel.Networks)
+                {
+                    <SelectOption Value="@network.Id.ToString()">@network.Name</SelectOption>
+                }
+            </Select>
+        </FormItem>
+        <FormItem Label="Apps">
+            <Select Placeholder="Select Apps" Mode="multiple" DefaultValue="@defaultAppIds" OnChange="OnAppSelectChange">
+                @foreach (var app in ViewModel.Apps)
+                {
+                    <SelectOption Value="@app.Id.ToString()">@($"{app.Name} - {app.Id}")</SelectOption>
+                }
+            </Select>
+        </FormItem>
+        <FormItem Label="Mobile Server">
+            <Select Placeholder="Select Server"   OnChange="OnServerSelectChange">
+                @foreach (var server in ViewModel.MobileServers)
+                {
+                    <SelectOption Value="@server.Id.ToString()">@($"{server.Name}")</SelectOption>
+                }
+            </Select>
+        </FormItem>
+        <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => sim = new SimAdminDto()">Clear</Button>
+                </SpaceItem>
+            </Space>
+        </FormItem>
+    </Form>
+</Modal>
+<Modal Title="@("Add or remove app")" OkText="@("Add")" CancelText="@("Cancel")" OnOk="CanAddApp" OnCancel="HideModal" Visible="@modalAppsVisible" >
+    <Table DataSource="@apps" Class="table-responsive">
+        <Column @bind-Field="@context.Name"></Column>
+        <Column @bind-Field="@context.Id"></Column>
+        <ActionColumn Title="Owner">@($"{context?.User?.Fristname} {context?.User?.Lastname}")</ActionColumn>
+        <Column @bind-Field="@context.Credit"></Column>
+        <ActionColumn Title="Action">
+            <Space Size="middle">
+                <SpaceItem>
+                    <Button Type="danger" OnClick="() => OnRemoveApp(context)">Delete</Button>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+    </Table>
+    <Select Disabled="!canAddApp" Style="width:150px" Placeholder="Select Apps" Mode="multiple"  OnChange="OnAppModalSelectChange">
+        @foreach (var app in ViewModel.Apps)
+        {
+            <SelectOption Value="@app.Id.ToString()">@($"{app.Name} - {app.Id}")</SelectOption>
+        }
+    </Select>
+    <Button Disabled="!canAddApp" Type="primary" OnClick="() => Save(null)"  >Save</Button>
+</Modal>

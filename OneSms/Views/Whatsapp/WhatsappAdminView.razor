@@ -1,0 +1,65 @@
+﻿@page "/whatsappadmin"
+@using OneSms.ViewModels.Whatsapp 
+@inherits ReactiveComponentBase<WhatsappAdminViewModel>
+@attribute [Authorize(Roles = "SuperAdmin")]
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Whatsapp Test</PageHeaderTitle>
+</PageHeader>
+
+<Text Type="danger">@ViewModel.Errors</Text>
+
+<Form Layout="@FormLayout.Horizontal"
+      Model="@transaction"
+      OnFinish="OnFinish">
+    <FormItem Label="Title">
+        <Input Size="@InputSize.Large" @bind-Value="@context.Title" />
+    </FormItem>
+    <FormItem Label="Sender">
+        <Select Size="@InputSize.Large" Placeholder="Select Sender" OnChange="OnServerSelectChange">
+            @foreach (var server in ViewModel.MobileServers)
+            {
+                <SelectOption Value="@server.Id.ToString()">@($"{server.Name}")</SelectOption>
+            }
+        </Select>
+    </FormItem>
+
+    <FormItem Label="Receiver">
+        <Input Size="@InputSize.Large" @bind-Value="@context.RecieverNumber" />
+    </FormItem>
+
+    <FormItem Label="Message">
+        <Input Size="@InputSize.Large" @bind-Value="@context.Body" />
+    </FormItem>
+    <FormItem Label="Select Image">
+        <InputFile OnChange="HandleFileSelected" />
+    </FormItem>
+    <FormItem Label="Image Url">
+        <Text>@imageUrl</Text>
+    </FormItem>
+    <FormItem>
+        <Button Type="@ButtonType.Primary" Size="@InputSize.Large" HtmlType="submit">
+            Submit
+        </Button>
+    </FormItem>
+</Form>
+
+<Table DataSource="@ViewModel.Transactions" Class="table-responsive">
+    <Column @bind-Field="@context.Title"></Column>
+    <Column @bind-Field="@context.SenderNumber"></Column>
+    <Column @bind-Field="@context.RecieverNumber"></Column>
+    <Column @bind-Field="@context.Body"></Column>
+    <Column @bind-Field="@context.StartTime"></Column>
+    <Column @bind-Field="@context.CompletedTime"></Column>
+    <Column @bind-Field="@context.TransactionState"></Column>
+    @if (context.MobileServer != null)
+    {
+        <Column @bind-Field="@context.MobileServer.Name"></Column>
+    }
+    @if (context.OneSmsApp != null)
+    {
+        <ActionColumn Title="Network name">
+            <Column Title="Network name" @bind-Field="@context.OneSmsApp.Name"></Column>
+        </ActionColumn>
+    }
+    <Column @bind-Field="@context.CreatedOn"></Column>
+</Table>
