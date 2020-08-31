@@ -1,17 +1,25 @@
 ﻿@page "/smstransactions"
 @inherits ReactiveComponentBase<SmsTransactionViewModel>
-    <PageHeader BackIcon="string.Empty">
-        <PageHeaderTitle>Sms Transactions</PageHeaderTitle>
-    </PageHeader>
-    <Table DataSource="@ViewModel.SmsTransactions" Class="table-responsive">
-        <Column @bind-Field="@context.Title"></Column>
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Sms Transactions</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Select Placeholder="Select App" DefaultValue="@ViewModel.SelectedApp?.Id.ToString()" OnChange="OnAppSelectionChange">
+            @foreach (var app in ViewModel.Apps)
+            {
+                <SelectOption Value="@app.Id.ToString()">@app.Name</SelectOption>
+            }
+        </Select>
+    </PageHeaderExtra>
+    
+</PageHeader>
+    <Table DataSource="@ViewModel.Transactions" Class="table-responsive">
+        <Column @bind-Field="@context.Label"></Column>
         <Column @bind-Field="@context.SenderNumber"></Column>
         <Column @bind-Field="@context.RecieverNumber"></Column>
         <Column @bind-Field="@context.Body"></Column>
         <Column @bind-Field="@context.StartTime"></Column>
         <Column @bind-Field="@context.CompletedTime"></Column>
-        <Column @bind-Field="@context.TransactionState"></Column>
-        <Column @bind-Field="@context.CreatedOn"></Column>
+        <Column @bind-Field="@context.MessageStatus"></Column>
         <ActionColumn Title="Time">
             @((context.CompletedTime - context.StartTime).TotalSeconds) seconds
         </ActionColumn>
@@ -21,10 +29,10 @@
         @context.MobileServer.Name
     </ActionColumn>
         }
-        @if (context.OneSmsApp != null)
+        @if (context.App != null)
         {
             <ActionColumn Title="Network name">
-                <Column Title="Network name" @bind-Field="@context.OneSmsApp.Name"></Column>
+                <Column Title="Network name" @bind-Field="@context.App.Name"></Column>
             </ActionColumn>
         }
         <ActionColumn Title="Action">

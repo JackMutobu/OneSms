@@ -29,5 +29,21 @@
 
             public const string Server = Base + "/auth/server";
         }
+
+        public static class Message
+        {
+            public const string Send = Base + "/messages/send";
+
+        }
+
+        public static class Sms
+        {
+            public const string Send = Base + "/sms/send";
+        }
+
+        public static class Whatsapp
+        {
+            public const string Send = Base + "/whatsapp/send";
+        }
     }
 }

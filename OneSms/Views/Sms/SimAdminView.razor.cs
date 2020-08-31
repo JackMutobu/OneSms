@@ -24,7 +24,7 @@ namespace OneSms.Views.Sms
         string[] defaultAppIds = default;
         List<Application> apps = new List<Application>();
         [Inject]
-        DataContext DbContext { get; set; }
+        DataContext DbContext { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {

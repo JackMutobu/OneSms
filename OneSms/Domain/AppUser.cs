@@ -7,13 +7,13 @@ namespace OneSms.Domain
     public class AppUser : IdentityUser
     {
         [Required]
-        public string Fristname { get; set; }
+        public string Fristname { get; set; } = null!;
 
         [Required]
-        public string Lastname { get; set; }
+        public string Lastname { get; set; } = null!;
 
         [Required]
-        public string Role { get; set; }
+        public string Role { get; set; } = null!;
 
         public DateTime CreatedOn { get; set; }
     }

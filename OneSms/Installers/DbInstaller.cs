@@ -6,6 +6,7 @@ using OneSms.Data;
 using OneSms.Domain;
 using OneSms.Online.Models;
 using OneSms.Online.Services;
+using OneSms.Services;
 
 namespace OneSms.Installers
 {
@@ -32,7 +33,9 @@ namespace OneSms.Installers
               .AddDefaultTokenProviders();
 
 
-            services.AddSingleton<ServerConnectionService>();
+            services.AddSingleton<IServerConnectionService, ServerConnectionService>();
+            services.AddScoped<ISmsService, SmsService>();
+            services.AddScoped<IWhatsappService, WhatsappService>();
             services.AddSingleton<HubEventService>();
             services.AddScoped<TimService>();
             services.AddScoped<SmsDataExtractorService>();

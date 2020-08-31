@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Nullable>enable</Nullable>
     <UserSecretsId>aspnet-OneSms.Online-48479B79-74F0-4CD7-B93C-F67789F8389F</UserSecretsId>
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
   </PropertyGroup>
@@ -11,6 +12,8 @@
     <Compile Remove="Data\Migrations\20200803071501_AddUssdNumber.Designer.cs" />
     <Compile Remove="Data\Migrations\20200803074157_UssdUpdateTable.cs" />
     <Compile Remove="Data\Migrations\20200803074157_UssdUpdateTable.Designer.cs" />
+    <Compile Remove="Data\Migrations\V1\20200831090048_AddMessages.cs" />
+    <Compile Remove="Data\Migrations\V1\20200831090048_AddMessages.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

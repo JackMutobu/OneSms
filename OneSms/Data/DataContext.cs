@@ -18,6 +18,10 @@ namespace OneSms.Data
 
         public DbSet<ApplicationSim> AppSims { get; set; }
 
+        public DbSet<SmsMessage> SmsMessages { get; set; }
+
+        public DbSet<WhatsappMessage> WhatsappMessages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

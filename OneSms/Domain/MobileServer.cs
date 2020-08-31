@@ -13,10 +13,10 @@ namespace OneSms.Domain
         public Guid Id { get; set; }
 
         [Required]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         [Required]
-        public string Secret { get; set; }
+        public string Secret { get; set; } = null!;
 
         public ICollection<SimCard> Sims { get; set; }
     }

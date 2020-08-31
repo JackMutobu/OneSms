@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using OneSms.Online.Hubs;
-using OneSms.Web.Shared.Models;
+﻿using Microsoft.EntityFrameworkCore;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System;
@@ -12,39 +9,63 @@ using System.Reactive.Linq;
 using System.Linq;
 using OneSms.Online.Services;
 using OneSms.Data;
+using OneSms.Domain;
+using System.Threading.Tasks;
 
 namespace OneSms.ViewModels
 {
     public class SmsTransactionViewModel:ReactiveObject
     {
-        private OneSmsDbContext _oneSmsDbContext;
-        private IHubContext<OneSmsHub> _oneSmsHubContext;
-        private HubEventService _smsHubEventService;
+        private readonly DataContext _dbContext;
+        private readonly ISmsService _smsService;
 
-        public SmsTransactionViewModel(OneSmsDbContext oneSmsDbContext,IHubContext<OneSmsHub> oneSmsHubContext,HubEventService smsHubEventService)
+        public SmsTransactionViewModel(DataContext dbContext,ISmsService smsService)
         {
-            _oneSmsDbContext = oneSmsDbContext;
-            _oneSmsHubContext = oneSmsHubContext;
-            _smsHubEventService = smsHubEventService;
+            _dbContext = dbContext;
+            _smsService = smsService;
 
-            SmsTransactions = new ObservableCollection<SmsTransaction>();
-            LoadSmsTransactions = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.SmsTransactions.Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime).ToListAsync());
-            LoadSmsTransactions.Do(sms => SmsTransactions = new ObservableCollection<SmsTransaction>(sms)).Subscribe();
+            LoadApps = ReactiveCommand.CreateFromTask<string, List<Application>>(userId => string.IsNullOrEmpty(userId) ? _dbContext.Apps.ToListAsync() : _dbContext.Apps.Where(x => x.UserId == userId).ToListAsync());
+            LoadApps.Do(apps => SelectedApp = apps.FirstOrDefault()).Subscribe();
+            LoadApps.Do(apps => Apps = new ObservableCollection<Application>(apps)).Subscribe();
 
-            DeleteTransaction = ReactiveCommand.CreateFromTask<SmsTransaction, int>(sms =>
+            Transactions = new ObservableCollection<SmsMessage>();
+            
+            LoadSmsTransactions = ReactiveCommand.CreateFromTask<Application>(app => LoadSmsMessages(app));
+            LoadSmsTransactions.Do(_ => Transactions = new ObservableCollection<SmsMessage>(Transactions)).Subscribe();
+
+            this.WhenAnyValue(x => x.SelectedApp).Where(x => x != null).DistinctUntilChanged().InvokeCommand(LoadSmsTransactions);
+
+            DeleteTransaction = ReactiveCommand.CreateFromTask<SmsMessage, int>(sms =>
              {
-                 _oneSmsDbContext.Remove(sms);
-                 return _oneSmsDbContext.SaveChangesAsync();
+                 _dbContext.Remove(sms);
+                 return _dbContext.SaveChangesAsync();
              });
-            DeleteTransaction.Select(_ => Unit.Default).InvokeCommand(LoadSmsTransactions);
-            _smsHubEventService.OnMessageStateChanged.Select(_ => Unit.Default).InvokeCommand(LoadSmsTransactions);
+            DeleteTransaction.Select(_ => SelectedApp).InvokeCommand(LoadSmsTransactions);
         }
+        
 
         [Reactive]
-        public ObservableCollection<SmsTransaction> SmsTransactions { get; set; }
+        public ObservableCollection<SmsMessage> Transactions { get; set; }
 
-        public ReactiveCommand<Unit, List<SmsTransaction>> LoadSmsTransactions { get; }
+        [Reactive]
+        public ObservableCollection<Application> Apps { get; set; } = new ObservableCollection<Application>();
 
-        public ReactiveCommand<SmsTransaction,int> DeleteTransaction { get; }
+        [Reactive]
+        public Application SelectedApp { get; set; } = null!;
+
+        public ReactiveCommand<Application,Unit> LoadSmsTransactions { get; }
+
+        public ReactiveCommand<string, List<Application>> LoadApps { get; }
+
+        public ReactiveCommand<SmsMessage,int> DeleteTransaction { get; }
+
+        private async Task LoadSmsMessages(Application application)
+        {
+            Transactions.Clear();
+            await foreach(var message in _smsService.GetMessages(application.Id))
+            {
+                Transactions.Add(message);
+            }
+        }
     }
 }

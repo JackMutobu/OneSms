@@ -9,10 +9,10 @@ namespace OneSms.Domain
 
         [Required]
         [DisplayName("Network")]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         [Required]
         [DisplayName("Alias")]
-        public string Alias { get; set; }
+        public string Alias { get; set; } = null!;
     }
 }

@@ -15,18 +15,18 @@ namespace OneSms.Domain
 
         [Required]
         [DataType(DataType.PhoneNumber)]
-        public string Number { get; set; }
+        public string Number { get; set; } = null!;
 
         [Required]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
-        public string SmsBalance { get; set; }
+        public string? SmsBalance { get; set; }
 
-        public string MobileMoneyBalance { get; set; }
+        public string? MobileMoneyBalance { get; set; }
 
-        public string AirtimeBalance { get; set; }
+        public string? AirtimeBalance { get; set; }
 
-        public string CallBalance { get; set; }
+        public string? CallBalance { get; set; }
 
         public int SimSlot { get; set; }
 
@@ -34,11 +34,11 @@ namespace OneSms.Domain
 
         public int NetworkId { get; set; }
 
-        public virtual NetworkOperator Network { get; set; }
+        public virtual NetworkOperator? Network { get; set; }
 
         public Guid MobileServerId { get; set; }
 
-        public virtual MobileServer MobileServer { get; set; }
+        public virtual MobileServer? MobileServer { get; set; }
 
         public ICollection<ApplicationSim> Apps { get; set; }
     }

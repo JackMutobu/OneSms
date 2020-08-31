@@ -17,7 +17,7 @@ namespace OneSms.Views.Infrastructure
         MobileServer serverMobile = new MobileServer();
 
         [Inject]
-        DataContext DataContext { get; set; }
+        DataContext DataContext { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {
