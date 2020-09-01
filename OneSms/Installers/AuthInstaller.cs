@@ -40,7 +40,7 @@ namespace OneSms.Installers
                 x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                 x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-                .AddCookie(cfg => cfg.SlidingExpiration = true)
+                .AddCookie()
                 .AddJwtBearer(x =>
                 {
                     x.SaveToken = true;

@@ -21,6 +21,7 @@ namespace OneSms.Services
         IAsyncEnumerable<int> Send(SendMessageRequest sendMessageRequest, string transactionId = "");
         IAsyncEnumerable<int> SendPending(string serverKey);
         IAsyncEnumerable<WhatsappMessage> GetMessages(Guid appId);
+        IAsyncEnumerable<WhatsappMessage> GetMessagesByTransactionId(Guid transactionId);
     }
 
     public class WhatsappService : IWhatsappService
@@ -48,6 +49,9 @@ namespace OneSms.Services
             foreach (var message in pendingMessages)
                 yield return await Send(message);
         }
+
+        public IAsyncEnumerable<WhatsappMessage> GetMessagesByTransactionId(Guid transactionId)
+           => _dbContext.WhatsappMessages.OrderByDescending(x => x.CompletedTime).Where(x => x.TransactionId == transactionId).AsAsyncEnumerable();
 
         public IAsyncEnumerable<WhatsappMessage> GetMessages(Guid appId)
             => _dbContext.WhatsappMessages.Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime)

@@ -20,6 +20,7 @@ namespace OneSms.Online.Services
         IAsyncEnumerable<int> Send(SendMessageRequest sendMessageRequest, string transactionId = "");
         IAsyncEnumerable<int> SendPending(string serverKey);
         IAsyncEnumerable<SmsMessage> GetMessages(Guid appId);
+        IAsyncEnumerable<SmsMessage> GetMessagesByTransactionId(Guid transactionId);
     }
 
     public class SmsService : ISmsService
@@ -47,6 +48,9 @@ namespace OneSms.Online.Services
             foreach(var sms in pendingMessages)
                 yield return await Send(sms);
         }
+
+        public IAsyncEnumerable<SmsMessage> GetMessagesByTransactionId(Guid transactionId)
+            => _dbContext.SmsMessages.OrderByDescending(x => x.CompletedTime).Where(x => x.TransactionId == transactionId).AsAsyncEnumerable();
 
         public  IAsyncEnumerable<SmsMessage> GetMessages(Guid appId) 
             => _dbContext.SmsMessages.Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime)
@@ -106,5 +110,6 @@ namespace OneSms.Online.Services
                 }
             }
         }
+
     }
 }

@@ -20,6 +20,7 @@
     <Column @bind-Field="@context.StartTime"></Column>
     <Column @bind-Field="@context.CompletedTime"></Column>
     <Column @bind-Field="@context.MessageStatus"></Column>
+    <Column @bind-Field="@context.TransactionId"></Column>
     <ActionColumn Title="Time">
         @((context.CompletedTime - context.StartTime).TotalSeconds) seconds
     </ActionColumn>

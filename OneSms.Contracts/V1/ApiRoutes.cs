@@ -33,17 +33,19 @@
         public static class Message
         {
             public const string Send = Base + "/messages/send";
-
+            public const string GetAllByTransactionId = Base + "/messages/{transactionId}";
         }
 
         public static class Sms
         {
             public const string Send = Base + "/sms/send";
+            public const string GetAllByTransactionId = Base + "/sms/{transactionId}";
         }
 
         public static class Whatsapp
         {
             public const string Send = Base + "/whatsapp/send";
+            public const string GetAllByTransactionId = Base + "/whatsapp/{transactionId}";
         }
     }
 }
