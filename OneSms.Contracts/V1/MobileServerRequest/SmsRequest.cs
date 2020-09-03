@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OneSms.Contracts.V1.Enumerations;
+using System;
 
 namespace OneSms.Contracts.V1.MobileServerRequest
 {
@@ -11,6 +12,8 @@ namespace OneSms.Contracts.V1.MobileServerRequest
         public int SimSlot { get; set; }
 
         public int SmsId { get; set; }
+
+        public MessageStatus MessageStatus { get; set; }
 
         public string ReceiverNumber { get; set; }
 

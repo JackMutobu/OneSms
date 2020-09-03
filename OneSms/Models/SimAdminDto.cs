@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
-namespace OneSms.Online.Models
+namespace OneSms.Models
 {
     public class SimAdminDto:SimCard
     {

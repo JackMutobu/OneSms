@@ -1,7 +1,7 @@
 ﻿using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Models;
 
-namespace OneSms.Online.Models
+namespace OneSms.Models
 {
     public class SmsDataExtractor:BaseModel
     {

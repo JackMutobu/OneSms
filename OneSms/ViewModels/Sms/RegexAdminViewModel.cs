@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
-using OneSms.Online.Models;
+using OneSms.Models;
 using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Models;
 using ReactiveUI;

@@ -95,6 +95,7 @@ namespace OneSms.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, app.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, app.Id.ToString()),
                 new Claim("appId", app.Id.ToString()),
                 new Claim(ClaimTypes.Role,Roles.ApiUser),
                 new Claim("userId",app.UserId),
@@ -109,6 +110,7 @@ namespace OneSms.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, server.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, server.Id.ToString()),
                 new Claim("mobileServerId", server.Id.ToString()),
                 new Claim(ClaimTypes.Role,Roles.MobileServer)
             };
@@ -154,7 +156,9 @@ namespace OneSms.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("id", user.Id)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("id", user.Id),
+                new Claim(ClaimTypes.Role,user.Role)
             };
 
             var userClaims = await _userManager.GetClaimsAsync(user);

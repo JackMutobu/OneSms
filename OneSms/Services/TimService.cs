@@ -1,21 +1,10 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using OneSms.Online.Data;
-using OneSms.Online.Hubs;
-using OneSms.Web.Shared.Constants;
-using OneSms.Web.Shared.Dtos;
-using OneSms.Web.Shared.Enumerations;
-using OneSms.Web.Shared.Models;
+﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
 using System.Reactive.Linq;
-using System.Threading.Tasks;
 
-namespace OneSms.Online.Services
+namespace OneSms.Services
 {
     public class TimService
     {

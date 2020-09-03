@@ -3,10 +3,11 @@ using Android.Content;
 using Android.OS;
 using Android.Provider;
 using Android.Util;
+using OneSms.Contracts.V1.Dtos;
+using OneSms.Contracts.V1.Enumerations;
+using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Services;
-using OneSms.Web.Shared.Dtos;
-using OneSms.Web.Shared.Enumerations;
 using Splat;
 using System;
 using Xamarin.Essentials;
@@ -33,19 +34,19 @@ namespace OneSms.Droid.Server.Receivers
                 var senderNumber = intent.Extras.GetString(OneSmsAction.SenderNumber);
                 var receiverNumber = intent.Extras.GetString(OneSmsAction.ReceiverNumber);
                 var appId = intent.Extras.GetString(OneSmsAction.AppId);
-                var serverId = intent.Extras.GetInt(OneSmsAction.MobileServerId);
+                var serverId = intent.Extras.GetString(OneSmsAction.MobileServerId);
                 var smsId = smsIdBundle.GetInt(OneSmsAction.SmsTransactionId);
-                var smsTransaction = new MessageTransactionProcessDto
+                var body = smsIdBundle.GetString(OneSmsAction.Body);
+                var smsTransaction = new SmsRequest
                 {
                     AppId = new Guid(appId),
                     SenderNumber = senderNumber,
                     ReceiverNumber = receiverNumber,
                     SmsId = smsId,
-                    TimeStamp = DateTime.UtcNow,
-                    MobileServerId = serverId,
-                    Message = "Prevent Serialization Failure"
+                    MobileServerId = new Guid(serverId),
+                    Body = body
                 };
-                smsTransaction.TransactionState = intent.Action == OneSmsAction.SmsSent ? MessageTransactionState.Sent : MessageTransactionState.Delivered;
+                smsTransaction.MessageStatus = intent.Action == OneSmsAction.SmsSent ? MessageStatus.Sent : MessageStatus.Delivered;
 
                 switch (ResultCode)
                 {
@@ -54,7 +55,7 @@ namespace OneSms.Droid.Server.Receivers
                         break;
                     case Result.Canceled:
                         var exception = new Exception("Transaction canceled");
-                        smsTransaction.TransactionState = MessageTransactionState.Canceled;
+                        smsTransaction.MessageStatus = MessageStatus.Canceled;
                         exception.Data.Add(OneSmsAction.SmsTransaction, smsTransaction);
                         _smsService.OnSmsTransaction.OnError(exception);
                         break;
@@ -66,7 +67,7 @@ namespace OneSms.Droid.Server.Receivers
             if(intent.Action.Equals(Telephony.Sms.Intents.SmsReceivedAction))
             {
                 var smsMessages = Telephony.Sms.Intents.GetMessagesFromIntent(intent);
-                var smsModel = new SmsReceivedDto();
+                var smsModel = new SmsReceived();
                 foreach(var sms in smsMessages)
                 {
                     smsModel.Body += sms.MessageBody;

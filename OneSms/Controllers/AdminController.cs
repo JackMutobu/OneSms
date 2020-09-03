@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using OneSms.Online.Services;
-using System.Threading.Tasks;
+using OneSms.Services;
 
 namespace OneSms.Online.Controllers
 {

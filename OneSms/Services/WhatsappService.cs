@@ -1,87 +1,42 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Data;
 using OneSms.Domain;
-using OneSms.Online.Hubs;
-using OneSms.Online.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace OneSms.Services
 {
     public interface IWhatsappService
     {
-        IAsyncEnumerable<int> Send(SendMessageRequest sendMessageRequest, string transactionId = "");
-        IAsyncEnumerable<int> SendPending(string serverKey);
         IAsyncEnumerable<WhatsappMessage> GetMessages(Guid appId);
         IAsyncEnumerable<WhatsappMessage> GetMessagesByTransactionId(Guid transactionId);
+        Task<WhatsappRequest> OnSendingMessage(WhatsappMessage message);
+        Task<WhatsappMessage> OnStatusChanged(WhatsappRequest whatsappRequest, DateTime completedTime);
+        IAsyncEnumerable<WhatsappMessage> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transactionId = "");
+        IAsyncEnumerable<WhatsappMessage> SendPending(string serverKey);
+        Task<bool> CheckSenderNumber(string number);
     }
 
     public class WhatsappService : IWhatsappService
     {
         private readonly DataContext _dbContext;
-        private readonly IServerConnectionService _serverConnectionService;
-        private readonly IHubContext<OneSmsHub> _hubContext;
+        private readonly IMapper _mapper;
 
-        public WhatsappService(DataContext dbContext, IServerConnectionService serverConnectionService, IHubContext<OneSmsHub> hubContext)
+        public WhatsappService(DataContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
-            _serverConnectionService = serverConnectionService;
-            _hubContext = hubContext;
+            _mapper = mapper;
         }
 
-        public async IAsyncEnumerable<int> Send(SendMessageRequest sendMessageRequest, string transactionId = "")
-        {
-            await foreach (var message in RegisterSendMessageRequest(sendMessageRequest,transactionId))
-                yield return await Send(message);
-        }
-
-        public async IAsyncEnumerable<int> SendPending(string serverKey)
-        {
-            var pendingMessages = await _dbContext.WhatsappMessages.Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending).ToListAsync();
-            foreach (var message in pendingMessages)
-                yield return await Send(message);
-        }
-
-        public IAsyncEnumerable<WhatsappMessage> GetMessagesByTransactionId(Guid transactionId)
-           => _dbContext.WhatsappMessages.OrderByDescending(x => x.CompletedTime).Where(x => x.TransactionId == transactionId).AsAsyncEnumerable();
-
-        public IAsyncEnumerable<WhatsappMessage> GetMessages(Guid appId)
-            => _dbContext.WhatsappMessages.Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime)
-            .Where(x => x.AppId == appId).AsAsyncEnumerable();
-
-        private async Task<int> Send(WhatsappMessage message)
-        {
-            var smsRequest = new WhatsappRequest
-            {
-                AppId = message.AppId,
-                Body = message.Body,
-                SenderNumber = message.SenderNumber,
-                MobileServerId = message.MobileServerId,
-                ReceiverNumber = message.RecieverNumber,
-                WhatsappId = message.Id,
-                TransactionId = message.TransactionId
-            };
-
-            if (_serverConnectionService.ConnectedServers.TryGetValue(message.MobileServerId.ToString(), out string? serverConnectionId))
-            {
-                message.MessageStatus = MessageStatus.Sending;
-                _dbContext.Update(message);
-                await _dbContext.SaveChangesAsync();
-                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, smsRequest);
-                return 1;
-            }
-            return 0;
-        }
-
-        private async IAsyncEnumerable<WhatsappMessage> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transactionId = "")
+        public async IAsyncEnumerable<WhatsappMessage> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transactionId = "")
         {
             var transId = string.IsNullOrEmpty(transactionId) ? Guid.NewGuid() : new Guid(transactionId);
             var mobileServerId = _dbContext.Sims.SingleOrDefault(x => x.Number == sendMessageRequest.SenderNumber)?.MobileServerId;
@@ -96,12 +51,15 @@ namespace OneSms.Services
                         StartTime = DateTime.UtcNow,
                         CompletedTime = DateTime.UtcNow,
                         Label = sendMessageRequest.Label,
-                        MessageStatus = Contracts.V1.Enumerations.MessageStatus.Pending,
+                        MessageStatus = MessageStatus.Pending,
                         MobileServerId = (Guid)mobileServerId,
                         RecieverNumber = recipient,
                         SenderNumber = sendMessageRequest.SenderNumber,
                         TransactionId = transId,
-                        Tags = sendMessageRequest.Tags
+                        Tags = sendMessageRequest.Tags,
+                        ImageLinkOne = sendMessageRequest.ImageLink.Where(x => !string.IsNullOrEmpty(x)).FirstOrDefault(),
+                        ImageLinkTwo = sendMessageRequest.ImageLink.Where(x => !string.IsNullOrEmpty(x)).Skip(1).FirstOrDefault(),
+                        ImageLinkThree = sendMessageRequest.ImageLink.Where(x => !string.IsNullOrEmpty(x)).Skip(2).FirstOrDefault()
                     };
                     EntityEntry<WhatsappMessage> created = _dbContext.WhatsappMessages.Add(message);
                     await _dbContext.SaveChangesAsync();
@@ -109,6 +67,38 @@ namespace OneSms.Services
                     yield return message;
                 }
             }
+        }
+
+        public Task<bool> CheckSenderNumber(string number) => _dbContext.Sims.AnyAsync(x => x.Number == number);
+
+        public IAsyncEnumerable<WhatsappMessage> SendPending(string serverKey)
+        {
+            return _dbContext.WhatsappMessages.Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending).AsAsyncEnumerable();
+        }
+
+        public IAsyncEnumerable<WhatsappMessage> GetMessagesByTransactionId(Guid transactionId)
+           => _dbContext.WhatsappMessages.OrderByDescending(x => x.CompletedTime).Where(x => x.TransactionId == transactionId).AsAsyncEnumerable();
+
+        public IAsyncEnumerable<WhatsappMessage> GetMessages(Guid appId)
+            => _dbContext.WhatsappMessages.Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime)
+            .Where(x => x.AppId == appId).AsAsyncEnumerable();
+
+        public async Task<WhatsappMessage> OnStatusChanged(WhatsappRequest whatsappRequest, DateTime completedTime)
+        {
+            var message = _dbContext.WhatsappMessages.FirstOrDefault(x => x.Id == whatsappRequest.WhatsappId);
+            message.CompletedTime = completedTime;
+            message.MessageStatus = whatsappRequest.MessageStatus;
+            _dbContext.Update(message);
+            await _dbContext.SaveChangesAsync();
+            return message;
+        }
+
+        public async Task<WhatsappRequest> OnSendingMessage(WhatsappMessage message)
+        {
+            message.MessageStatus = MessageStatus.Sending;
+            _dbContext.Update(message);
+            await _dbContext.SaveChangesAsync();
+            return _mapper.Map<WhatsappRequest>(message);
         }
     }
 }

@@ -1,9 +1,8 @@
 ﻿using OneSms.Data;
-using OneSms.Online.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace OneSms.Online.Services
+namespace OneSms.Services
 {
     public class SimService
     {

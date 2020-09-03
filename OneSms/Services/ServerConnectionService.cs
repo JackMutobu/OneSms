@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reactive.Subjects;
 
-namespace OneSms.Online.Services
+namespace OneSms.Services
 {
     public interface IServerConnectionService
     {

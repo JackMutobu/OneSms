@@ -1,16 +1,21 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
-using OneSms.Domain;
-using OneSms.Online.Services;
+using OneSms.Extensions;
+using OneSms.Hubs;
 using OneSms.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace OneSms.Controllers.V1
@@ -22,39 +27,92 @@ namespace OneSms.Controllers.V1
         private readonly ISmsService _smsService;
         private readonly IWhatsappService _whatsappService;
         private readonly IMapper _mapper;
+        private readonly IUriService _uriService;
+        private readonly IHubContext<OneSmsHub> _hubContext;
+        private readonly IServerConnectionService _serverConnectionService;
+        private readonly IWebHostEnvironment _environment;
 
-        public MessagesController(ISmsService smsService, IWhatsappService whatsappService, IMapper mapper)
+        public MessagesController(ISmsService smsService, IWhatsappService whatsappService, 
+            IMapper mapper,IUriService uriService,IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService, IWebHostEnvironment environment)
         {
             _smsService = smsService;
             _whatsappService = whatsappService;
             _mapper = mapper;
+            _uriService = uriService;
+            _hubContext = hubContext;
+            _serverConnectionService = serverConnectionService;
+            _environment = environment;
         }
 
         [HttpPost(ApiRoutes.Message.Send)]
         public async Task<IActionResult> SendMessage(SendMessageRequest messageRequest)
         {
             var numberOfSentMessages = 0;
-            var transactionId = Guid.NewGuid();
-           foreach(var processor in messageRequest.Processors)
+            var numberOfPendingMessages = 0;
+            var transactionId = Guid.NewGuid().ToString();
+            string? serverConnectionId;
+           foreach (var processor in messageRequest.Processors)
             {
                 switch(processor)
                 {
                     case MessageProcessor.SMS:
-                        await foreach (var sentSms in _smsService.Send(messageRequest,transactionId.ToString()))
-                            numberOfSentMessages++;
+                        await foreach(var sms in _smsService.RegisterSendMessageRequest(messageRequest, transactionId))
+                        {
+                            ++numberOfPendingMessages;
+                            if (_serverConnectionService.ConnectedServers.TryGetValue(sms.MobileServerId.ToString(), out serverConnectionId))
+                            {
+                                var smsRequest = await _smsService.OnSendingMessage(sms);
+                                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendSms, smsRequest);
+                                ++numberOfSentMessages;
+                                --numberOfPendingMessages;
+                            }
+                        }
                         break;
                     case MessageProcessor.Whatsapp:
-                        await foreach (var sentMessage in _whatsappService.Send(messageRequest,transactionId.ToString()))
-                            numberOfSentMessages++;
+                        await foreach (var whatsapp in _whatsappService.RegisterSendMessageRequest(messageRequest, transactionId))
+                        {
+                            ++numberOfPendingMessages;
+                            if (_serverConnectionService.ConnectedServers.TryGetValue(whatsapp.MobileServerId.ToString(), out serverConnectionId))
+                            {
+                                var whatsappRequest = await _whatsappService.OnSendingMessage(whatsapp);
+                                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, whatsappRequest);
+                                ++numberOfSentMessages;
+                                --numberOfPendingMessages;
+                            }
+                        }
                         break;
                 }
             }
-            var baseUrl = $"{this.Request.Scheme}://{this.Request.Host}{this.Request.PathBase}";
-            return Created($"{baseUrl}{ApiRoutes.Message.GetAllByTransactionId}", new SendMessageResponse
+
+           
+
+           return Created(_uriService.GetMessageByTransactionId(ApiRoutes.Message.Controller,transactionId), new SendMessageResponse
             {
                 SentMessages = numberOfSentMessages,
+                PendingMessages = numberOfPendingMessages,
                 TransactionId = transactionId.ToString()
             });
+        }
+
+        [HttpPost(ApiRoutes.Message.UploadImage)]
+        public async Task<IActionResult> UploadImage(IFormFile formImage)
+        {
+            var imgFolder = Path.Combine(_environment.WebRootPath, $"uploads/images");
+            if (!Directory.Exists(imgFolder))
+                Directory.CreateDirectory(imgFolder);
+            if(formImage.IsImage())
+            {
+                var fileNameArray = formImage.FileName.Split(".");
+                var fileName = $"{fileNameArray.FirstOrDefault()}{DateTime.UtcNow.Ticks}.{fileNameArray.LastOrDefault() ?? "png"}";
+                using var fileStream = new FileStream(Path.Combine(imgFolder, fileName), FileMode.OpenOrCreate);
+                await formImage.CopyToAsync(fileStream);
+
+                var filePath = fileStream.Name.Replace(_environment.WebRootPath, _uriService.InternetUrl);
+                var path =  filePath.Replace("\\", "/");
+
+                return Created(path, new FileUploadSuccessReponse { Url = path });
+            }
+            return BadRequest(new FileUploadFailedResponse { Errors = new List<string> { "Not valid image" } });
         }
 
         [HttpGet(ApiRoutes.Message.GetAllByTransactionId)]
@@ -76,5 +134,27 @@ namespace OneSms.Controllers.V1
 
             return Ok(messages);
         }
+
+        [HttpGet(ApiRoutes.Message.GetAllByAppId)]
+        public async Task<IActionResult> GetMessagesByAppId(string appId)
+        {
+            var messages = new List<MessageResponse>();
+
+            await foreach (var message in _smsService.GetMessages(new Guid(appId)))
+            {
+                var sms = _mapper.Map<MessageResponse>(message);
+                messages.Add(sms);
+            }
+
+            await foreach (var message in _whatsappService.GetMessages(new Guid(appId)))
+            {
+                var whatsapp = _mapper.Map<MessageResponse>(message);
+                messages.Add(whatsapp);
+            }
+
+            return Ok(messages);
+        }
+
+
     }
 }

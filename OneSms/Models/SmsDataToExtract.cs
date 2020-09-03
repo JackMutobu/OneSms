@@ -1,6 +1,6 @@
 ﻿using OneSms.Web.Shared.Enumerations;
 
-namespace OneSms.Online.Models
+namespace OneSms.Models
 {
     public class SmsDataToExtract
     {

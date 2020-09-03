@@ -1,21 +1,13 @@
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OneSms.Online.Areas.Identity;
-using OneSms.Online.Models;
-using Microsoft.OpenApi.Models;
-using System.Collections.Generic;
-using OneSms.Online.Hubs;
-using OneSms.Online.Services;
-using OneSms.Data;
 using OneSms.Installers;
 using AutoMapper;
 using OneSms.Options;
+using OneSms.Hubs;
+using Microsoft.AspNetCore.Http.Connections;
 
 namespace OneSms
 {

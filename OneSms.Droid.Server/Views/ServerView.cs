@@ -14,6 +14,7 @@ namespace OneSms.Droid.Server.Views
     {
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
+        private IAuthService _authService;
         private TextView _label;
         private TextView _labelServer;
         private TextView _labelServerUrl;
@@ -21,15 +22,20 @@ namespace OneSms.Droid.Server.Views
         private Button _serverUrlBtn;
         private TextView _labelServerId;
         private EditText _serverText;
+        private EditText _serverSecretText;
         private Button _save;
         private TextView _labelConnected;
         private Button _reconnectToSignalR;
         private Context _context;
+        private Button _authBtn;
+        private TextView _authStateLabel;
         public ServerView(Context context) : base(context)
         {
             _context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
+            _authService = Locator.Current.GetService<IAuthService>();
+
             _label = new TextView(context)
             {
                 Text = "Server ID"
@@ -42,6 +48,10 @@ namespace OneSms.Droid.Server.Views
             _serverText = new EditText(context)
             {
                 Hint = "Server ID..."
+            };
+            _serverSecretText = new EditText(context)
+            {
+                Hint = "Secret..."
             };
             _save = new Button(context)
             {
@@ -72,11 +82,23 @@ namespace OneSms.Droid.Server.Views
             {
                 Text = "Server Url"
             };
+            _authBtn = new Button(context)
+            {
+                Text = "Authenticate"
+            };
+            _authStateLabel = new TextView(context)
+            {
+                Text = "Not authenticated"
+            };
+
             Orientation = Orientation.Vertical;
             AddView(_label);
             AddView(_serverText);
             AddView(_labelServerId);
+            AddView(_serverSecretText);
             AddView(_save);
+            AddView(_authStateLabel);
+            AddView(_authBtn);
             AddView(_labelConnected);
             AddView(_reconnectToSignalR);
             AddView(_labelServer);
@@ -97,11 +119,11 @@ namespace OneSms.Droid.Server.Views
                 if(!string.IsNullOrEmpty(_serverUrlText.Text))
                 {
                     Preferences.Set(OneSmsAction.ServerUrl, $"{_serverUrlText.Text}/onesmshub");
-                    Preferences.Set(OneSmsAction.BaseUrl, $"{_serverUrlText.Text}/api/");
-                    
+                    Preferences.Set(OneSmsAction.BaseUrl, $"{_serverUrlText.Text}/");
                     _labelServerUrl.Text = _serverUrlText.Text;
-                    _signalRService = new SignalRService(_context,Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
-                    _httpClientService.HttpClient.BaseAddress = new System.Uri(Preferences.Get(OneSmsAction.BaseUrl, string.Empty));
+                    _httpClientService.ChangeBaseAdresse(new Uri(Preferences.Get(OneSmsAction.BaseUrl, string.Empty)));
+                    _signalRService.ChangeUrl(Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
+                    _authService.Authenticate();
                 }
             };
             _signalRService.Connection.Closed += _ => 
@@ -114,22 +136,27 @@ namespace OneSms.Droid.Server.Views
                 _labelConnected.Text = "Reconnecting";
                 return Task.CompletedTask;
             };
-            _signalRService.Connection.Reconnected += _ =>
-            {
-                _labelConnected.Text = "Connected";
-                return Task.CompletedTask;
-            };
             _signalRService.OnConnectionChanged.Subscribe(con => MainThread.BeginInvokeOnMainThread(() => _labelConnected.Text = con ? "Connected" : "Disconnected"));
-            
+
+            _authService.OnAuthStateChanged.Subscribe(x =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _authStateLabel.Text = x ? "Authenticated" : "Not authenticated";
+                });
+            });
+            _authBtn.Click += (s, e) => _authService.Authenticate();
         }
 
         private async void OnServerIdSave(object sender, System.EventArgs e)
         {
-            if (!string.IsNullOrEmpty(_serverText.Text))
+            if (!string.IsNullOrEmpty(_serverText.Text) && !string.IsNullOrEmpty(_serverSecretText.Text))
             {
                 Preferences.Set(OneSmsAction.ServerKey, _serverText.Text);
+                Preferences.Set(OneSmsAction.ServerSecret, _serverSecretText.Text);
                 _labelServerId.Text = Preferences.Get(OneSmsAction.ServerKey, string.Empty);
-                await _signalRService.SendServerId(_labelServerId.Text);
+                _serverSecretText.Text = string.Empty;
+                await _signalRService.ReconnectToHub();
             }
         }
     }

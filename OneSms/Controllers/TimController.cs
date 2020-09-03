@@ -2,9 +2,8 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
-using OneSms.Online.Data;
-using OneSms.Online.Hubs;
-using OneSms.Online.Services;
+using OneSms.Hubs;
+using OneSms.Services;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using OneSms.Online.Hubs;
 using OneSms.Online.Services;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Models;
@@ -15,6 +14,8 @@ using System.Linq;
 using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Data;
+using OneSms.Hubs;
+using OneSms.Services;
 
 namespace OneSms.ViewModels
 {

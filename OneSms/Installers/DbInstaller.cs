@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneSms.Data;
 using OneSms.Domain;
-using OneSms.Online.Models;
 using OneSms.Online.Services;
+using OneSms.Options;
 using OneSms.Services;
 
 namespace OneSms.Installers
@@ -40,6 +41,16 @@ namespace OneSms.Installers
             services.AddScoped<TimService>();
             services.AddScoped<SmsDataExtractorService>();
             services.AddScoped<SimService>();
+
+            var urlOptions = new UrlOptions();
+            configuration.GetSection(nameof(UrlOptions)).Bind(urlOptions);
+            services.AddSingleton<IUriService>(provider =>
+            {
+                var accessor = provider.GetRequiredService<IHttpContextAccessor>();
+                var request = accessor.HttpContext.Request;
+                var absoluteUri = string.Concat(request.Scheme, "://", request.Host.ToUriComponent(), "/");
+                return new UriService(absoluteUri,urlOptions.InternetUrl);
+            });
         }
     }
 }

@@ -6,9 +6,6 @@ using Android.Provider;
 using Android.Widget;
 using Java.Net;
 using Microsoft.AspNetCore.SignalR.Client;
-using OneSms.Web.Shared.Constants;
-using OneSms.Web.Shared.Dtos;
-using OneSms.Web.Shared.Enumerations;
 using Splat;
 using System;
 using System.Collections.Generic;
@@ -21,14 +18,17 @@ using File = Java.IO.File;
 using Uri = Android.Net.Uri;
 using System.Reactive.Linq;
 using OneSms.Droid.Server.Constants;
+using OneSms.Contracts.V1.MobileServerRequest;
+using OneSms.Contracts.V1.Enumerations;
+using OneSms.Contracts.V1;
 
 namespace OneSms.Droid.Server.Services
 {
     public interface IWhatsappService
     {
         Context Context { get; set; }
-        MessageTransactionProcessDto CurrentTransaction { get; }
-        Subject<MessageTransactionProcessDto> OnMessageSent { get; }
+        WhatsappRequest CurrentTransaction { get; }
+        Subject<WhatsappRequest> OnMessageSent { get; }
 
         Task<PermissionStatus> CheckAndRequestReadContactPermission();
         Task<PermissionStatus> CheckAndRequestWriteContactPermission();
@@ -38,16 +38,15 @@ namespace OneSms.Droid.Server.Services
         Uri GetLocalBitmapUri(Context context, Bitmap bitmap);
         Uri GetUriFromFile(Context context, File file);
         Task<string> GetWhatsappNumber(Context context, string contactId);
-        Task SendAsync(MessageTransactionProcessDto transaction);
+        Task SendAsync(WhatsappRequest transaction);
         void SendImage(Context context, Bitmap bitmap, string number, string message);
         void SendText(string number, string message);
-        void SendSms(MessageTransactionProcessDto transaction);
         void ReportNumberNotOnWhatsapp();
     }
 
     public class WhatsappService : IWhatsappService
     {
-        private Queue<MessageTransactionProcessDto> _transactionQueue;
+        private Queue<WhatsappRequest> _transactionQueue;
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
         private bool _isBusy;
@@ -56,21 +55,19 @@ namespace OneSms.Droid.Server.Services
             Context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
-            OnMessageSent = new Subject<MessageTransactionProcessDto>();
-            _transactionQueue = new Queue<MessageTransactionProcessDto>();
-            _signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(async transaction => await Execute(transaction)));
+            OnMessageSent = new Subject<WhatsappRequest>();
+            _transactionQueue = new Queue<WhatsappRequest>();
+            _signalRService.Connection.On<WhatsappRequest>(SignalRKeys.SendWhatsapp, async transaction => await Execute(transaction));
 
             OnMessageSent.Subscribe(async transaction =>
             {
                 _isBusy = false;
                 if (transaction != null)
                 {
-                    transaction.TransactionState = await BlobCache.LocalMachine.GetObject<MessageTransactionState>(OneSmsAction.TransactionState);
-                    if (transaction.TransactionState == MessageTransactionState.Failed || transaction.TransactionState == MessageTransactionState.Canceled)
-                        SendSms(transaction);
-
-                    transaction.TimeStamp = DateTime.UtcNow;
-                    _httpClientService.PutAsync<string>(transaction, "Transaction/StatusChanged");
+                    transaction.MessageStatus = await BlobCache.LocalMachine.GetObject<MessageStatus>(OneSmsAction.MessageStatus);
+                    if (transaction.MessageStatus == MessageStatus.Failed || transaction.MessageStatus == MessageStatus.Canceled)
+                        ReportNumberNotFound(transaction);
+                    _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
                 }
 
                 await ExecuteNextTransaction();
@@ -90,34 +87,34 @@ namespace OneSms.Droid.Server.Services
 
         public Context Context { get; set; }
 
-        public MessageTransactionProcessDto CurrentTransaction { get; private set; }
+        public WhatsappRequest CurrentTransaction { get; private set; }
 
-        public Subject<MessageTransactionProcessDto> OnMessageSent { get; }
+        public Subject<WhatsappRequest> OnMessageSent { get; }
 
-        private async Task Execute(MessageTransactionProcessDto transaction)
+        private async Task Execute(WhatsappRequest transaction)
         {
             if (_isBusy)
                 _transactionQueue.Enqueue(transaction);
             else
             {
                 _isBusy = true;
-                transaction.TransactionState = MessageTransactionState.Executing;
-                _httpClientService.PutAsync<string>(transaction, "Transaction/StatusChanged");
+                transaction.MessageStatus = MessageStatus.Executing;
+                _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
                 await SendAsync(transaction);
             }
         }
 
-        public async Task SendAsync(MessageTransactionProcessDto transaction)
+        public async Task SendAsync(WhatsappRequest transaction)
         {
             CurrentTransaction = transaction;
             var imageLink = transaction.ImageLinks.Where(x => !string.IsNullOrEmpty(x)).FirstOrDefault();
             if (string.IsNullOrEmpty(imageLink))
-                  SendText(transaction.ReceiverNumber, transaction.Message);
+                  SendText(transaction.ReceiverNumber, transaction.Body);
             else
             {
                 var imageBytes = await BlobCache.LocalMachine.DownloadUrl(imageLink);
                 var image = await BitmapFactory.DecodeByteArrayAsync(imageBytes,0,imageBytes.Length);
-                await CheckContactAndSendImage(Context, image, transaction.ReceiverNumber, transaction.Message);
+                await CheckContactAndSendImage(Context, image, transaction.ReceiverNumber, transaction.Body);
                 Preferences.Set(OneSmsAction.ImageTransaction, transaction.WhatsappId);
             }
         }
@@ -150,7 +147,7 @@ namespace OneSms.Droid.Server.Services
             {
                 var whatsappNumber = await GetWhatsappNumber(context, contactId);
                 if (string.IsNullOrEmpty(whatsappNumber))
-                    SendSms(CurrentTransaction);
+                    ReportNumberNotFound(CurrentTransaction);
                     
                 SendImage(context, bitmap, toNumber, message);
             }
@@ -163,7 +160,7 @@ namespace OneSms.Droid.Server.Services
                     await CheckContactAndSendImage(context, bitmap, number, message);
                 }
                 else
-                    SendSms(CurrentTransaction);
+                    ReportNumberNotFound(CurrentTransaction);
             }
 
         }
@@ -340,15 +337,14 @@ namespace OneSms.Droid.Server.Services
             return status;
         }
 
-        public void SendSms(MessageTransactionProcessDto transaction)=> _httpClientService.PostAsync<string>(transaction, "Sms/Send");
+        public void ReportNumberNotFound(WhatsappRequest transaction)=> _httpClientService.PostAsync<string>(transaction, ApiRoutes.Whatsapp.NumberNotFound);
 
         public void ReportNumberNotOnWhatsapp()
         {
             var transaction = CurrentTransaction;
-            transaction.TransactionState = MessageTransactionState.Failed;
-            transaction.TimeStamp = DateTime.UtcNow;
-            _httpClientService.PutAsync<string>(transaction, "Transaction/StatusChanged");
-            SendSms(transaction);
+            transaction.MessageStatus = MessageStatus.Failed;
+            _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
+            ReportNumberNotFound(transaction);
             CurrentTransaction = null;
         }
 

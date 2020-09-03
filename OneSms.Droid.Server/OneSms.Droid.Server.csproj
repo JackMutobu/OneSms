@@ -71,12 +71,14 @@
     <Compile Include="Extensions\UriExtensions.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Models\ContactInfo.cs" />
+    <Compile Include="Models\Result.cs" />
     <Compile Include="Models\SimInfo.cs" />
     <Compile Include="ExtendedPermissions\ReadPhoneStatePermission.cs" />
     <Compile Include="Receivers\SmsReceiver.cs" />
     <Compile Include="Receivers\StartReceiver.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\HttpClientService.cs" />
     <Compile Include="Services\OneForegroundService.cs" />
     <Compile Include="Services\SignalRService.cs" />
@@ -169,6 +171,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\OneSms.Contracts\OneSms.Contracts.csproj">
+      <Project>{88C4639A-1A17-4B7B-933C-0076595BADFC}</Project>
+      <Name>OneSms.Contracts</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OneSms.Web\Shared\OneSms.Web.Shared.csproj">
       <Project>{3E48221B-A655-4A5D-A3EC-BA04F36E9D85}</Project>
       <Name>OneSms.Web.Shared</Name>

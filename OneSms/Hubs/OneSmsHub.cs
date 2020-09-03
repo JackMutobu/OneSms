@@ -1,22 +1,24 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using OneSms.Data;
-using OneSms.Online.Data;
 using OneSms.Online.Services;
-using OneSms.Web.Shared.Dtos;
+using OneSms.Services;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace OneSms.Online.Hubs
+namespace OneSms.Hubs
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class OneSmsHub:Hub
     {
         private readonly OneSmsDbContext _oneSmsDbContext;
-        private readonly ServerConnectionService _serverConnectionService;
+        private readonly IServerConnectionService _serverConnectionService;
         private readonly HubEventService _smsHubEventService;
 
-        public OneSmsHub(OneSmsDbContext oneSmsDbContext,ServerConnectionService serverConnectionService, HubEventService smsHubEventService)
+        public OneSmsHub(OneSmsDbContext oneSmsDbContext,IServerConnectionService serverConnectionService, HubEventService smsHubEventService)
         {
             _oneSmsDbContext = oneSmsDbContext;
             _serverConnectionService = serverConnectionService;
@@ -25,6 +27,12 @@ namespace OneSms.Online.Hubs
         public async Task SendMessage(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
+        }
+
+        public override Task OnConnectedAsync()
+        {
+            var user = Context.User.Identity;
+            return base.OnConnectedAsync();
         }
 
         public async Task SetServerId(string serverKey)
@@ -48,23 +56,6 @@ namespace OneSms.Online.Hubs
                 await Clients.Caller.SendAsync("OnException", ex);
             }
             
-        }
-
-        public void SmsStateChanged(MessageTransactionProcessDto sms)
-        {
-            try
-            {
-                var smsTransaction = _oneSmsDbContext.SmsTransactions.First(x => x.Id == sms.SmsId);
-                smsTransaction.CompletedTime = sms.TimeStamp;
-                smsTransaction.TransactionState = sms.TransactionState;
-                _oneSmsDbContext.Update(smsTransaction);
-                _oneSmsDbContext.SaveChangesAsync();
-                _smsHubEventService.OnMessageStateChanged.OnNext(sms);
-            }
-            catch(Exception ex)
-            {
-                Clients.Caller.SendAsync("OnException", ex);
-            }
         }
 
         public override Task OnDisconnectedAsync(Exception exception)

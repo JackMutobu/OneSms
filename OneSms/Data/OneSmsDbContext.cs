@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using OneSms.Domain;
-using OneSms.Online.Models;
+using OneSms.Models;
 using OneSms.Web.Shared.Models;
 using SimCard = OneSms.Web.Shared.Models.SimCard;
 

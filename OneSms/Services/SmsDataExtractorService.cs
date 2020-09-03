@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
-using OneSms.Online.Data;
-using OneSms.Online.Models;
+using OneSms.Models;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Models;
@@ -11,7 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace OneSms.Online.Services
+namespace OneSms.Services
 {
     public class SmsDataExtractorService
     {

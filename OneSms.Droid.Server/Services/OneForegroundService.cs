@@ -39,27 +39,27 @@ namespace OneSms.Droid.Server.Services
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
             _whatsappService.Context = this;
             _transactionQueue = new Queue<MessageTransactionProcessDto>();
-            _signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(transaction =>
-            {
-                CheckScreenInteractivity();
-                Execute(transaction);
-            }));
+            //_signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(transaction =>
+            //{
+            //    CheckScreenInteractivity();
+            //    Execute(transaction);
+            //}));
 
-            _whatsappService.OnMessageSent.Subscribe(transaction => 
-            {
-                if (_transactionQueue.Count > 0)
-                    Execute(_transactionQueue.Dequeue());
-            });
+            //_whatsappService.OnMessageSent.Subscribe(transaction => 
+            //{
+            //    if (_transactionQueue.Count > 0)
+            //        Execute(_transactionQueue.Dequeue());
+            //});
 
         }
 
-        private void Execute(MessageTransactionProcessDto transaction)
-        {
-            if (_transactionQueue.Count > 0)
-                _transactionQueue.Enqueue(transaction);
-            else
-                _whatsappService.SendAsync(transaction);
-        }
+        //////private void Execute(MessageTransactionProcessDto transaction)
+        //////{
+        //////    if (_transactionQueue.Count > 0)
+        //////        _transactionQueue.Enqueue(transaction);
+        //////    else
+        //////        _whatsappService.SendAsync(transaction);
+        //////}
 
         private void CheckScreenInteractivity()
         {

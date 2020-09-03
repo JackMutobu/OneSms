@@ -4,6 +4,8 @@
     {
         public int SentMessages { get; set; }
 
+        public int PendingMessages { get; set; }
+
         public string TransactionId { get; set; }
     }
 }

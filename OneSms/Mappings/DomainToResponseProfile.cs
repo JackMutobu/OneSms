@@ -10,7 +10,7 @@ namespace OneSms.Mappings
         public DomainToResponseProfile()
         {
             CreateMap<Message, MessageResponse>()
-                .ForMember(dest => dest.Images, opt => opt.Ignore()); ;
+                .ForMember(dest => dest.Images, opt => opt.Ignore());
 
             CreateMap<SmsMessage, MessageResponse>()
                 .ForMember(dest => dest.Images,opt => opt.Ignore());

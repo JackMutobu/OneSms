@@ -5,13 +5,10 @@ using Android.App;
 using Android.Content;
 using Android.Util;
 using Android.Views.Accessibility;
-using Android.Widget;
+using OneSms.Contracts.V1.Enumerations;
 using OneSms.Droid.Server.Constants;
-using OneSms.Web.Shared.Enumerations;
 using Splat;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -51,7 +48,7 @@ namespace OneSms.Droid.Server.Services
             if ((textViews.Any(x => x.Text?.Contains("The phone number") ?? false) && buttons.Any(x => x.Text?.Contains("OK") ?? false)) ||
               (textViews.Any(x => x.Text?.Contains("Send to") ?? false) && textViews.Any(x => x.ContentDescription?.Contains("Search") ?? false)))
             {
-                await BlobCache.LocalMachine.InsertObject(OneSmsAction.TransactionState, MessageTransactionState.Failed);
+                await BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Failed);
                 PerformGlobalAction(GlobalAction.Home);
             }
         }
@@ -66,7 +63,7 @@ namespace OneSms.Droid.Server.Services
             {
                 sendPagerButton.PerformAction(Action.Click);
                 System.Diagnostics.Debug.WriteLine("Image sent");
-                BlobCache.LocalMachine.InsertObject(OneSmsAction.TransactionState, MessageTransactionState.Sent);
+                BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Sent);
                 //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
                 var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
                 if (_whatsappService.CurrentTransaction?.WhatsappId == transactionId)
@@ -84,7 +81,7 @@ namespace OneSms.Droid.Server.Services
             {
                 sendButton.PerformAction(Action.Click);
                 System.Diagnostics.Debug.WriteLine("Text sent");
-                BlobCache.LocalMachine.InsertObject(OneSmsAction.TransactionState, MessageTransactionState.Sent);
+                BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Sent);
                 this.PerformGlobalAction(GlobalAction.Home);
             }
         }

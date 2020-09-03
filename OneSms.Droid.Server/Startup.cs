@@ -17,6 +17,8 @@ namespace OneSms.Droid.Server
             Locator.CurrentMutable.RegisterConstant<IUssdService>(new UssdService(context));
 
             Locator.CurrentMutable.RegisterConstant<IWhatsappService>(new WhatsappService(context));
+
+            Locator.CurrentMutable.RegisterConstant<IAuthService>(new AuthService(context));
         }
     }
 }

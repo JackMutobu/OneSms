@@ -1,5 +1,10 @@
-﻿using OneSms.Web.Shared.Models;
+﻿using OneSms.Contracts.V1;
+using OneSms.Contracts.V1.Requests;
+using OneSms.Contracts.V1.Responses;
+using OneSms.Droid.Server.Models;
+using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -13,6 +18,9 @@ namespace OneSms.Droid.Server.Services
         Task<Result<T>> GetAsync<T>(object content, string uri) where T : class;
         Task<Result<T>> PostAsync<T>(object content, string uri) where T : class;
         Task<Result<T>> PutAsync<T>(object content, string uri) where T : class;
+        void SetAuthorizationHeaderToken(string token);
+        Task<AuthSuccessResponse> Authenticate(ServerAuthRequest model);
+        void ChangeBaseAdresse(Uri uri);
     }
 
     public class HttpClientService : IHttpClientService
@@ -25,7 +33,35 @@ namespace OneSms.Droid.Server.Services
             };
         }
 
-        public HttpClient HttpClient { get; }
+        public HttpClient HttpClient { get; private set; }
+
+        public void ChangeBaseAdresse(Uri uri)
+        {
+            HttpClient = new HttpClient
+            {
+                BaseAddress = uri
+            };
+        }
+
+        public void SetAuthorizationHeaderToken(string token)
+        {
+            HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        public async Task<AuthSuccessResponse> Authenticate(ServerAuthRequest model)
+        {
+            var data = JsonSerializer.Serialize(model);
+            var content = new StringContent(data, Encoding.UTF8, "application/json");
+            var response = await HttpClient.PostAsync(ApiRoutes.Auth.Server, content);
+            if (response.IsSuccessStatusCode)
+            {
+                var stringResponse = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<AuthSuccessResponse>(stringResponse, new JsonSerializerOptions {PropertyNameCaseInsensitive = true });
+                return result;
+            }
+
+            throw new Exception(await response.Content.ReadAsStringAsync());
+        }
 
         public async Task<Result<T>> GetAsync<T>(object content, string uri) where T : class
         {

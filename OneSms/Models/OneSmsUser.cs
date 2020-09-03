@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
-namespace OneSms.Online.Models
+namespace OneSms.Models
 {
     public class OneSmsUser : IdentityUser
     {

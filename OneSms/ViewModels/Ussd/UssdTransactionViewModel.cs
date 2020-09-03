@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
-using OneSms.Online.Hubs;
+using OneSms.Hubs;
 using OneSms.Online.Services;
 using OneSms.Web.Shared.Models;
 using ReactiveUI;
