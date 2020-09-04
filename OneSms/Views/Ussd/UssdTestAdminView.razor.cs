@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.SignalR;
 using OneOf;
 using OneSms.Data;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
 using OneSms.Web.Shared.Dtos;
 using System.Collections.Generic;
@@ -20,16 +19,16 @@ namespace OneSms.Views.Ussd
         UssdTransactionDto ussdTransactionDto = new UssdTransactionDto();
 
         [Inject]
-        OneSmsDbContext OneSmsDbContext { get; set; }
+        OneSmsDbContext OneSmsDbContext { get; set; } = null!;
 
         [Inject]
-        IHubContext<OneSmsHub> OneSmsHubContext { get; set; }
+        IHubContext<OneSmsHub> OneSmsHubContext { get; set; } = null!;
 
         [Inject]
-        HubEventService HubEventService { get; set; }
+        HubEventService HubEventService { get; set; } = null!;
 
         [Inject]
-        ServerConnectionService ServerConnectionService { get; set; }
+        ServerConnectionService ServerConnectionService { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {

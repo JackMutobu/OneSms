@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using OneSms.Data;
 using OneSms.Hubs;
-using OneSms.Online.Services;
+using OneSms.Services;
 using OneSms.Web.Shared.Models;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
@@ -12,13 +12,13 @@ namespace OneSms.Views.Ussd
     public partial class UssdTransactionView
     {
         [Inject]
-        OneSmsDbContext OneSmsDbContext { get; set; }
+        OneSmsDbContext OneSmsDbContext { get; set; } = null!;
 
         [Inject]
-        IHubContext<OneSmsHub> OneSmsHubContext { get; set; }
+        IHubContext<OneSmsHub> OneSmsHubContext { get; set; } = null!;
 
         [Inject]
-        HubEventService SmsHubEventService { get; set; }
+        HubEventService SmsHubEventService { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {

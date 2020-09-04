@@ -2,11 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using OneSms.Data;
-using OneSms.Online.Services;
 using OneSms.Services;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace OneSms.Hubs
@@ -14,15 +12,11 @@ namespace OneSms.Hubs
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class OneSmsHub:Hub
     {
-        private readonly OneSmsDbContext _oneSmsDbContext;
         private readonly IServerConnectionService _serverConnectionService;
-        private readonly HubEventService _smsHubEventService;
 
-        public OneSmsHub(OneSmsDbContext oneSmsDbContext,IServerConnectionService serverConnectionService, HubEventService smsHubEventService)
+        public OneSmsHub(IServerConnectionService serverConnectionService)
         {
-            _oneSmsDbContext = oneSmsDbContext;
             _serverConnectionService = serverConnectionService;
-            _smsHubEventService = smsHubEventService;
         }
         public async Task SendMessage(string user, string message)
         {

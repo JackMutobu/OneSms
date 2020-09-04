@@ -5,12 +5,11 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using OneOf;
+using OneSms.Contracts.V1.Enumerations;
 using OneSms.Data;
+using OneSms.Domain;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
-using OneSms.Web.Shared.Enumerations;
-using OneSms.Web.Shared.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,29 +20,31 @@ namespace OneSms.Views.Whatsapp
 {
     public partial class WhatsappAdminView
     {
-        WhatsappTransaction transaction = new WhatsappTransaction();
-        IFileListEntry fileImage;
-        string imageUrl;
+        WhatsappMessage transaction = new WhatsappMessage();
+        IFileListEntry? fileImage;
+        string? imageUrl;
 
         [Inject]
-        OneSmsDbContext OneSmsDbContext { get; set; }
+        DataContext DataContext { get; set; } = null!;
 
         [Inject]
-        IHubContext<OneSmsHub> OneSmsHubContext { get; set; }
+        IHubContext<OneSmsHub> HubContext { get; set; } = null!;
 
         [Inject]
-        ServerConnectionService ServerConnectionService { get; set; }
+        IServerConnectionService ServerConnectionService { get; set; } = null!;
 
         [Inject]
-        HubEventService HubEventService { get; set; }
+        HubEventService HubEventService { get; set; } = null!;
         [Inject]
-        IWebHostEnvironment Environment { get; set; }
+        IWebHostEnvironment Environment { get; set; } = null!;
         [Inject]
-        NavigationManager UriHelper { get; set; }
+        NavigationManager UriHelper { get; set; } = null!;
+        [Inject]
+        IUriService UriService { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {
-            ViewModel = new ViewModels.Whatsapp.WhatsappAdminViewModel(OneSmsDbContext, ServerConnectionService, OneSmsHubContext, HubEventService);
+            ViewModel = new ViewModels.Whatsapp.WhatsappAdminViewModel(DataContext, ServerConnectionService, HubContext, HubEventService);
             await ViewModel.LoadMobileServers.Execute().ToTask();
         }
 
@@ -51,14 +52,14 @@ namespace OneSms.Views.Whatsapp
         {
             var numbers = transaction.RecieverNumber;
             var recipients = transaction.RecieverNumber.Split(",");
-            transaction.TransactionState = MessageTransactionState.Sending;
+            transaction.MessageStatus = MessageStatus.Sending;
             transaction.MobileServerId = ViewModel.MobileServer.Id;
             transaction.ImageLinkOne = imageUrl;
             foreach (var number in recipients)
             {
                 transaction.RecieverNumber = number;
                 await ViewModel.AddTransaction.Execute(transaction).ToTask();
-                transaction = new WhatsappTransaction() { RecieverNumber = transaction.RecieverNumber, Title = transaction.Title, Body = transaction.Body, MobileServerId = transaction.MobileServerId, ImageLinkOne = imageUrl,TransactionState = transaction.TransactionState};
+                transaction = new WhatsappMessage() { RecieverNumber = transaction.RecieverNumber, Label = transaction.Label, Body = transaction.Body, MobileServerId = transaction.MobileServerId, ImageLinkOne = imageUrl,MessageStatus = transaction.MessageStatus};
             }
             transaction.RecieverNumber = numbers;
             
@@ -66,7 +67,7 @@ namespace OneSms.Views.Whatsapp
 
         private void OnServerSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
         {
-            var server = ViewModel.MobileServers.First(x => x.Id == int.Parse(value.Value.ToString()));
+            var server = ViewModel.MobileServers.First(x => x.Id.ToString() == value.Value.ToString());
             ViewModel.MobileServer = server;
         }
 
@@ -87,10 +88,8 @@ namespace OneSms.Views.Whatsapp
                 var fileName = fileNameArray.FirstOrDefault() + $".{fileNameArray.LastOrDefault() ?? "png"}";
                 using var fileStream = new FileStream(Path.Combine(profileUploads, fileName), FileMode.OpenOrCreate);
                 await file.Data.CopyToAsync(fileStream);
-                var baseUrl = UriHelper.BaseUri.Substring(0, UriHelper.BaseUri.Length - 1);
-                if (baseUrl.Contains("localhost"))
-                    baseUrl = "https://e69b70a3ee5d.ngrok.io";
-                var filePath = fileStream.Name.Replace(Environment.WebRootPath, baseUrl);
+             
+                var filePath = fileStream.Name.Replace(Environment.WebRootPath, UriService.InternetUrl);
                 return filePath.Replace("\\", "/");
             }
             return string.Empty;

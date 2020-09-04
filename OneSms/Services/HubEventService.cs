@@ -2,9 +2,8 @@
 using System.Reactive.Subjects;
 using Splat;
 using OneSms.Domain;
-using System;
 
-namespace OneSms.Online.Services
+namespace OneSms.Services
 {
     public class HubEventService:IEnableLogger
     {

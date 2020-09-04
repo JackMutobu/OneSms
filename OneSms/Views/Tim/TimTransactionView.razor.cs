@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.SignalR;
 using OneSms.Data;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
 using OneSms.ViewModels;
 using OneSms.Web.Shared.Models;
@@ -19,13 +18,13 @@ namespace OneSms.Views.Tim
         TimTransaction transaction = new TimTransaction();
 
         [Inject]
-        OneSmsDbContext OneSmsDbContext { get; set; }
+        OneSmsDbContext OneSmsDbContext { get; set; } = null!;
         [Inject]
-        IHubContext<OneSmsHub> OneSmsHubContext  { get; set; }
+        IHubContext<OneSmsHub> OneSmsHubContext  { get; set; } = null!;
         [Inject]
-        HubEventService HubEventService { get; set; }
+        HubEventService HubEventService { get; set; } = null!;
         [Inject]
-        ServerConnectionService ServerConnectionService { get; set; }
+        ServerConnectionService ServerConnectionService { get; set; } = null!;
 
         private void HideModal() => modalVisible = false;
 

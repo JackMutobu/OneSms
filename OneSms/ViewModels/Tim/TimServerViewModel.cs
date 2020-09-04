@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using OneSms.Online.Services;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Models;
 using ReactiveUI;
@@ -23,7 +22,6 @@ namespace OneSms.ViewModels
     {
         private OneSmsDbContext _oneSmsDbContext;
         private IHubContext<OneSmsHub> _oneSmsHubContext;
-        private HubEventService _hubEventService;
         private ServerConnectionService _serverConnectionService;
         public TimServerViewModel(OneSmsDbContext oneSmsDbContext, IHubContext<OneSmsHub> oneSmsHubContext, ServerConnectionService serverConnectionService)
         {
@@ -99,7 +97,7 @@ namespace OneSms.ViewModels
         }
 
         [Reactive]
-        public string CurrentServerKey { get; set; }
+        public string? CurrentServerKey { get; set; }
 
         [Reactive]
         public ObservableCollection<ServerMobile> MobileServers { get; set; } = new ObservableCollection<ServerMobile>();
@@ -110,7 +108,7 @@ namespace OneSms.ViewModels
 
         public ReactiveCommand<List<ServerMobile>, string> GetOnlineServer { get; }
 
-        public string Errors { [ObservableAsProperty]get; }
+        public string? Errors { [ObservableAsProperty]get; }
 
         [Reactive]
         public bool IsBusy { get; set; }

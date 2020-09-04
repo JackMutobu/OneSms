@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
@@ -131,7 +130,7 @@ namespace OneSms.ViewModels
             return 1;
         }
 
-        public string Errors { [ObservableAsProperty]get; }
+        public string? Errors { [ObservableAsProperty]get; }
 
         [Reactive]
         public bool IsBusy { get; set; }

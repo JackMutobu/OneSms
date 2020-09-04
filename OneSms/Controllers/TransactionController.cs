@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OneSms.Data;
-using OneSms.Online.Data;
-using OneSms.Online.Services;
+using OneSms.Services;
 using OneSms.Web.Shared.Dtos;
 using OneSms.Web.Shared.Enumerations;
 using OneSms.Web.Shared.Models;

@@ -8,7 +8,6 @@ using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
 using System;
 using System.Collections.Generic;

@@ -11,9 +11,7 @@ using OneSms.Contracts.V1.Dtos;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
-using OneSms.Domain;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
 
 namespace OneSms.Controllers.V1

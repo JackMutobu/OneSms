@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneSms.Data;
 using OneSms.Domain;
-using OneSms.Online.Services;
 using OneSms.Options;
 using OneSms.Services;
 

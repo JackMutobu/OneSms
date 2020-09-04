@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
 using OneSms.Hubs;
-using OneSms.Online.Services;
 using OneSms.Services;
 using OneSms.Web.Shared.Constants;
 using OneSms.Web.Shared.Dtos;
@@ -103,22 +102,22 @@ namespace OneSms.ViewModels
                 return Unit.Default;
             });
         }
-        public SimCard  SelectedSimCard { get; set; }
+        public SimCard?  SelectedSimCard { get; set; } 
 
         public UssdActionType SelectedAction { get; set; }
 
-        public UssdTransactionDto LatestTransaction { get; set; }
+        public UssdTransactionDto? LatestTransaction { get; set; }
 
-        public string Errors { [ObservableAsProperty]get; }
+        public string? Errors { [ObservableAsProperty]get; }
 
         [Reactive]
-        public string CurrentServerKey { get; set; }
+        public string? CurrentServerKey { get; set; }
 
         [Reactive]
         public ObservableCollection<UssdActionType> UssdActions { get; set; } 
 
         [Reactive]
-        public ObservableCollection<UssdTransaction> UssdTransactions { get; set; }
+        public ObservableCollection<UssdTransaction> UssdTransactions { get; set; } 
 
         [Reactive]
         public ObservableCollection<SimCard> SimCards { get; set; }
