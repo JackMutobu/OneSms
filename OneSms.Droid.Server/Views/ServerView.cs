@@ -7,6 +7,7 @@ using Xamarin.Essentials;
 using System.Reactive.Linq;
 using System;
 using Splat;
+using Akavache;
 
 namespace OneSms.Droid.Server.Views
 {
@@ -88,7 +89,8 @@ namespace OneSms.Droid.Server.Views
             };
             _authStateLabel = new TextView(context)
             {
-                Text = "Not authenticated"
+                Text = "Not authenticated",
+                TextSize = 20
             };
 
             Orientation = Orientation.Vertical;
@@ -122,10 +124,11 @@ namespace OneSms.Droid.Server.Views
                     Preferences.Set(OneSmsAction.BaseUrl, $"{_serverUrlText.Text}/");
                     _labelServerUrl.Text = _serverUrlText.Text;
                     _httpClientService.ChangeBaseAdresse(new Uri(Preferences.Get(OneSmsAction.BaseUrl, string.Empty)));
-                    _signalRService.ChangeUrl(Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
                     _authService.Authenticate();
+                    _signalRService.ChangeUrl(Preferences.Get(OneSmsAction.ServerUrl, string.Empty));
                 }
             };
+
             _signalRService.Connection.Closed += _ => 
             {
                 _labelConnected.Text = "Disconnected";
@@ -138,13 +141,17 @@ namespace OneSms.Droid.Server.Views
             };
             _signalRService.OnConnectionChanged.Subscribe(con => MainThread.BeginInvokeOnMainThread(() => _labelConnected.Text = con ? "Connected" : "Disconnected"));
 
+            BlobCache.LocalMachine.GetObject<string>(OneSmsAction.AuthKey).Catch(Observable.Return(string.Empty))
+                .Subscribe(x => MainThread.BeginInvokeOnMainThread(() => _authStateLabel.Text = string.IsNullOrEmpty(x) ? "Authenticated" : "Authenticated"));
+
             _authService.OnAuthStateChanged.Subscribe(x =>
             {
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    _authStateLabel.Text = x ? "Authenticated" : "Not authenticated";
+                    _authStateLabel.Text = x ? "Authenticated" : "AuthenticatedAuthenticated";
                 });
             });
+
             _authBtn.Click += (s, e) => _authService.Authenticate();
         }
 

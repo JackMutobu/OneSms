@@ -12,6 +12,9 @@
         </Select>
     </PageHeaderExtra>
 </PageHeader>
+
+<Text Type="danger">@ViewModel.Errors</Text>
+
 <Table DataSource="@ViewModel.Transactions" Class="table-responsive">
     <Column @bind-Field="@context.Label"></Column>
     <Column @bind-Field="@context.SenderNumber"></Column>

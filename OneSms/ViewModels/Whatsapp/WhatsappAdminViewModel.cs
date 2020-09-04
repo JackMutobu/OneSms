@@ -95,7 +95,7 @@ namespace OneSms.ViewModels.Whatsapp
         [Reactive]
         public ObservableCollection<WhatsappMessage> Transactions { get; set; } = new ObservableCollection<WhatsappMessage>();
 
-        public string Errors { [ObservableAsProperty]get; }
+        public string? Errors { [ObservableAsProperty]get; }
 
         public MobileServer MobileServer { get; set; } = null!;
 

@@ -30,6 +30,8 @@ namespace OneSms.ViewModels.Whatsapp
 
             LoadTransactions = ReactiveCommand.CreateFromTask<Application>(app => LoadMessages(app));
             LoadTransactions.Do(_ => Transactions = new ObservableCollection<WhatsappMessage>(Transactions)).Subscribe();
+            LoadTransactions.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+
             this.WhenAnyValue(x => x.SelectedApp).Where(x => x != null).DistinctUntilChanged().InvokeCommand(LoadTransactions);
             
 
@@ -49,6 +51,8 @@ namespace OneSms.ViewModels.Whatsapp
 
         [Reactive]
         public Application SelectedApp { get; set; } = null!;
+
+        public string? Errors { [ObservableAsProperty]get; }
 
         public ReactiveCommand<Application, Unit> LoadTransactions { get; }
 

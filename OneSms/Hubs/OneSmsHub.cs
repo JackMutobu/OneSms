@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using OneSms.Data;
 using OneSms.Services;
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace OneSms.Hubs
@@ -18,39 +19,20 @@ namespace OneSms.Hubs
         {
             _serverConnectionService = serverConnectionService;
         }
-        public async Task SendMessage(string user, string message)
-        {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
-        }
 
-        public override Task OnConnectedAsync()
-        {
-            var user = Context.User.Identity;
-            return base.OnConnectedAsync();
-        }
-
-        public async Task SetServerId(string serverKey)
+        public async override Task OnConnectedAsync()
         {
             try
             {
-                if (_serverConnectionService.ConnectedServers.ContainsKey(serverKey))
-                    _serverConnectionService.ConnectedServers[serverKey] = Context.ConnectionId;
-                else
-                    _serverConnectionService.ConnectedServers.Add(serverKey, Context.ConnectionId);
-
-                if(_serverConnectionService.ConnectedServersReverse.ContainsKey(Context.ConnectionId))
-                    _serverConnectionService.ConnectedServersReverse[Context.ConnectionId] = serverKey;
-                else
-                    _serverConnectionService.ConnectedServersReverse.Add(Context.ConnectionId, serverKey);
-
-                await Clients.Caller.SendAsync("OnConnected", Context.ConnectionId);
+                var serverId = Context.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(serverId))
+                    AddServerId(serverId);
             }
             catch(Exception ex)
             {
                 await Clients.Caller.SendAsync("OnException", ex);
             }
-            
-        }
+        } 
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
@@ -67,6 +49,20 @@ namespace OneSms.Hubs
             }
             return base.OnDisconnectedAsync(exception);
         }
+
+        private void AddServerId(string serverId)
+        {
+            if (_serverConnectionService.ConnectedServers.ContainsKey(serverId))
+                _serverConnectionService.ConnectedServers[serverId] = Context.ConnectionId;
+            else
+                _serverConnectionService.ConnectedServers.Add(serverId, Context.ConnectionId);
+
+            if (_serverConnectionService.ConnectedServersReverse.ContainsKey(Context.ConnectionId))
+                _serverConnectionService.ConnectedServersReverse[Context.ConnectionId] = serverId;
+            else
+                _serverConnectionService.ConnectedServersReverse.Add(Context.ConnectionId, serverId);
+        }
+
 
     }
 }

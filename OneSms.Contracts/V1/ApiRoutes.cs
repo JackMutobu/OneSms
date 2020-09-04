@@ -8,19 +8,6 @@
 
         public const string Base = Root + "/" + Version;
 
-        public static class Posts
-        {
-            public const string GetAll = Base + "/posts";
-
-            public const string Update = Base + "/posts/{postId}";
-
-            public const string Delete = Base + "/posts/{postId}";
-
-            public const string Get = Base + "/posts/{postId}";
-
-            public const string Create = Base + "/posts";
-        }
-
         public static class Auth
         {
             public const string Controller = "/auth";
@@ -39,7 +26,6 @@
             public const string GetAll = Base + Controller;
             public const string GetAllByTransactionId = Base + Controller + "/transaction/{transactionId}";
             public const string GetAllByAppId = Base + Controller + "/app/{appId}";
-            public const string UploadImage = Base + Controller + "/upload/image";
         }
 
         public static class Sms
@@ -63,6 +49,13 @@
             public const string WhatsappReceived = Base + Controller + "/received";
             public const string StatusChanged = Base + Controller + "/status";
             public const string NumberNotFound = Base + Controller + "/numbernotfound";
+        }
+
+        public static class Upload
+        {
+            public const string Controller = "/upload";
+
+            public const string Image = Base + Controller + "/image";
         }
     }
 }

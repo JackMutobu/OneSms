@@ -52,14 +52,14 @@ namespace OneSms.Droid.Server.Services
             OnSmsTransaction = new Subject<SmsRequest>();
             OnSmsTransaction.Subscribe(sms =>
             {
-                _httpClientService.PutAsync<string>(sms, "Transaction/StatusChanged");
+                _httpClientService.PutAsync<string>(sms, ApiRoutes.Sms.StatusChanged);
                 if (_pendingSms.Count > 0 && sms.MessageStatus == MessageStatus.Sent)
                     SendSms(_pendingSms.Dequeue());
             },
             ex =>
             {
                 var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsRequest;
-                _httpClientService.PutAsync<string>(transacton, "Transaction/StatusChanged");
+                _httpClientService.PutAsync<string>(transacton, ApiRoutes.Sms.StatusChanged);
                 if (_pendingSms.Count > 0)
                     SendSms(_pendingSms.Dequeue());
             });
@@ -220,7 +220,7 @@ namespace OneSms.Droid.Server.Services
             }
         }
 
-        public Task<Result<string>> SendReceivedSms(SmsReceived smsReceived) => _httpClientService.PutAsync<string>(smsReceived, "Sms/SmsReceived");
+        public Task<Result<string>> SendReceivedSms(SmsReceived smsReceived) => _httpClientService.PutAsync<string>(smsReceived, ApiRoutes.Sms.SmsReceived);
 
         public async Task<PermissionStatus> CheckAndRequestSmsPermission()
         {

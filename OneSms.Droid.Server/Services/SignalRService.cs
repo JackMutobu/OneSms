@@ -23,11 +23,8 @@ namespace OneSms.Droid.Server.Services
         bool IsConnected { get; }
         Subject<bool> OnConnectionChanged { get; }
 
-        Task<bool> ConnectToHub();
+        Task ConnectToHub();
         Task ReconnectToHub();
-        Task SendServerId(string serverId);
-        Task SendSmsStateChanged(MessageTransactionProcessDto smsTransactionDto);
-        Task SendUssdStateChanged(UssdTransactionDto ussdTransactionDto);
         Context Context { get; set; }
 
         void ChangeUrl(string url);
@@ -46,8 +43,9 @@ namespace OneSms.Droid.Server.Services
             Connection.Closed += async (error) =>
             {
                 IsConnected = false;
+                OnConnectionChanged.OnNext(IsConnected);
                 await Task.Delay(new Random().Next(0, 5) * 1000);
-                await ConnectToHub();
+                await ReconnectToHub();
             };
 
             Connection.On<string>("OnConnected", conId =>
@@ -94,12 +92,11 @@ namespace OneSms.Droid.Server.Services
         public void ChangeUrl(string url) => BuildConnection(url);
 
 
-        public async Task<bool> ConnectToHub()
+        public async Task ConnectToHub()
         {
             try
             {
                 await Connection.StartAsync();
-                IsConnected = true;
             }
             catch (Exception ex)
             {
@@ -107,11 +104,7 @@ namespace OneSms.Droid.Server.Services
                 alertDialog.SetTitle("Exception");
                 alertDialog.SetMessage($"Message:{ex.Message}");
                 alertDialog.Show();
-
-                IsConnected = false;
             }
-            OnConnectionChanged.OnNext(IsConnected);
-            return IsConnected;
         }
 
         public async Task ReconnectToHub()
@@ -120,42 +113,14 @@ namespace OneSms.Droid.Server.Services
                 await Connection.StopAsync();
             else
             {
-                var isConnected = await ConnectToHub();
-                if (isConnected)
-                    await SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
-                else
+                await ConnectToHub();
+                IsConnected = Connection.State == HubConnectionState.Connected;
+                if(!IsConnected)
                     MainThread.BeginInvokeOnMainThread(() => Toast.MakeText(Context, "Reconnecting failed", ToastLength.Long).Show());
+
+                OnConnectionChanged.OnNext(IsConnected);
             }
 
         }
-
-
-        public async Task SendServerId(string serverId)
-        {
-            try
-            {
-                if (Connection.State == HubConnectionState.Connected)
-                    await Connection.InvokeAsync("SetServerId", serverId);
-            }
-            catch(Exception ex)
-            {
-                MainThread.BeginInvokeOnMainThread(() => Toast.MakeText(Context, ex.Message, ToastLength.Long).Show());
-            }
-        }
-
-        public async Task SendSmsStateChanged(MessageTransactionProcessDto smsTransactionDto)
-        {
-            if (Connection.State == HubConnectionState.Connected)
-                await Connection.InvokeAsync("SmsStateChanged", smsTransactionDto);
-        }
-
-        public async Task SendUssdStateChanged(UssdTransactionDto ussdTransactionDto)
-        {
-            if (Connection.State == HubConnectionState.Connected)
-                await Connection.InvokeAsync("SmsStateChanged", ussdTransactionDto);
-        }
-
-
-
     }
 }

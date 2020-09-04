@@ -2,7 +2,6 @@
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
-using Android.Net;
 using Android.OS;
 using Android.Provider;
 using Android.Runtime;
@@ -10,7 +9,6 @@ using Android.Views;
 using AndroidX.AppCompat.App;
 using Java.Lang;
 using OneSms.Droid.Server.Constants;
-using OneSms.Droid.Server.Extensions;
 using OneSms.Droid.Server.Receivers;
 using OneSms.Droid.Server.Services;
 using OneSms.Droid.Server.Views;
@@ -67,7 +65,7 @@ namespace OneSms.Droid.Server
             authService = Locator.Current.GetService<IAuthService>();
             await authService.Authenticate();
             InitializeSmsServices();
-            await InitializeSignalR();
+            await signalRService.ReconnectToHub();
         }
 
         private async Task RequestPermissions()
@@ -85,13 +83,6 @@ namespace OneSms.Droid.Server
         {
             smsReceiver = new SmsReceiver();
             CheckForIncommingSMS();
-        }
-
-        private async Task InitializeSignalR()
-        {
-            await signalRService.ConnectToHub();
-            if (Preferences.ContainsKey(OneSmsAction.ServerKey))
-                await signalRService.SendServerId(Preferences.Get(OneSmsAction.ServerKey, string.Empty));
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
