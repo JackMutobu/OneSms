@@ -189,13 +189,20 @@ namespace OneSms.Droid.Server
                     System.Diagnostics.Debug.WriteLine(ex);
                 }
             }
-            homeView.SetImageView(homeView.BitmapImage);
+            try
+            {
+                homeView.SetImageView(homeView.BitmapImage);
+            }
+            catch (IOException ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
         }
 
         protected override void OnResume()
         {
             base.OnResume();
-            whatsappService?.OnMessageSent.OnNext(whatsappService?.CurrentTransaction);
+            whatsappService?.OnMessageSent?.OnNext(whatsappService?.CurrentTransaction);
         }
     }
 }

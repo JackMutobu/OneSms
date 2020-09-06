@@ -34,12 +34,15 @@ namespace OneSms.Droid.Server.Services
     public class SignalRService : ISignalRService
     {
         private readonly string _url;
+        private readonly IAuthService _authService;
 
         public SignalRService(Context context, string url)
         {
             Context = context;
             OnConnectionChanged = new Subject<bool>();
             _url = Preferences.Get(OneSmsAction.ServerUrl, url);
+            _authService = Locator.Current.GetService<IAuthService>();
+
             BuildConnection(_url);
             Connection.Closed += async (error) =>
             {
@@ -101,7 +104,8 @@ namespace OneSms.Droid.Server.Services
             try
             {
                 var current = Connectivity.NetworkAccess;
-                if (current == NetworkAccess.Internet)
+                var isAuthenticated = await _authService.IsAuthenticated();
+                if (current == NetworkAccess.Internet && isAuthenticated)
                     await Connection.StartAsync();
             }
             catch (Exception ex)

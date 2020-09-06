@@ -17,6 +17,8 @@ namespace OneSms.Droid.Server.Services
         Subject<bool> OnAuthStateChanged { get; }
 
         Task<bool> Authenticate();
+
+        Task<bool> IsAuthenticated();
     }
 
     public class AuthService : IAuthService
@@ -37,21 +39,25 @@ namespace OneSms.Droid.Server.Services
         {
             try
             {
-                var authKey = await BlobCache.LocalMachine.GetObject<string>(OneSmsAction.AuthKey).Catch(Observable.Return(string.Empty));
-                if (string.IsNullOrEmpty(authKey))
+                var current = Connectivity.NetworkAccess;
+                if (current == NetworkAccess.Internet)
                 {
-                    var server = new ServerAuthRequest
+                    var authKey = await BlobCache.LocalMachine.GetObject<string>(OneSmsAction.AuthKey).Catch(Observable.Return(string.Empty));
+                    if (string.IsNullOrEmpty(authKey))
                     {
-                        ServerKey = Preferences.Get(OneSmsAction.ServerKey, string.Empty),
-                        Secret = Preferences.Get(OneSmsAction.ServerSecret, string.Empty)
-                    };
-                    var authResponse = await _httpClientService.Authenticate(server);
-                    authKey = authResponse.Token;
-                    await BlobCache.LocalMachine.InsertObject(OneSmsAction.AuthKey, authKey, TimeSpan.FromDays(29));
+                        var server = new ServerAuthRequest
+                        {
+                            ServerKey = Preferences.Get(OneSmsAction.ServerKey, string.Empty),
+                            Secret = Preferences.Get(OneSmsAction.ServerSecret, string.Empty)
+                        };
+                        var authResponse = await _httpClientService.Authenticate(server);
+                        authKey = authResponse.Token;
+                        await BlobCache.LocalMachine.InsertObject(OneSmsAction.AuthKey, authKey, TimeSpan.FromDays(29));
+                    }
+                    _httpClientService.SetAuthorizationHeaderToken(authKey);
+                    OnAuthStateChanged.OnNext(true);
+                    return true;
                 }
-                _httpClientService.SetAuthorizationHeaderToken(authKey);
-                OnAuthStateChanged.OnNext(true);
-                return true;
             }
             catch (Exception ex)
             {
@@ -63,5 +69,7 @@ namespace OneSms.Droid.Server.Services
             OnAuthStateChanged.OnNext(false);
             return false;
         }
+
+        public async Task<bool> IsAuthenticated() => !string.IsNullOrEmpty(await BlobCache.LocalMachine.GetObject<string>(OneSmsAction.AuthKey).Catch(Observable.Return(string.Empty)));
     }
 }

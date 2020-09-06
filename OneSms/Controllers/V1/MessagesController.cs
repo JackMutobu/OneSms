@@ -71,9 +71,12 @@ namespace OneSms.Controllers.V1
         [HttpPost(ApiRoutes.Message.SendPending)]
         public async Task<IActionResult> SendPendingMessage(string serverId)
         {
+            string? serverConnectionId;
+            if(_serverConnectionService.ConnectedServers.TryGetValue(serverId, out serverConnectionId))
+                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.ResetToActive);
+
             var numberOfSentMessages = 0;
             var numberOfPendingMessages = 0;
-
             foreach(var message in await _whatsappService.GetListOfPendingMessages(serverId))
             {
                 var (sentMessages, pendingMessages) = await OnSendWhatsapp(message);

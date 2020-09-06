@@ -10,6 +10,8 @@ namespace OneSms.Droid.Server
         {
             Locator.CurrentMutable.RegisterConstant<IHttpClientService>(new HttpClientService(httpBaseUrl));
 
+            Locator.CurrentMutable.RegisterConstant<IAuthService>(new AuthService(context));
+
             Locator.CurrentMutable.RegisterConstant<ISignalRService>(new SignalRService(context,singalRBaseUrl));
 
             Locator.CurrentMutable.RegisterConstant<ISmsService>(new SmsService(context));
@@ -17,8 +19,6 @@ namespace OneSms.Droid.Server
             Locator.CurrentMutable.RegisterConstant<IUssdService>(new UssdService(context));
 
             Locator.CurrentMutable.RegisterConstant<IWhatsappService>(new WhatsappService(context));
-
-            Locator.CurrentMutable.RegisterConstant<IAuthService>(new AuthService(context));
         }
     }
 }

@@ -50,6 +50,7 @@ namespace OneSms.Droid.Server.Services
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
         private bool _isBusy;
+        private int _privWhatsappId;
         public WhatsappService(Context context)
         {
             Context = context;
@@ -57,6 +58,7 @@ namespace OneSms.Droid.Server.Services
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
             OnMessageSent = new Subject<WhatsappRequest>();
             _transactionQueue = new Queue<WhatsappRequest>();
+            _signalRService.Connection.On(SignalRKeys.ResetToActive, () => _isBusy = false);
             _signalRService.Connection.On<WhatsappRequest>(SignalRKeys.SendWhatsapp, async transaction => await Execute(transaction));
 
             OnMessageSent.Subscribe(async transaction =>
@@ -72,6 +74,21 @@ namespace OneSms.Droid.Server.Services
 
                 await ExecuteNextTransaction();
             });
+
+            Observable.Interval(TimeSpan.FromSeconds(30))
+                .Subscribe(async _ =>
+                {
+                    if(CurrentTransaction != null && _privWhatsappId == CurrentTransaction?.WhatsappId)
+                    {
+                        _privWhatsappId = 0;
+                        _isBusy = false;
+                        await Execute(CurrentTransaction);
+                    }
+                    else
+                    {
+                         _privWhatsappId = CurrentTransaction?.WhatsappId ?? 0;
+                    }
+                });
         }
 
         private async Task ExecuteNextTransaction()
@@ -93,14 +110,22 @@ namespace OneSms.Droid.Server.Services
 
         private async Task Execute(WhatsappRequest transaction)
         {
-            if (_isBusy)
-                _transactionQueue.Enqueue(transaction);
+            var current = Connectivity.NetworkAccess;
+            if (current == NetworkAccess.Internet)
+            {
+                if (_isBusy)
+                    _transactionQueue.Enqueue(transaction);
+                else
+                {
+                    _isBusy = true;
+                    transaction.MessageStatus = MessageStatus.Executing;
+                    _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
+                    await SendAsync(transaction);
+                }
+            }
             else
             {
-                _isBusy = true;
-                transaction.MessageStatus = MessageStatus.Executing;
-                _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
-                await SendAsync(transaction);
+                CurrentTransaction = transaction;
             }
         }
 
