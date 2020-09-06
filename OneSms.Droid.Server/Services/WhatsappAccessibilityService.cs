@@ -8,7 +8,9 @@ using Android.Views.Accessibility;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Droid.Server.Constants;
 using Splat;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -35,12 +37,19 @@ namespace OneSms.Droid.Server.Services
             var buttons = nodes.Where(x => x.ClassName == "android.widget.Button" || x.ClassName == "android.widget.ImageButton");
             var textViews = nodes.Where(x => x.ClassName == "android.widget.TextView");
             
-           
-            await NumberNotFoundOnWhatsapp(textViews, buttons);
+           try
+            {
+                await NumberNotFoundOnWhatsapp(textViews, buttons);
 
-            SendTextMessage(nodes, buttons);
+                SendTextMessage(nodes, buttons);
 
-            SendImage(nodes, buttons);
+                SendImage(nodes, buttons);
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine($"Accessibility crashed: {ex.Message}");
+            }
+
         }
 
         private async Task NumberNotFoundOnWhatsapp(IEnumerable<AccessibilityNodeInfo> textViews, IEnumerable<AccessibilityNodeInfo> buttons)

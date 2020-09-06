@@ -45,27 +45,28 @@ namespace OneSms.Droid.Server
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(OneSmsAction.SyncfusionKey);
             //Register Akavache
             Akavache.Registrations.Start("OneSmsDb");
-            tabView = new SfTabView(this.ApplicationContext);
-            await InitializeServices();
 
+            InitializeServices();
+            await RequestPermissions();
+            await authService.Authenticate();
+            await signalRService.ReconnectToHub();
+
+            tabView = new SfTabView(this.ApplicationContext);
             homeView = new HomeView(this);
             settingsView = new SettingsView(this);
             serverView = new ServerView(this);
-            await RequestPermissions();
             SetContentView(tabView);
             InitializeTab();
         }
 
-        private async Task InitializeServices()
+        private void InitializeServices()
         {
             Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/"), Preferences.Get(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub"));
             signalRService = Locator.Current.GetService<ISignalRService>();
             smsService = Locator.Current.GetService<ISmsService>();
             whatsappService = Locator.Current.GetService<IWhatsappService>();
             authService = Locator.Current.GetService<IAuthService>();
-            await authService.Authenticate();
             InitializeSmsServices();
-            await signalRService.ReconnectToHub();
         }
 
         private async Task RequestPermissions()
@@ -194,7 +195,7 @@ namespace OneSms.Droid.Server
         protected override void OnResume()
         {
             base.OnResume();
-            whatsappService.OnMessageSent.OnNext(whatsappService.CurrentTransaction);
+            whatsappService?.OnMessageSent.OnNext(whatsappService?.CurrentTransaction);
         }
     }
 }

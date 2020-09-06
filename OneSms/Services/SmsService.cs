@@ -20,7 +20,8 @@ namespace OneSms.Services
         Task<SmsRequest> OnSendingMessage(SmsMessage sms);
         Task<SmsMessage> OnStatusChanged(SmsRequest smsRequest, DateTime completedTime);
         IAsyncEnumerable<SmsMessage> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transId = "");
-        IAsyncEnumerable<SmsMessage> SendPending(string serverKey);
+        IAsyncEnumerable<SmsMessage> GetPendingMessages(string serverKey);
+        Task<List<SmsMessage>> GetListOfPendingMessages(string serverKey);
         Task<bool> CheckSenderNumber(string number);
     }
 
@@ -50,7 +51,7 @@ namespace OneSms.Services
                         StartTime = DateTime.UtcNow,
                         CompletedTime = DateTime.UtcNow,
                         Label = sendMessageRequest.Label,
-                        MessageStatus = Contracts.V1.Enumerations.MessageStatus.Pending,
+                        MessageStatus = MessageStatus.Pending,
                         MobileServerId = (Guid)mobileServerId,
                         RecieverNumber = recipient,
                         SenderNumber = sendMessageRequest.SenderNumber,
@@ -67,9 +68,14 @@ namespace OneSms.Services
 
         public Task<bool> CheckSenderNumber(string number) => _dbContext.Sims.AnyAsync(x => x.Number == number);
 
-        public IAsyncEnumerable<SmsMessage> SendPending(string serverKey)
+        public IAsyncEnumerable<SmsMessage> GetPendingMessages(string serverKey)
         {
             return _dbContext.SmsMessages.Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending).AsAsyncEnumerable();
+        }
+
+        public Task<List<SmsMessage>> GetListOfPendingMessages(string serverKey)
+        {
+            return _dbContext.SmsMessages.Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending).ToListAsync();
         }
 
         public IAsyncEnumerable<SmsMessage> GetMessagesByTransactionId(Guid transactionId)

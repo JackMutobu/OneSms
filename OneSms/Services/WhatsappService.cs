@@ -9,7 +9,6 @@ using OneSms.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace OneSms.Services
@@ -21,7 +20,8 @@ namespace OneSms.Services
         Task<WhatsappRequest> OnSendingMessage(WhatsappMessage message);
         Task<WhatsappMessage> OnStatusChanged(WhatsappRequest whatsappRequest, DateTime completedTime);
         IAsyncEnumerable<WhatsappMessage> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transactionId = "");
-        IAsyncEnumerable<WhatsappMessage> SendPending(string serverKey);
+        IAsyncEnumerable<WhatsappMessage> GetPendingMessages(string serverKey);
+        Task<List<WhatsappMessage>> GetListOfPendingMessages(string serverKey);
         Task<bool> CheckSenderNumber(string number);
     }
 
@@ -71,9 +71,14 @@ namespace OneSms.Services
 
         public Task<bool> CheckSenderNumber(string number) => _dbContext.Sims.AnyAsync(x => x.Number == number);
 
-        public IAsyncEnumerable<WhatsappMessage> SendPending(string serverKey)
+        public IAsyncEnumerable<WhatsappMessage> GetPendingMessages(string serverKey)
         {
             return _dbContext.WhatsappMessages.Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending).AsAsyncEnumerable();
+        }
+
+        public  Task<List<WhatsappMessage>> GetListOfPendingMessages(string serverKey)
+        {
+            return _dbContext.WhatsappMessages.Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending).ToListAsync();
         }
 
         public IAsyncEnumerable<WhatsappMessage> GetMessagesByTransactionId(Guid transactionId)

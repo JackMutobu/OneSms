@@ -23,6 +23,7 @@
         {
             public const string Controller = "/messages";
             public const string Send = Base + Controller + "/send";
+            public const string SendPending = Base + Controller + "/send/pending/{serverId}";
             public const string GetAll = Base + Controller;
             public const string GetAllByTransactionId = Base + Controller + "/transaction/{transactionId}";
             public const string GetAllByAppId = Base + Controller + "/app/{appId}";

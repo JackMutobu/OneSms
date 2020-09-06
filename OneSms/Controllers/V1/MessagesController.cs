@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
+using OneSms.Domain;
 using OneSms.Hubs;
 using OneSms.Services;
 using System;
@@ -44,47 +44,53 @@ namespace OneSms.Controllers.V1
             var numberOfSentMessages = 0;
             var numberOfPendingMessages = 0;
             var transactionId = Guid.NewGuid().ToString();
-            string? serverConnectionId;
-           foreach (var processor in messageRequest.Processors)
+            foreach (var processor in messageRequest.Processors)
             {
-                switch(processor)
+                switch (processor)
                 {
                     case MessageProcessor.SMS:
-                        await foreach(var sms in _smsService.RegisterSendMessageRequest(messageRequest, transactionId))
-                        {
-                            ++numberOfPendingMessages;
-                            if (_serverConnectionService.ConnectedServers.TryGetValue(sms.MobileServerId.ToString(), out serverConnectionId))
-                            {
-                                var smsRequest = await _smsService.OnSendingMessage(sms);
-                                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendSms, smsRequest);
-                                ++numberOfSentMessages;
-                                --numberOfPendingMessages;
-                            }
-                        }
+                        var (sentMessages, pendingMessages) = await SendSms(_smsService.RegisterSendMessageRequest(messageRequest, transactionId));
+                        numberOfPendingMessages += pendingMessages;
+                        numberOfSentMessages += sentMessages;
                         break;
                     case MessageProcessor.Whatsapp:
-                        await foreach (var whatsapp in _whatsappService.RegisterSendMessageRequest(messageRequest, transactionId))
-                        {
-                            ++numberOfPendingMessages;
-                            if (_serverConnectionService.ConnectedServers.TryGetValue(whatsapp.MobileServerId.ToString(), out serverConnectionId))
-                            {
-                                var whatsappRequest = await _whatsappService.OnSendingMessage(whatsapp);
-                                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, whatsappRequest);
-                                ++numberOfSentMessages;
-                                --numberOfPendingMessages;
-                            }
-                        }
+                        var whatsappResult = await SendWhatsapp(_whatsappService.RegisterSendMessageRequest(messageRequest, transactionId));
+                        numberOfPendingMessages += whatsappResult.pendingMessages;
+                        numberOfSentMessages += whatsappResult.sentMessages;
                         break;
                 }
             }
-
-           
-
-           return Created(_uriService.GetMessageByTransactionId(ApiRoutes.Message.Controller,transactionId), new SendMessageResponse
+            return Created(_uriService.GetMessageByTransactionId(ApiRoutes.Message.Controller, transactionId), new SendMessageResponse
             {
                 SentMessages = numberOfSentMessages,
                 PendingMessages = numberOfPendingMessages,
                 TransactionId = transactionId.ToString()
+            });
+        }
+
+        [HttpPost(ApiRoutes.Message.SendPending)]
+        public async Task<IActionResult> SendPendingMessage(string serverId)
+        {
+            var numberOfSentMessages = 0;
+            var numberOfPendingMessages = 0;
+
+            foreach(var message in await _whatsappService.GetListOfPendingMessages(serverId))
+            {
+                var (sentMessages, pendingMessages) = await OnSendWhatsapp(message);
+                numberOfPendingMessages += pendingMessages;
+                numberOfSentMessages += sentMessages;
+            }
+
+            foreach (var message in await _smsService.GetListOfPendingMessages(serverId))
+            {
+                var (sentMessages, pendingMessages) = await OnSendSms(message);
+                numberOfPendingMessages += pendingMessages;
+                numberOfSentMessages += sentMessages;
+            }
+            return Ok(new SendMessageResponse
+            {
+                PendingMessages = numberOfPendingMessages,
+                SentMessages = numberOfSentMessages
             });
         }
 
@@ -128,6 +134,64 @@ namespace OneSms.Controllers.V1
             return Ok(messages);
         }
 
+        private async Task<(int sentMessages, int pendingMessages)> SendSms(IAsyncEnumerable<SmsMessage> messages)
+        {
+            int sentMessages = 0;
+            int pendingMessages = 0;
+            await foreach (var sms in messages)
+            {
+                var result = await OnSendSms(sms);
+                sentMessages += result.sentMessages;
+                pendingMessages += result.pendingMessages;
+            }
 
+            return (sentMessages, pendingMessages);
+        }
+
+        private async Task<(int sentMessages, int pendingMessages)> SendWhatsapp(IAsyncEnumerable<WhatsappMessage> messages)
+        {
+            int sentMessages = 0;
+            int pendingMessages = 0;
+            await foreach (var message in messages)
+            {
+                var result = await OnSendWhatsapp(message);
+                sentMessages += result.sentMessages;
+                pendingMessages += result.pendingMessages;
+            }
+
+            return (sentMessages, pendingMessages);
+        }
+
+        private async Task<(int sentMessages, int pendingMessages)> OnSendWhatsapp(WhatsappMessage message)
+        {
+            string? serverConnectionId;
+            int sentMessages = 0;
+            int pendingMessages = 0;
+            ++pendingMessages;
+            if (_serverConnectionService.ConnectedServers.TryGetValue(message.MobileServerId.ToString(), out serverConnectionId))
+            {
+                var request = await _whatsappService.OnSendingMessage(message);
+                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, request);
+                ++sentMessages;
+                --pendingMessages;
+            }
+            return (sentMessages, pendingMessages);
+        }
+
+        private async Task<(int sentMessages, int pendingMessages)> OnSendSms(SmsMessage message)
+        {
+            string? serverConnectionId;
+            int sentMessages = 0;
+            int pendingMessages = 0;
+            ++pendingMessages;
+            if (_serverConnectionService.ConnectedServers.TryGetValue(message.MobileServerId.ToString(), out serverConnectionId))
+            {
+                var request = await _smsService.OnSendingMessage(message);
+                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendSms, request);
+                ++sentMessages;
+                --pendingMessages;
+            }
+            return (sentMessages, pendingMessages);
+        }
     }
 }

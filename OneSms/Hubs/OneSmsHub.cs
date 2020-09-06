@@ -1,10 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Net.Http.Headers;
 using OneSms.Services;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -14,10 +18,15 @@ namespace OneSms.Hubs
     public class OneSmsHub:Hub
     {
         private readonly IServerConnectionService _serverConnectionService;
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly IUriService _uriService;
 
-        public OneSmsHub(IServerConnectionService serverConnectionService)
+        public OneSmsHub(IServerConnectionService serverConnectionService,IHttpClientFactory clientFactory, IUriService uriService)
         {
             _serverConnectionService = serverConnectionService;
+            _clientFactory = clientFactory;
+            _uriService = uriService;
+
         }
 
         public async override Task OnConnectedAsync()
@@ -25,8 +34,12 @@ namespace OneSms.Hubs
             try
             {
                 var serverId = Context.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+
                 if (!string.IsNullOrEmpty(serverId))
-                    AddServerId(serverId);
+                {
+                    _serverConnectionService.AddServer(serverId,Context.ConnectionId);
+                    await SendPendingMessage(serverId, Context.GetHttpContext());
+                }
             }
             catch(Exception ex)
             {
@@ -38,31 +51,33 @@ namespace OneSms.Hubs
         {
             try
             {
-                var connectionId = Context.ConnectionId;
-                var serverId = _serverConnectionService.ConnectedServersReverse[connectionId];
-                _serverConnectionService.ConnectedServers.Remove(serverId);
-                _serverConnectionService.ConnectedServersReverse.Remove(connectionId);
+               _serverConnectionService.RemoveServer(Context.ConnectionId);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
             }
             return base.OnDisconnectedAsync(exception);
         }
 
-        private void AddServerId(string serverId)
+        public Task CheckClientAvailabilityCallback(Guid requestId,bool response)
         {
-            if (_serverConnectionService.ConnectedServers.ContainsKey(serverId))
-                _serverConnectionService.ConnectedServers[serverId] = Context.ConnectionId;
-            else
-                _serverConnectionService.ConnectedServers.Add(serverId, Context.ConnectionId);
-
-            if (_serverConnectionService.ConnectedServersReverse.ContainsKey(Context.ConnectionId))
-                _serverConnectionService.ConnectedServersReverse[Context.ConnectionId] = serverId;
-            else
-                _serverConnectionService.ConnectedServersReverse.Add(Context.ConnectionId, serverId);
+            _serverConnectionService.CheckClientAvailabilityCallback(requestId,response);
+            return Task.CompletedTask;
         }
 
+        private Task SendPendingMessage(string serverId,HttpContext context)
+        {
+            var bearerToken = context.Request.Headers[HeaderNames.Authorization].FirstOrDefault(x=> x.Contains("Bearer"))?.Replace("Bearer ","");
+            if(!string.IsNullOrEmpty(bearerToken))
+            {
+                var client = _clientFactory.CreateClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{_uriService.InternetUrl}/api/v1/messages/send/pending/{serverId}");
+                client.SendAsync(request);
+            }
+            return Task.CompletedTask;
+        }
 
     }
 }

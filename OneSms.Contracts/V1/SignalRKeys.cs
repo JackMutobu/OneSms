@@ -10,5 +10,6 @@
         public const string CancelUssdSession = nameof(CancelUssdSession);
 
         public const string SendWhatsapp = nameof(SendWhatsapp);
+        public const string CheckClientAlive = nameof(CheckClientAlive);
     }
 }

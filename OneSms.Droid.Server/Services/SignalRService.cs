@@ -3,6 +3,7 @@ using Android.App;
 using Android.Content;
 using Android.Widget;
 using Microsoft.AspNetCore.SignalR.Client;
+using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Droid.Server.Constants;
 using OneSms.Web.Shared.Dtos;
@@ -23,7 +24,7 @@ namespace OneSms.Droid.Server.Services
         bool IsConnected { get; }
         Subject<bool> OnConnectionChanged { get; }
 
-        Task ConnectToHub();
+        Task<bool> ConnectToHub();
         Task ReconnectToHub();
         Context Context { get; set; }
 
@@ -54,7 +55,10 @@ namespace OneSms.Droid.Server.Services
             });
             Connection.On<Exception>("OnException", ex => Toast.MakeText(Context, ex.Message, ToastLength.Long).Show());
 
-            Observable.Interval(TimeSpan.FromMinutes(3)).Subscribe(async number =>
+            Connection.On<string, Guid>(SignalRKeys.CheckClientAlive, (hubMethodCallback, requestId) 
+                => Connection.InvokeAsync(hubMethodCallback, requestId, true));
+
+            Observable.Interval(TimeSpan.FromSeconds(30)).Subscribe(async number =>
             {
                 if (Connection.State == HubConnectionState.Disconnected)
                     await ReconnectToHub();
@@ -92,11 +96,13 @@ namespace OneSms.Droid.Server.Services
         public void ChangeUrl(string url) => BuildConnection(url);
 
 
-        public async Task ConnectToHub()
+        public async Task<bool> ConnectToHub()
         {
             try
             {
-                await Connection.StartAsync();
+                var current = Connectivity.NetworkAccess;
+                if (current == NetworkAccess.Internet)
+                    await Connection.StartAsync();
             }
             catch (Exception ex)
             {
@@ -105,22 +111,32 @@ namespace OneSms.Droid.Server.Services
                 alertDialog.SetMessage($"Message:{ex.Message}");
                 alertDialog.Show();
             }
+
+            return Connection.State == HubConnectionState.Connected;
         }
 
         public async Task ReconnectToHub()
         {
-            if (Connection.State == HubConnectionState.Connected)
-                await Connection.StopAsync();
-            else
+            try
             {
-                await ConnectToHub();
-                IsConnected = Connection.State == HubConnectionState.Connected;
-                if(!IsConnected)
-                    MainThread.BeginInvokeOnMainThread(() => Toast.MakeText(Context, "Reconnecting failed", ToastLength.Long).Show());
+                if (Connection.State == HubConnectionState.Connected)
+                    await Connection.StopAsync();
+                else
+                {
+                    IsConnected = await ConnectToHub();
+                    if (!IsConnected)
+                        MainThread.BeginInvokeOnMainThread(() => Toast.MakeText(Context, "Reconnecting failed", ToastLength.Long).Show());
 
-                OnConnectionChanged.OnNext(IsConnected);
+                    OnConnectionChanged.OnNext(IsConnected);
+                }
             }
-
+            catch(Exception ex)
+            {
+                AlertDialog alertDialog = new AlertDialog.Builder(Context).Create();
+                alertDialog.SetTitle("Exception");
+                alertDialog.SetMessage($"Message:{ex.Message}");
+                alertDialog.Show();
+            }
         }
     }
 }
