@@ -110,23 +110,24 @@ namespace OneSms.Droid.Server.Services
 
         private async Task Execute(WhatsappRequest transaction)
         {
-            var current = Connectivity.NetworkAccess;
-            if (current == NetworkAccess.Internet)
-            {
-                if (_isBusy)
-                    _transactionQueue.Enqueue(transaction);
-                else
-                {
-                    _isBusy = true;
-                    transaction.MessageStatus = MessageStatus.Executing;
-                    _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
-                    await SendAsync(transaction);
-                }
-            }
+
+            if (_isBusy)
+                _transactionQueue.Enqueue(transaction);
             else
             {
-                CurrentTransaction = transaction;
+                _isBusy = true;
+                transaction.MessageStatus = MessageStatus.Executing;
+                _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
+                await SendAsync(transaction);
             }
+            //var current = Connectivity.NetworkAccess;
+            //if (current == NetworkAccess.Internet)
+            //{
+            //}
+            //else
+            //{
+            //    CurrentTransaction = transaction;
+            //}
         }
 
         public async Task SendAsync(WhatsappRequest transaction)

@@ -39,6 +39,8 @@ namespace OneSms.Droid.Server.Services
             
            try
             {
+                CanNotLookupNumber(textViews, buttons);
+
                 await NumberNotFoundOnWhatsapp(textViews, buttons);
 
                 SendTextMessage(nodes, buttons);
@@ -58,6 +60,14 @@ namespace OneSms.Droid.Server.Services
               (textViews.Any(x => x.Text?.Contains("Send to") ?? false) && textViews.Any(x => x.ContentDescription?.Contains("Search") ?? false)))
             {
                 await BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Failed);
+                PerformGlobalAction(GlobalAction.Home);
+            }
+        }
+
+        private void CanNotLookupNumber(IEnumerable<AccessibilityNodeInfo> textViews, IEnumerable<AccessibilityNodeInfo> buttons)
+        {
+            if ((textViews.Any(x => x.Text?.Contains("look up phone number") ?? false) && buttons.Any(x => x.Text?.Contains("OK") ?? false)))
+            {
                 PerformGlobalAction(GlobalAction.Home);
             }
         }
