@@ -10,6 +10,7 @@ namespace OneSms.Domain
         public Application()
         {
             Sims = new Collection<ApplicationSim>();
+            Contacts = new Collection<AppContact>();
         }
         public Guid Id { get; set; }
 
@@ -17,6 +18,8 @@ namespace OneSms.Domain
 
         [Required]
         public string Name { get; set; } = null!;
+
+        public string? Organization { get; set; }
 
         public decimal Credit { get; set; }
 
@@ -27,5 +30,7 @@ namespace OneSms.Domain
         public AppUser? User { get; set; }
 
         public virtual ICollection<ApplicationSim> Sims { get; set; }
+
+        public virtual ICollection<AppContact> Contacts { get; set; }
     }
 }

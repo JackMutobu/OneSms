@@ -12,5 +12,7 @@
         public const string SendWhatsapp = nameof(SendWhatsapp);
         public const string ResetToActive = nameof(ResetToActive);
         public const string CheckClientAlive = nameof(CheckClientAlive);
+
+        public const string ShareContact = nameof(ShareContact);
     }
 }

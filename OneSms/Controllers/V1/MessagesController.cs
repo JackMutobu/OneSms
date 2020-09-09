@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Net.Http.Headers;
 using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.Requests;
@@ -12,6 +13,11 @@ using OneSms.Hubs;
 using OneSms.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace OneSms.Controllers.V1
@@ -26,9 +32,10 @@ namespace OneSms.Controllers.V1
         private readonly IUriService _uriService;
         private readonly IHubContext<OneSmsHub> _hubContext;
         private readonly IServerConnectionService _serverConnectionService;
+        private readonly IHttpClientFactory _clientFactory;
 
-        public MessagesController(ISmsService smsService, IWhatsappService whatsappService, 
-            IMapper mapper,IUriService uriService,IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService)
+        public MessagesController(ISmsService smsService, IWhatsappService whatsappService, IMapper mapper,IUriService uriService,
+            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService, IHttpClientFactory clientFactory)
         {
             _smsService = smsService;
             _whatsappService = whatsappService;
@@ -36,6 +43,7 @@ namespace OneSms.Controllers.V1
             _uriService = uriService;
             _hubContext = hubContext;
             _serverConnectionService = serverConnectionService;
+            _clientFactory = clientFactory;
         }
 
         [HttpPost(ApiRoutes.Message.Send)]
@@ -177,6 +185,7 @@ namespace OneSms.Controllers.V1
                 await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, request);
                 ++sentMessages;
                 --pendingMessages;
+                ShareContact(message.AppId.ToString(), message.RecieverNumber, serverConnectionId);
             }
             return (sentMessages, pendingMessages);
         }
@@ -195,6 +204,27 @@ namespace OneSms.Controllers.V1
                 --pendingMessages;
             }
             return (sentMessages, pendingMessages);
+        }
+
+        private Task ShareContact(string appId, string number, string serverConnectionId)
+        {
+            var bearerToken = HttpContext.Request.Headers[HeaderNames.Authorization].FirstOrDefault(x => x.Contains("Bearer"))?.Replace("Bearer ", "");
+            if (!string.IsNullOrEmpty(bearerToken))
+            {
+                var client = _clientFactory.CreateClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{_uriService.InternetUrl}/{ApiRoutes.Contact.Share}");
+                var shareContactRequest = new SharingContactRequest
+                {
+                    AppId = new Guid(appId),
+                    Number = number,
+                    ServerConnectionId = serverConnectionId
+                };
+                HttpContent httpContent = new StringContent(JsonSerializer.Serialize(shareContactRequest),Encoding.UTF8, "application/json");
+                request.Content = httpContent;
+                client.SendAsync(request);
+            }
+            return Task.CompletedTask;
         }
     }
 }

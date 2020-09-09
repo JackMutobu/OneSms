@@ -36,6 +36,7 @@ namespace OneSms.Installers
             services.AddSingleton<IServerConnectionService, ServerConnectionService>();
             services.AddScoped<ISmsService, SmsService>();
             services.AddScoped<IWhatsappService, WhatsappService>();
+            services.AddScoped<IContactService, ContactService>();
             services.AddSingleton<HubEventService>();
             services.AddScoped<TimService>();
             services.AddScoped<SmsDataExtractorService>();

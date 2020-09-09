@@ -6,6 +6,7 @@ using Android.Content;
 using Android.Util;
 using Android.Views.Accessibility;
 using OneSms.Contracts.V1.Enumerations;
+using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Droid.Server.Constants;
 using Splat;
 using System;
@@ -29,6 +30,7 @@ namespace OneSms.Droid.Server.Services
         {
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
         }
+
         public async override void OnAccessibilityEvent(AccessibilityEvent e)
         {
             var eventTye = e.EventType;
@@ -39,6 +41,10 @@ namespace OneSms.Droid.Server.Services
             
            try
             {
+                ReturnToHomeFromInbox(nodes, buttons);
+
+                await ShareContact(buttons, textViews);
+
                 CanNotLookupNumber(textViews, buttons);
 
                 await NumberNotFoundOnWhatsapp(textViews, buttons);
@@ -47,11 +53,36 @@ namespace OneSms.Droid.Server.Services
 
                 SendImage(nodes, buttons);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine($"Accessibility crashed: {ex.Message}");
             }
 
+        }
+
+        private void ReturnToHomeFromInbox(List<AccessibilityNodeInfo> nodes, IEnumerable<AccessibilityNodeInfo> buttons)
+        {
+            if (buttons.Any(x => x.ContentDescription?.Contains("Voice message, Button") ?? false) &&
+                                buttons.Any(x => x.ContentDescription?.Contains("Camera") ?? false) && buttons.Any(x => x.ContentDescription?.Contains("Attach") ?? false))
+            {
+                var editText = nodes.FirstOrDefault(x => x.ClassName == "android.widget.EditText");
+                if (editText != null && editText.Text == "Type a message")
+                {
+                    this.PerformGlobalAction(GlobalAction.Home);
+                }
+            }
+        }
+
+        private async Task ShareContact(IEnumerable<AccessibilityNodeInfo> buttons, IEnumerable<AccessibilityNodeInfo> textViews)
+        {
+            if (buttons.Count() == 2 && textViews.Count() == 1 && buttons.Any(x => x.Text.Contains("OK")) && buttons.Any(x => x.Text.Contains("CANCEL")))
+            {
+                var okButton = buttons.Single(x => x.Text.Contains("OK"));
+                okButton.PerformAction(Action.Click);
+                System.Diagnostics.Debug.WriteLine("Contact sent");
+                await Task.Delay(TimeSpan.FromSeconds(1));//Wait for the contact to be sent
+                this.PerformGlobalAction(GlobalAction.Home);
+            }
         }
 
         private async Task NumberNotFoundOnWhatsapp(IEnumerable<AccessibilityNodeInfo> textViews, IEnumerable<AccessibilityNodeInfo> buttons)
@@ -85,7 +116,7 @@ namespace OneSms.Droid.Server.Services
                 BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Sent);
                 //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
                 var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
-                if (_whatsappService.CurrentTransaction?.WhatsappId == transactionId)
+                if (_whatsappService.CurrentTransaction is WhatsappRequest whatsappRequest && whatsappRequest.WhatsappId  == transactionId)
                     Preferences.Set(OneSmsAction.ImageTransaction, 0);
                 else
                     PerformGlobalAction(GlobalAction.Home);
@@ -148,6 +179,7 @@ namespace OneSms.Droid.Server.Services
                 GetLeaves(leaves, node?.GetChild(i));
             }
         }
+
         public void OpenMainActivity(Context context)
         {
             var intent = new Intent(context, typeof(MainActivity));

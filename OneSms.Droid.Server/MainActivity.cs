@@ -8,6 +8,7 @@ using Android.Runtime;
 using Android.Views;
 using AndroidX.AppCompat.App;
 using Java.Lang;
+using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Receivers;
 using OneSms.Droid.Server.Services;
@@ -191,9 +192,9 @@ namespace OneSms.Droid.Server
             }
             try
             {
-                homeView.SetImageView(homeView.BitmapImage);
+                homeView?.SetImageView(homeView?.BitmapImage);
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex);
             }
@@ -202,7 +203,16 @@ namespace OneSms.Droid.Server
         protected override void OnResume()
         {
             base.OnResume();
-            whatsappService?.OnMessageSent?.OnNext(whatsappService?.CurrentTransaction);
+            if(whatsappService?.CurrentTransaction is WhatsappRequest whatsappRequest)
+            {
+                whatsappService?.OnMessageSent?.OnNext(whatsappRequest);
+            }
+
+            if (whatsappService?.CurrentTransaction is ShareContactRequest shareContactRequest)
+            {
+                whatsappService?.OnContactShared?.OnNext(shareContactRequest);
+            }
+
         }
     }
 }

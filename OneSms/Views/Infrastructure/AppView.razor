@@ -11,6 +11,7 @@
 <Table DataSource="@ViewModel.Apps" Class="table-responsive">
     <Column @bind-Field="@context.Id"></Column>
     <Column @bind-Field="@context.Name"></Column>
+    <Column @bind-Field="@context.Organization"></Column>
     <Column @bind-Field="@context.Credit"></Column>
     <Column @bind-Field="@context.Secret"></Column>
     <ActionColumn Title="Owner">@($"{context?.User?.Fristname} {context?.User?.Lastname}")</ActionColumn>
@@ -33,6 +34,9 @@
     <Form Model="app" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
         <FormItem Label="Name">
             <Input @bind-Value="@context.Name" />
+        </FormItem>
+        <FormItem Label="Organization">
+            <Input @bind-Value="@context.Organization" />
         </FormItem>
         <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
             <Space>

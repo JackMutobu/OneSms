@@ -58,5 +58,12 @@
 
             public const string Image = Base + Controller + "/image";
         }
+
+        public static class Contact
+        {
+            public const string Controller = "/contacts";
+
+            public const string Share = Base + Controller + "/share";
+        }
     }
 }

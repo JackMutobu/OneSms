@@ -1,5 +1,4 @@
-﻿using DynamicData.Annotations;
-using OneSms.Domain;
+﻿using OneSms.Domain;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

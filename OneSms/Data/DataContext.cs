@@ -7,7 +7,7 @@ namespace OneSms.Data
     public class DataContext: IdentityDbContext<AppUser>
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
-             
+
         public DbSet<Application> Apps { get; set; }
 
         public DbSet<SimCard> Sims { get; set; }
@@ -21,6 +21,10 @@ namespace OneSms.Data
         public DbSet<SmsMessage> SmsMessages { get; set; }
 
         public DbSet<WhatsappMessage> WhatsappMessages { get; set; }
+
+        public DbSet<Contact> Contacts { get; set; }
+
+        public DbSet<AppContact> AppContacts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -36,6 +40,18 @@ namespace OneSms.Data
                 .HasOne(bc => bc.Sim)
                 .WithMany(c => c.Apps)
                 .HasForeignKey(bc => bc.SimId);
+
+            builder.Entity<AppContact>()
+        .HasKey(aps => new { aps.AppId, aps.ContactId });
+            builder.Entity<AppContact>()
+                .HasOne(bc => bc.App)
+                .WithMany(b => b.Contacts)
+                .HasForeignKey(bc => bc.AppId);
+
+            builder.Entity<AppContact>()
+                .HasOne(bc => bc.Contact)
+                .WithMany(c => c.Apps)
+                .HasForeignKey(bc => bc.ContactId);
         }
     }
 }

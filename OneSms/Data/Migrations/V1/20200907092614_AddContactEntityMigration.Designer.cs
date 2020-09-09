@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OneSms.Data;
 
 namespace OneSms.Data.Migrations.V1
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20200907092614_AddContactEntityMigration")]
+    partial class AddContactEntityMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -162,7 +164,7 @@ namespace OneSms.Data.Migrations.V1
 
                     b.HasIndex("ContactId");
 
-                    b.ToTable("AppContacts");
+                    b.ToTable("AppContact");
                 });
 
             modelBuilder.Entity("OneSms.Domain.AppUser", b =>

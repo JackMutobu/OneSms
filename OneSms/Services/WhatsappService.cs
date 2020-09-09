@@ -91,8 +91,27 @@ namespace OneSms.Services
         public async Task<WhatsappMessage> OnStatusChanged(WhatsappRequest whatsappRequest, DateTime completedTime)
         {
             var message = _dbContext.WhatsappMessages.FirstOrDefault(x => x.Id == whatsappRequest.WhatsappId);
-            message.CompletedTime = completedTime;
-            message.MessageStatus = whatsappRequest.MessageStatus;
+            if(message != null)
+            {
+                message.CompletedTime = completedTime;
+                message.MessageStatus = whatsappRequest.MessageStatus;
+            }
+            else
+            {
+                message = new WhatsappMessage
+                {
+                    SenderNumber = whatsappRequest.SenderNumber,
+                    AppId = whatsappRequest.AppId,
+                    Body = whatsappRequest.Body,
+                    CompletedTime = completedTime,
+                    Label = "Contact Sent",
+                    MessageStatus = whatsappRequest.MessageStatus,
+                    MobileServerId = whatsappRequest.MobileServerId,
+                    RecieverNumber = whatsappRequest.ReceiverNumber,
+                    TransactionId = whatsappRequest.TransactionId,
+                    Tags = "contact,send"
+                };
+            }
             _dbContext.Update(message);
             await _dbContext.SaveChangesAsync();
             return message;

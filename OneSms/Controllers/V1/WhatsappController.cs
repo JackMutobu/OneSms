@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Net.Http.Headers;
 using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
@@ -11,6 +12,11 @@ using OneSms.Hubs;
 using OneSms.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace OneSms.Controllers.V1
@@ -25,9 +31,10 @@ namespace OneSms.Controllers.V1
         private readonly HubEventService _hubEventService;
         private readonly IHubContext<OneSmsHub> _hubContext;
         private readonly IServerConnectionService _serverConnectionService;
+        private readonly IHttpClientFactory _clientFactory;
 
         public WhatsappController(IWhatsappService whatsappService, IMapper mapper,IUriService uriService, HubEventService hubEventService,
-            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService)
+            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService, IHttpClientFactory clientFactory)
         {
             _whatsappService = whatsappService;
             _mapper = mapper;
@@ -35,6 +42,7 @@ namespace OneSms.Controllers.V1
             _hubEventService = hubEventService;
             _hubContext = hubContext;
             _serverConnectionService = serverConnectionService;
+            _clientFactory = clientFactory;
         }
 
         [HttpPost(ApiRoutes.Whatsapp.Send)]
@@ -67,6 +75,7 @@ namespace OneSms.Controllers.V1
                     await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendWhatsapp, whatsappRequest);
                     ++numberOfSentMessages;
                     --numberOfPendingMessages;
+                    ShareContact(whatsappRequest.AppId.ToString(), whatsappRequest.ReceiverNumber, serverConnectionId,transactionId, whatsappRequest.MobileServerId.ToString());
                 }
             }
 
@@ -110,9 +119,10 @@ namespace OneSms.Controllers.V1
         public async Task<IActionResult> OnStatusChanged([FromBody]WhatsappRequest whatsappRequest)
         {
             var message = await _whatsappService.OnStatusChanged(whatsappRequest, DateTime.UtcNow);
-            _hubEventService.OnWhatsappMessageStatusChanged.OnNext(message);
+            if(message != null)
+                _hubEventService.OnWhatsappMessageStatusChanged.OnNext(message);
 
-            return Ok($"Message status changed:{message.MessageStatus}");
+            return Ok($"Message status changed:{message?.MessageStatus}");
         }
 
         [HttpPost(ApiRoutes.Whatsapp.NumberNotFound)]
@@ -120,6 +130,29 @@ namespace OneSms.Controllers.V1
         {
            
             return Ok($"NumberNotFound");
+        }
+
+        private Task ShareContact(string appId, string number, string serverConnectionId,string transactionId,string mobileServerId)
+        {
+            var bearerToken = HttpContext.Request.Headers[HeaderNames.Authorization].FirstOrDefault(x => x.Contains("Bearer"))?.Replace("Bearer ", "");
+            if (!string.IsNullOrEmpty(bearerToken))
+            {
+                var client = _clientFactory.CreateClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{_uriService.InternetUrl}/{ApiRoutes.Contact.Share}");
+                var shareContactRequest = new SharingContactRequest
+                {
+                    AppId = new Guid(appId),
+                    Number = number,
+                    ServerConnectionId = serverConnectionId,
+                    TransactionId = new Guid(transactionId),
+                    MobileServerId = new Guid(mobileServerId)
+                };
+                HttpContent httpContent = new StringContent(JsonSerializer.Serialize(shareContactRequest), Encoding.UTF8, "application/json");
+                request.Content = httpContent;
+                client.SendAsync(request);
+            }
+            return Task.CompletedTask;
         }
     }
 }

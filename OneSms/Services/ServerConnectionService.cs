@@ -74,13 +74,14 @@ namespace OneSms.Services
         public async Task<bool> CheckClientAvailability(string connectionId)
         {
             var requestId = Guid.NewGuid();
-            var source = new TaskCompletionSource<bool>();
-            var cancelTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            cancelTokenSource.Token.Register(() => source.TrySetCanceled(), useSynchronizationContext: false);
-            _pendingTasks[requestId] = source;
-            await _hubContext.Clients.Client(connectionId).SendAsync(SignalRKeys.CheckClientAlive, nameof(CheckClientAvailabilityCallback), requestId);
             try
             {
+                var source = new TaskCompletionSource<bool>();
+                var cancelTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cancelTokenSource.Token.Register(() => source.TrySetCanceled(), useSynchronizationContext: false);
+                _pendingTasks[requestId] = source;
+            await _hubContext.Clients.Client(connectionId).SendAsync(SignalRKeys.CheckClientAlive, nameof(CheckClientAvailabilityCallback), requestId);
+
                 return await source.Task;
             }
             catch(TaskCanceledException ex)

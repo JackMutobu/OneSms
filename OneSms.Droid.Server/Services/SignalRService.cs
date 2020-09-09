@@ -29,6 +29,8 @@ namespace OneSms.Droid.Server.Services
         Context Context { get; set; }
 
         void ChangeUrl(string url);
+
+        void SignalRServiceConnectionChecker();
     }
 
     public class SignalRService : ISignalRService
@@ -58,16 +60,19 @@ namespace OneSms.Droid.Server.Services
             });
             Connection.On<Exception>("OnException", ex => Toast.MakeText(Context, ex.Message, ToastLength.Long).Show());
 
-            Connection.On<string, Guid>(SignalRKeys.CheckClientAlive, (hubMethodCallback, requestId) 
+            Connection.On<string, Guid>(SignalRKeys.CheckClientAlive, (hubMethodCallback, requestId)
                 => Connection.InvokeAsync(hubMethodCallback, requestId, true));
 
+            Connectivity.ConnectivityChanged += async (s, e) => await ReconnectToHub();
+        }
+
+        public void SignalRServiceConnectionChecker()
+        {
             Observable.Interval(TimeSpan.FromSeconds(30)).Subscribe(async number =>
             {
                 if (Connection.State == HubConnectionState.Disconnected)
                     await ReconnectToHub();
             });
-
-            Connectivity.ConnectivityChanged += async (s, e) => await ReconnectToHub();
         }
 
         private void BuildConnection(string url)

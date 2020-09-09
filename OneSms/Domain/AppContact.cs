@@ -2,12 +2,12 @@
 
 namespace OneSms.Domain
 {
-    public class ApplicationSim
+    public class AppContact
     {
         public Guid AppId { get; set; }
         public Application? App { get; set; }
 
-        public int SimId { get; set; }
-        public SimCard? Sim { get; set; }
+        public int ContactId { get; set; }
+        public Contact? Contact { get; set; }
     }
 }

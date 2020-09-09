@@ -21,14 +21,16 @@ using OneSms.Droid.Server.Constants;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1;
+using Java.IO;
 
 namespace OneSms.Droid.Server.Services
 {
     public interface IWhatsappService
     {
         Context Context { get; set; }
-        WhatsappRequest CurrentTransaction { get; }
+        object CurrentTransaction { get; }
         Subject<WhatsappRequest> OnMessageSent { get; }
+        Subject<ShareContactRequest> OnContactShared { get; }
 
         Task<PermissionStatus> CheckAndRequestReadContactPermission();
         Task<PermissionStatus> CheckAndRequestWriteContactPermission();
@@ -42,24 +44,29 @@ namespace OneSms.Droid.Server.Services
         void SendImage(Context context, Bitmap bitmap, string number, string message);
         void SendText(string number, string message);
         void ReportNumberNotOnWhatsapp();
+        void SendVcard(Context context, string number, string message, string vcard);
+        Task CheckContactAndSendVcard(Context context, string vcard, string number, string message);
+        void WhatsappServiceQueueChecker();
     }
 
     public class WhatsappService : IWhatsappService
     {
-        private Queue<WhatsappRequest> _transactionQueue;
+        private Queue<object> _transactionQueue;
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
         private bool _isBusy;
-        private int _privWhatsappId;
+        private string _prevTransactionId;
         public WhatsappService(Context context)
         {
             Context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
             OnMessageSent = new Subject<WhatsappRequest>();
-            _transactionQueue = new Queue<WhatsappRequest>();
+            OnContactShared = new Subject<ShareContactRequest>();
+            _transactionQueue = new Queue<object>();
             _signalRService.Connection.On(SignalRKeys.ResetToActive, () => _isBusy = false);
             _signalRService.Connection.On<WhatsappRequest>(SignalRKeys.SendWhatsapp, async transaction => await Execute(transaction));
+            _signalRService.Connection.On<ShareContactRequest>(SignalRKeys.ShareContact, async contact => await Execute(contact));
 
             OnMessageSent.Subscribe(async transaction =>
             {
@@ -75,20 +82,47 @@ namespace OneSms.Droid.Server.Services
                 await ExecuteNextTransaction();
             });
 
+            OnContactShared.Subscribe(async transaction =>
+            {
+                _isBusy = false;
+                await ExecuteNextTransaction();
+            });
+
+            WhatsappServiceQueueChecker();
+        }
+
+        public void WhatsappServiceQueueChecker()
+        {
             Observable.Interval(TimeSpan.FromSeconds(30))
-                .Subscribe(async _ =>
-                {
-                    if(CurrentTransaction != null && _privWhatsappId == CurrentTransaction?.WhatsappId)
-                    {
-                        _privWhatsappId = 0;
-                        _isBusy = false;
-                        await Execute(CurrentTransaction);
-                    }
-                    else
-                    {
-                         _privWhatsappId = CurrentTransaction?.WhatsappId ?? 0;
-                    }
-                });
+                            .Subscribe(async _ =>
+                            {
+                                if (CurrentTransaction != null && CurrentTransaction is WhatsappRequest request)
+                                {
+                                    if (_prevTransactionId == request.WhatsappId.ToString())
+                                    {
+                                        _prevTransactionId = "0";
+                                        OnMessageSent.OnNext(request);
+                                    }
+                                    else
+                                    {
+                                        _prevTransactionId = request.WhatsappId.ToString();
+                                    }
+
+                                }
+                                else if (CurrentTransaction != null && CurrentTransaction is ShareContactRequest shareRequest)
+                                {
+                                    if (_prevTransactionId == shareRequest.Number)
+                                    {
+                                        _prevTransactionId = "0";
+                                        _isBusy = false;
+                                        await ExecuteNextTransaction();
+                                    }
+                                    else
+                                    {
+                                        _prevTransactionId = shareRequest.Number;
+                                    }
+                                }
+                            });
         }
 
         private async Task ExecuteNextTransaction()
@@ -96,7 +130,11 @@ namespace OneSms.Droid.Server.Services
             if (_transactionQueue.Count > 0)
             {
                 CurrentTransaction = _transactionQueue.Dequeue();
-                await Execute(CurrentTransaction);
+                if (CurrentTransaction is WhatsappRequest whatsappRequest)
+                    await Execute(whatsappRequest);
+
+                if (CurrentTransaction is ShareContactRequest shareContactRequest)
+                    await Execute(shareContactRequest);
             }
             else
                 CurrentTransaction = null;
@@ -104,9 +142,11 @@ namespace OneSms.Droid.Server.Services
 
         public Context Context { get; set; }
 
-        public WhatsappRequest CurrentTransaction { get; private set; }
+        public object CurrentTransaction { get; private set; }
 
         public Subject<WhatsappRequest> OnMessageSent { get; }
+
+        public Subject<ShareContactRequest> OnContactShared { get; }
 
         private async Task Execute(WhatsappRequest transaction)
         {
@@ -118,21 +158,25 @@ namespace OneSms.Droid.Server.Services
                 _isBusy = true;
                 transaction.MessageStatus = MessageStatus.Executing;
                 _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
+                CurrentTransaction = transaction;
                 await SendAsync(transaction);
             }
-            //var current = Connectivity.NetworkAccess;
-            //if (current == NetworkAccess.Internet)
-            //{
-            //}
-            //else
-            //{
-            //    CurrentTransaction = transaction;
-            //}
+        }
+
+        private async Task Execute(ShareContactRequest transaction)
+        {
+            if (_isBusy)
+                _transactionQueue.Enqueue(transaction);
+            else
+            {
+                _isBusy = true;
+                CurrentTransaction = transaction;
+                await CheckContactAndSendVcard(Context, transaction.VcardInfo,transaction.Number,transaction.Message);
+            }
         }
 
         public async Task SendAsync(WhatsappRequest transaction)
         {
-            CurrentTransaction = transaction;
             var imageLink = transaction.ImageLinks.Where(x => !string.IsNullOrEmpty(x)).FirstOrDefault();
             if (string.IsNullOrEmpty(imageLink))
                   SendText(transaction.ReceiverNumber, transaction.Body);
@@ -164,6 +208,7 @@ namespace OneSms.Droid.Server.Services
                 System.Diagnostics.Debug.WriteLine($"{e.Message}\n { e.StackTrace}");
             }
         }
+        
 
         public async Task CheckContactAndSendImage(Context context, Bitmap bitmap, string number, string message)
         {
@@ -173,7 +218,7 @@ namespace OneSms.Droid.Server.Services
             {
                 var whatsappNumber = await GetWhatsappNumber(context, contactId);
                 if (string.IsNullOrEmpty(whatsappNumber))
-                    ReportNumberNotFound(CurrentTransaction);
+                    ReportNumberNotFound((WhatsappRequest)CurrentTransaction);
                     
                 SendImage(context, bitmap, toNumber, message);
             }
@@ -186,9 +231,52 @@ namespace OneSms.Droid.Server.Services
                     await CheckContactAndSendImage(context, bitmap, number, message);
                 }
                 else
-                    ReportNumberNotFound(CurrentTransaction);
+                    ReportNumberNotFound((WhatsappRequest)CurrentTransaction);
             }
 
+        }
+
+        public async Task CheckContactAndSendVcard(Context context, string vcard, string number, string message)
+        {
+            var toNumber = number.Replace("+", "").Replace(" ", "");
+            var contactId = await GetContactId(context, toNumber);
+            if (!string.IsNullOrEmpty(contactId))
+            {
+                var whatsappNumber = await GetWhatsappNumber(context, contactId);
+                if (!string.IsNullOrEmpty(whatsappNumber))
+                    SendVcard(context, toNumber, message, vcard);
+            }
+            else
+            {
+                var contactCreated = await CreateContact(context, number.Replace(" ", ""));
+                if (contactCreated)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await CheckContactAndSendVcard(context, number, message,vcard);
+                }
+            }
+
+        }
+
+        public void SendVcard(Context context, string number, string message, string vcard)
+        {
+            try
+            {
+                var vcardUri = GetLocalVcardUri(context, vcard);
+                Intent i = new Intent(Intent.ActionSend);
+                i.SetType("text/plain");
+                i.SetPackage("com.whatsapp.w4b");
+                i.PutExtra(Intent.ExtraText, message);
+                i.PutExtra(Intent.ExtraStream, vcardUri);
+                i.PutExtra("jid", $"{number}@s.whatsapp.net");
+                i.SetType("*/*");
+                i.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.NewTask | ActivityFlags.ClearTask);
+                Context.StartActivity(i);
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine($"{e.Message}\n { e.StackTrace}");
+            }
         }
 
         public void SendImage(Context context, Bitmap bitmap, string number, string message)
@@ -324,6 +412,25 @@ namespace OneSms.Droid.Server.Services
             return bmpUri;
         }
 
+        public Uri  GetLocalVcardUri(Context context, string vcardInfo)
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(Xamarin.Essentials.FileSystem.CacheDirectory, "onesms_sahre" + DateTime.Now.Millisecond + ".vcf");
+                using FileOutputStream outfile = new FileOutputStream(path);
+                outfile.Write(System.Text.Encoding.ASCII.GetBytes(vcardInfo));
+                outfile.Close();
+                File file = new File(path);
+                var vcardUri = GetUriFromFile(context, file);
+                return vcardUri;
+            }
+           catch(Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
+            return null;
+        }
+
         public Uri GetUriFromFile(Context context, File file)
         {
             if (file == null)
@@ -367,7 +474,7 @@ namespace OneSms.Droid.Server.Services
 
         public void ReportNumberNotOnWhatsapp()
         {
-            var transaction = CurrentTransaction;
+            var transaction = CurrentTransaction as WhatsappRequest;
             transaction.MessageStatus = MessageStatus.Failed;
             _httpClientService.PutAsync<string>(transaction, ApiRoutes.Whatsapp.StatusChanged);
             ReportNumberNotFound(transaction);
