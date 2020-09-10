@@ -41,7 +41,7 @@ namespace OneSms.Droid.Server.Services
             
            try
             {
-                ReturnToHomeFromInbox(nodes, buttons);
+                //ReturnToHomeFromInbox(nodes, buttons);
 
                 await ShareContact(buttons, textViews);
 
@@ -90,7 +90,7 @@ namespace OneSms.Droid.Server.Services
             if ((textViews.Any(x => x.Text?.Contains("The phone number") ?? false) && buttons.Any(x => x.Text?.Contains("OK") ?? false)) ||
               (textViews.Any(x => x.Text?.Contains("Send to") ?? false) && textViews.Any(x => x.ContentDescription?.Contains("Search") ?? false)))
             {
-                await BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Failed);
+                await BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.NumberNotFound);
                 PerformGlobalAction(GlobalAction.Home);
             }
         }

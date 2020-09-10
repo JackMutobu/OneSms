@@ -29,36 +29,52 @@ namespace OneSms.Controllers.V1
         [HttpPost(ApiRoutes.Contact.Share)]
         public async Task<IActionResult> ShareContact([FromBody] SharingContactRequest request)
         {
-            var isAlreadyAContact = _contactService.IsAlreadyContacted(request.AppId.ToString(), request.Number);
+            await OnSharingContact(request);
+            return Ok("Shared");
+        }
+
+        [HttpPost(ApiRoutes.Contact.ShareList)]
+        public async Task<IActionResult> ShareContact([FromBody] ShareContactListRequest shareContactListRequest)
+        {
+            foreach (var request in shareContactListRequest.SharingContactRequests)
+            {
+                await OnSharingContact(request);
+            }
+            return Ok("Shared");
+        }
+
+        private async Task OnSharingContact(SharingContactRequest request)
+        {
+            var isAlreadyAContact = _contactService.IsAlreadyContacted(request.AppId.ToString(), request.ReceiverNumber);
             if (!isAlreadyAContact)
             {
-                var appContactVcard = await _contactService.AddContactToApp(request.AppId.ToString(), request.Number);
+                var appContactVcard = await _contactService.AddContactToApp(request.AppId.ToString(), request.ReceiverNumber);
 
                 if (!string.IsNullOrEmpty(appContactVcard))
                 {
                     var contactRequest = new ShareContactRequest
                     {
-                        Message = "Pour recevoir plus d'information à propos de nous, veuillez enregistrer nos contacts ",
+                        Body = "Pour recevoir plus d'information à propos de nous, veuillez enregistrer nos contacts ",
                         VcardInfo = appContactVcard,
-                        Number = request.Number
+                        ReceiverNumber = request.ReceiverNumber,
+                        SenderNumber = request.SenderNumber
                     };
                     var messageRequest = new WhatsappRequest()
                     {
-                        Body = contactRequest.Message,
-                        ReceiverNumber = request.Number,
+                        Body = contactRequest.Body,
+                        ReceiverNumber = request.ReceiverNumber,
                         AppId = request.AppId,
                         MobileServerId = request.MobileServerId,
-                        SenderNumber = request.Number,
+                        SenderNumber = request.SenderNumber,
                         TransactionId = request.TransactionId,
                         ImageLinks = new List<string>(),
                         WhatsappId = GetRandomNumber()
                     };
-                    await _hubContext.Clients.Client(request.ServerConnectionId).SendAsync(SignalRKeys.ShareContact, contactRequest);
-                    await Task.Delay(TimeSpan.FromSeconds(1));//Wait a few seconds
+
                     await _hubContext.Clients.Client(request.ServerConnectionId).SendAsync(SignalRKeys.SendWhatsapp, messageRequest);
+                    await _hubContext.Clients.Client(request.ServerConnectionId).SendAsync(SignalRKeys.ShareContact, contactRequest);
                 }
             }
-            return Ok("Shared");
         }
 
         private int GetRandomNumber()

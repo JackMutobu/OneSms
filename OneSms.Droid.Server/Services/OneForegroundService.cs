@@ -37,7 +37,6 @@ namespace OneSms.Droid.Server.Services
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _signalRService.Context = this;
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
-            _whatsappService.Context = this;
             _transactionQueue = new Queue<MessageTransactionProcessDto>();
             //_signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(transaction =>
             //{

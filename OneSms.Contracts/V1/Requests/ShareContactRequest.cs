@@ -6,7 +6,9 @@ namespace OneSms.Contracts.V1.Requests
     {
         public Guid AppId { get; set; }
 
-        public string Number { get; set; }
+        public string ReceiverNumber { get; set; }
+
+        public string SenderNumber { get; set; }
 
         public string ServerConnectionId { get; set; }
 

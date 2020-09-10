@@ -217,7 +217,7 @@ namespace OneSms.Controllers.V1
                 var shareContactRequest = new SharingContactRequest
                 {
                     AppId = new Guid(appId),
-                    Number = number,
+                    ReceiverNumber = number,
                     ServerConnectionId = serverConnectionId
                 };
                 HttpContent httpContent = new StringContent(JsonSerializer.Serialize(shareContactRequest),Encoding.UTF8, "application/json");

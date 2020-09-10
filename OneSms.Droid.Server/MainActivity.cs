@@ -203,16 +203,7 @@ namespace OneSms.Droid.Server
         protected override void OnResume()
         {
             base.OnResume();
-            if(whatsappService?.CurrentTransaction is WhatsappRequest whatsappRequest)
-            {
-                whatsappService?.OnMessageSent?.OnNext(whatsappRequest);
-            }
-
-            if (whatsappService?.CurrentTransaction is ShareContactRequest shareContactRequest)
-            {
-                whatsappService?.OnContactShared?.OnNext(shareContactRequest);
-            }
-
+            whatsappService?.OnRequestCompleted.OnNext(whatsappService?.CurrentTransaction);
         }
     }
 }

@@ -9,6 +9,7 @@
         Retrying,
         Failed,
         Executing,
-        Pending
+        Pending,
+        NumberNotFound
     }
 }
