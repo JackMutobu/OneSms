@@ -23,6 +23,7 @@ namespace OneSms.Services
         IAsyncEnumerable<WhatsappMessage> GetPendingMessages(string serverKey);
         Task<List<WhatsappMessage>> GetListOfPendingMessages(string serverKey);
         Task<bool> CheckSenderNumber(string number);
+        string? GetSenderNumber(Guid AppId);
     }
 
     public class WhatsappService : IWhatsappService
@@ -67,6 +68,12 @@ namespace OneSms.Services
                     yield return message;
                 }
             }
+        }
+
+
+        public string? GetSenderNumber(Guid AppId)
+        {
+            return _dbContext.AppSims.Include(x => x.Sim).FirstOrDefault(x => x.AppId == AppId)?.Sim.Number;
         }
 
         public Task<bool> CheckSenderNumber(string number) => _dbContext.Sims.AnyAsync(x => x.Number == number);

@@ -23,6 +23,7 @@ namespace OneSms.Droid.Server.Views
         private Button _buttonChooseImage;
         private Button _sendVCard;
         private Button _buttonStartSignalRChecker;
+        private Button _buttonRestartActivity;
         private ImageView _imageView;
         public HomeView(Context context):base(context)
         {
@@ -36,6 +37,7 @@ namespace OneSms.Droid.Server.Views
             _buttonChooseImage = new Button(context) { Text = "Choose image" };
             _buttonSendImage = new Button(context) { Text = "Send Image" };
             _buttonStartSignalRChecker = new Button(context) { Text = "Start SignalR Checker" };
+            _buttonRestartActivity = new Button(context) { Text = "Restart" };
             _sendVCard = new Button(context) { Text = "Send Vcard" };
             _imageView = new ImageView(context);
             Orientation = Android.Widget.Orientation.Vertical;
@@ -48,6 +50,7 @@ namespace OneSms.Droid.Server.Views
             AddView(_buttonSendImage);
             AddView(_sendVCard);
             AddView(_buttonStartSignalRChecker);
+            AddView(_buttonRestartActivity);
 
             _button.Click += (s, e) =>
             {
@@ -96,6 +99,8 @@ namespace OneSms.Droid.Server.Views
             };
 
             _buttonStartSignalRChecker.Click += (s, e) => _signalRService.SignalRServiceConnectionChecker();
+
+            _buttonRestartActivity.Click += (s, e) => MainActivity.RestartActivity(context);
         }
 
         public Bitmap BitmapImage { get; set; }

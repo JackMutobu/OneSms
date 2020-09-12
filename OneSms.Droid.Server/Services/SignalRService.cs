@@ -77,7 +77,9 @@ namespace OneSms.Droid.Server.Services
 
         private void BuildConnection(string url)
         {
-            Connection = new HubConnectionBuilder()
+            try
+            {
+                Connection = new HubConnectionBuilder()
                .WithUrl(url, (opts) =>
                {
                    opts.AccessTokenProvider = () => BlobCache.LocalMachine.GetObject<string>(OneSmsAction.AuthKey)
@@ -92,6 +94,15 @@ namespace OneSms.Droid.Server.Services
                    };
                })
                .Build();
+            }
+            catch(Exception ex)
+            {
+                AlertDialog alertDialog = new AlertDialog.Builder(Context).Create();
+                alertDialog.SetTitle("Exception");
+                alertDialog.SetMessage($"Message:{ex.Message}");
+                alertDialog.Show();
+            }
+            
         }
 
         public HubConnection Connection { get; private set; }

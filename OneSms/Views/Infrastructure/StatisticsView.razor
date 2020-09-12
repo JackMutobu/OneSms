@@ -1,14 +1,74 @@
 ﻿@page "/"
-@inject AuthenticationStateProvider AuthenticationsStateProvider
-@inject NavigationManager NavigationManager
-@attribute [Authorize]
-<h1>Welcome</h1>
-@code {
-    protected override async Task OnInitializedAsync()
+@inherits ReactiveComponentBase<OneSms.ViewModels.Infrastructure.StatisticsViewModel>
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Test API</PageHeaderTitle>
+    <PageHeaderExtra>
+        <Text>@ViewModel.AuthMessage</Text>
+        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(authRequest)">Authentifier</Button>
+        <Button @onclick="() => Clear()">Reset</Button>
+    </PageHeaderExtra>
+</PageHeader>
+<div style="margin:10px">
+    @if (ViewModel.IsBusy)
     {
-        var authstate = await AuthenticationsStateProvider.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if(user.IsInRole(UserRoles.TimAccount))
-            NavigationManager.NavigateTo("timtransctions");
+        <Progress Percent=60 Status="@ProgressStatus.Active" Format="@((p) => "Veuillez pateiner")" />
     }
-}
+    <Text Type="danger">@ViewModel.Errors</Text>
+</div>
+<Form Layout="@FormLayout.Horizontal"
+      Model="@messageRequest"
+      OnFinish="OnSubmitMessage">
+    <FormItem Label="Titre">
+        <Input Size="@InputSize.Large" @bind-Value="@context.Label" />
+    </FormItem>
+    <FormItem Label="Destinateurs">
+        <Input Size="@InputSize.Large" Placeholder="+243986408335,+254743946115" @bind-Value="@receivers" />
+    </FormItem>
+
+    <FormItem Label="Message">
+        <Input Size="@InputSize.Large" @bind-Value="@context.Body" />
+    </FormItem>
+    <FormItem Label="Selectionner une image">
+        <InputFile OnChange="HandleFileSelected" />
+    </FormItem>
+    <FormItem Label="Image Url">
+        <Text>@ViewModel.ImageLink</Text>
+    </FormItem>
+    <FormItem>
+        <Button Type="@ButtonType.Primary" Size="@InputSize.Large" HtmlType="submit">
+            Submit
+        </Button>
+    </FormItem>
+</Form>
+
+<Table DataSource="@ViewModel.Messages" Class="table-responsive">
+    <Column @bind-Field="@context.Label"></Column>
+    <Column @bind-Field="@context.SenderNumber"></Column>
+    <Column @bind-Field="@context.RecieverNumber"></Column>
+    <Column @bind-Field="@context.Body"></Column>
+    <Column @bind-Field="@context.StartTime"></Column>
+    <Column @bind-Field="@context.CompletedTime"></Column>
+    <Column @bind-Field="@context.MessageStatus"></Column>
+    <Column @bind-Field="@context.TransactionId"></Column>
+</Table>
+
+<Modal Title="@("S'autentifier")" OnCancel="HideModal" Visible="@modalVisible" Footer="null">
+    <Form Model="authRequest" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+        <FormItem Label="AppId">
+            <Input @bind-Value="@context.AppId" />
+        </FormItem>
+        <FormItem Label="Secret">
+            <Input @bind-Value="@context.AppSecret" />
+        </FormItem>
+        <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+            <Space>
+                <SpaceItem>
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
+                </SpaceItem>
+                <SpaceItem>
+                    <Button @onclick="() => authRequest = new Contracts.V1.Requests.ApiAuthRequest()">Clear</Button>
+                </SpaceItem>
+            </Space>
+        </FormItem>
+    </Form>
+</Modal>

@@ -10,11 +10,11 @@ namespace OneSms.Views.Infrastructure
 {
     public partial class NetworkAdminView
     {
-        bool modalVisible = false;
+        bool modalVisible;
         NetworkOperator network = new NetworkOperator();
 
         [Inject]
-        DataContext DataContext { get; set; }
+        DataContext DataContext { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {

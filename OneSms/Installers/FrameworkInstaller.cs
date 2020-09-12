@@ -15,7 +15,10 @@ namespace OneSms.Installers
         {
             services.AddRazorPages();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options => {
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                });
             services.AddSignalR().AddHubOptions<OneSmsHub>(options =>
              {
                  options.EnableDetailedErrors = true;

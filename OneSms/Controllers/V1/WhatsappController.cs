@@ -50,12 +50,18 @@ namespace OneSms.Controllers.V1
         [HttpPost(ApiRoutes.Whatsapp.Send)]
         public async Task<IActionResult> SendMessage(SendMessageRequest messageRequest)
         {
-            var isSenderValid = await _whatsappService.CheckSenderNumber(messageRequest.SenderNumber);
-            if(isSenderValid)
+            if(string.IsNullOrEmpty(messageRequest.SenderNumber))
             {
-                return await SendToMobileServer(messageRequest);
+                messageRequest.SenderNumber = _whatsappService.GetSenderNumber(messageRequest.AppId);
             }
-
+            if(!string.IsNullOrEmpty(messageRequest.SenderNumber))
+            {
+                var isSenderValid = await _whatsappService.CheckSenderNumber(messageRequest.SenderNumber);
+                if (isSenderValid)
+                {
+                    return await SendToMobileServer(messageRequest);
+                }
+            }
             return BadRequest(new SendMessageFailedResponse
             {
                 Errors = new List<string> { "Sender number not found" }

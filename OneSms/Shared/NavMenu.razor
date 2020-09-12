@@ -8,139 +8,140 @@
 
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <ul class="nav flex-column">
-        @if (user.IsInRole(UserRoles.TimAccount))
-        {
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="timtransctions">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Transactions</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="timclients">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Clients</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="timserver">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Serveur</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        }
-        @if (user.IsInRole(UserRoles.SuperAdmin))
-        {
         <li class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <Space>
                     <SpaceItem><Icon Style="font-size:25px" Type="home" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Statistics</h6></SpaceItem>
+                    <SpaceItem><h6 style="color:white; margin-top:10px">Home</h6></SpaceItem>
                 </Space>
             </NavLink>
         </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="apps">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Apps</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="smstransactions">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Sms</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="mobileserveradmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="MobileOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Mobile Servers</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="simadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Sim Admin</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="ussdadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Admin</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="networkadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Networks</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="whatsappadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Whatsapp Admin</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="whatsapptransactions">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Whatsapp Transactions</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="smsadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">SMS Admin</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="regexadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Sms Extractors</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="ussdtestadmin">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="SlidersOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Test Admin</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="ussdtransactions">
-                <Space>
-                    <SpaceItem><Icon Style="font-size:25px" Type="SlidersOutlined" /></SpaceItem>
-                    <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Transactions</h6></SpaceItem>
-                </Space>
-            </NavLink>
-        </li>
+        @if (user.IsInRole(UserRoles.TimAccount))
+        {
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="timtransctions">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Transactions</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="timclients">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Clients</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="timserver">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Serveur</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+        }
+        @if (user.IsInRole(UserRoles.SuperAdmin))
+        {
+
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="apps">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Apps</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="smstransactions">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="CommentOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Sms</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="mobileserveradmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="MobileOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Mobile Servers</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="simadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Sim Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="ussdadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="networkadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Networks</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="whatsappadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Whatsapp Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="whatsapptransactions">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Whatsapp Transactions</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="smsadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">SMS Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="regexadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="BorderlessTableOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Sms Extractors</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="ussdtestadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="SlidersOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Test Admin</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="ussdtransactions">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="SlidersOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Transactions</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
         }
 
 

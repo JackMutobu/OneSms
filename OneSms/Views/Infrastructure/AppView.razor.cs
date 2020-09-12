@@ -19,9 +19,9 @@ namespace OneSms.Views.Infrastructure
         Application app = new Application();
 
         [Inject]
-        DataContext DbContext { get; set; }
+        DataContext DbContext { get; set; } = null!;
         [Inject]
-        AuthenticationStateProvider AuthenticationsStateProvider { get; set; }
+        AuthenticationStateProvider AuthenticationsStateProvider { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {
