@@ -54,7 +54,7 @@ namespace OneSms.ViewModels.Whatsapp
             SendTransactionToMobileServer = ReactiveCommand.CreateFromTask<WhatsappMessage, Unit>(async transaction =>
             {
                 var serverKey = transaction.MobileServerId.ToString();
-                LatestTransaction.WhatsappId = transaction.Id;
+                LatestTransaction.MessageId = transaction.Id;
                 LatestTransaction.MessageStatus = transaction.MessageStatus;
                 LatestTransaction.Body = transaction.Body;
                 LatestTransaction.ImageLinks = new List<string> { transaction.ImageLinkOne, transaction.ImageLinkTwo, transaction.ImageLinkThree };

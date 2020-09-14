@@ -1,6 +1,6 @@
 ﻿namespace OneSms.Domain
 {
-    public class SmsMessage:Message
+    public class SmsMessage:BaseMessage
     {
         public SmsMessage()
         {

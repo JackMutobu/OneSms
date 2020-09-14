@@ -85,14 +85,14 @@ namespace OneSms.Controllers.V1
 
             var numberOfSentMessages = 0;
             var numberOfPendingMessages = 0;
-            foreach(var message in await _whatsappService.GetListOfPendingMessages(serverId))
+            await foreach(var message in  _whatsappService.GetPendingMessages(serverId))
             {
                 var (sentMessages, pendingMessages) = await OnSendWhatsapp(message);
                 numberOfPendingMessages += pendingMessages;
                 numberOfSentMessages += sentMessages;
             }
 
-            foreach (var message in await _smsService.GetListOfPendingMessages(serverId))
+            await foreach (var message in _smsService.GetPendingMessages(serverId))
             {
                 var (sentMessages, pendingMessages) = await OnSendSms(message);
                 numberOfPendingMessages += pendingMessages;

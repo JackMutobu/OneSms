@@ -10,14 +10,14 @@ namespace OneSms.Services
         public HubEventService()
         {
             OnUssdStateChanged = new Subject<UssdTransactionDto>();
-            OnMessageStateChanged = new Subject<MessageTransactionProcessDto>();
+            OnMessageStateChanged = new Subject<BaseMessage>();
             OnSmsMessageStatusChanged = new Subject<SmsMessage>();
             OnWhatsappMessageStatusChanged = new Subject<WhatsappMessage>();
         }
 
         public Subject<UssdTransactionDto> OnUssdStateChanged { get; }
 
-        public Subject<MessageTransactionProcessDto> OnMessageStateChanged { get; }
+        public Subject<BaseMessage> OnMessageStateChanged { get; }
 
         public Subject<SmsMessage> OnSmsMessageStatusChanged { get; }
 

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OneSms.Domain
 {
-    public class Message
+    public class BaseMessage
     {
         public int Id { get; set; }
 

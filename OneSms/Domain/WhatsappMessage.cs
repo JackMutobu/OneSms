@@ -1,6 +1,6 @@
 ﻿namespace OneSms.Domain
 {
-    public class WhatsappMessage:Message
+    public class WhatsappMessage: BaseMessage
     {
         public WhatsappMessage()
         {

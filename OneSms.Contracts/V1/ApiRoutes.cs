@@ -64,8 +64,6 @@
             public const string Controller = "/contacts";
 
             public const string Share = Base + Controller + "/share";
-
-            public const string ShareList = Base + Controller + "/share/list";
         }
     }
 }

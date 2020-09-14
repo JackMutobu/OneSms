@@ -1,6 +1,6 @@
 ﻿namespace OneSms.Contracts.V1.MobileServerRequest
 {
-    public class BaseWhatsappRequest
+    public class BaseMessageRequest
     {
         public string Body { get; set; }
 

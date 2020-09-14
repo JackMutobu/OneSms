@@ -27,13 +27,6 @@ namespace OneSms.Controllers.V1
         }
 
         [HttpPost(ApiRoutes.Contact.Share)]
-        public async Task<IActionResult> ShareContact([FromBody] SharingContactRequest request)
-        {
-            await OnSharingContact(request);
-            return Ok("Shared");
-        }
-
-        [HttpPost(ApiRoutes.Contact.ShareList)]
         public async Task<IActionResult> ShareContact([FromBody] ShareContactListRequest shareContactListRequest)
         {
             foreach (var request in shareContactListRequest.SharingContactRequests)
@@ -68,7 +61,7 @@ namespace OneSms.Controllers.V1
                         SenderNumber = request.SenderNumber,
                         TransactionId = request.TransactionId,
                         ImageLinks = new List<string>(),
-                        WhatsappId = GetRandomNumber()
+                        MessageId = GetRandomNumber()
                     };
 
                     await _hubContext.Clients.Client(request.ServerConnectionId).SendAsync(SignalRKeys.SendWhatsapp, messageRequest);

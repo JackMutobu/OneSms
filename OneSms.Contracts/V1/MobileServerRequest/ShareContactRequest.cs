@@ -1,6 +1,6 @@
 ﻿namespace OneSms.Contracts.V1.MobileServerRequest
 {
-    public class ShareContactRequest:BaseWhatsappRequest
+    public class ShareContactRequest:BaseMessageRequest
     {
         public string VcardInfo { get; set; }
     }

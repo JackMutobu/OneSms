@@ -52,7 +52,7 @@ namespace OneSms.ViewModels
             {
                 var serverKey = sms.MobileServerId.ToString();
                 LatestTransaction.SimSlot = SelectedSimCard.SimSlot;
-                LatestTransaction.SmsId = sms.Id;
+                LatestTransaction.MessageId = sms.Id;
                 LatestTransaction.AppId = sms.AppId;
                 LatestTransaction.Body = sms.Body;
                 LatestTransaction.MobileServerId = sms.MobileServerId;
