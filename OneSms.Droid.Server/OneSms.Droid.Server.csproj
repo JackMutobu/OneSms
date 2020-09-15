@@ -190,9 +190,7 @@
   <ItemGroup>
     <AndroidResource Include="Resources\xml\whatsapp_service.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Helpers\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <AndroidResource Include="Resources\xml\provider_paths.xml" />
   </ItemGroup>

@@ -42,7 +42,7 @@ namespace OneSms.Droid.Server.Receivers
                     AppId = new Guid(appId),
                     SenderNumber = senderNumber,
                     ReceiverNumber = receiverNumber,
-                    SmsId = smsId,
+                    MessageId = smsId,
                     MobileServerId = new Guid(serverId),
                     Body = body
                 };

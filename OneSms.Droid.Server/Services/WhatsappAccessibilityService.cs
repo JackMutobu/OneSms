@@ -116,7 +116,7 @@ namespace OneSms.Droid.Server.Services
                 BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Sent);
                 //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
                 var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
-                if (_whatsappService.CurrentTransaction is WhatsappRequest whatsappRequest && whatsappRequest.WhatsappId  == transactionId)
+                if (_whatsappService.CurrentTransaction is WhatsappRequest whatsappRequest && whatsappRequest.MessageId  == transactionId)
                     Preferences.Set(OneSmsAction.ImageTransaction, 0);
                 else
                     PerformGlobalAction(GlobalAction.Home);

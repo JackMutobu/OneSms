@@ -29,7 +29,7 @@ namespace OneSms.Droid.Server.Services
         {
             HttpClient = new HttpClient
             {
-                BaseAddress = new System.Uri(url)
+                BaseAddress = new Uri(url)
             };
         }
 

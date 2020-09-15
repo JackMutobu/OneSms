@@ -155,7 +155,7 @@ namespace OneSms.Droid.Server.Services
                 SmsManager sm = SmsManager.Default;
                 List<string> parts = sm.DivideMessage(smsTransactionDto.Body).ToList();
                 var bundle = new Bundle(1);
-                bundle.PutInt(OneSmsAction.SmsTransactionId, smsTransactionDto.SmsId);
+                bundle.PutInt(OneSmsAction.SmsTransactionId, smsTransactionDto.MessageId);
                 Intent iSent = new Intent(OneSmsAction.SmsSent);
                 iSent.PutExtra(OneSmsAction.SmsBundleId, bundle);
                 iSent.PutExtra(OneSmsAction.ReceiverNumber, smsTransactionDto.ReceiverNumber);
@@ -163,7 +163,7 @@ namespace OneSms.Droid.Server.Services
                 iSent.PutExtra(OneSmsAction.SenderNumber, smsTransactionDto.SenderNumber);
                 iSent.PutExtra(OneSmsAction.MobileServerId, smsTransactionDto.MobileServerId.ToString());
 
-                PendingIntent piSent = PendingIntent.GetBroadcast(Context, smsTransactionDto.SmsId, iSent, PendingIntentFlags.UpdateCurrent);
+                PendingIntent piSent = PendingIntent.GetBroadcast(Context, smsTransactionDto.MessageId, iSent, PendingIntentFlags.UpdateCurrent);
 
                 Intent iDel = new Intent(OneSmsAction.SmsDelivered);
                 iDel.PutExtra(OneSmsAction.SmsBundleId, bundle);
@@ -172,7 +172,7 @@ namespace OneSms.Droid.Server.Services
                 iDel.PutExtra(OneSmsAction.SenderNumber, smsTransactionDto.SenderNumber);
                 iDel.PutExtra(OneSmsAction.MobileServerId, smsTransactionDto.MobileServerId.ToString());
 
-                PendingIntent piDel = PendingIntent.GetBroadcast(Context, smsTransactionDto.SmsId, iDel, PendingIntentFlags.UpdateCurrent);
+                PendingIntent piDel = PendingIntent.GetBroadcast(Context, smsTransactionDto.MessageId, iDel, PendingIntentFlags.UpdateCurrent);
 
                 if (Build.VERSION.SdkInt >= BuildVersionCodes.LollipopMr1)
                 {
