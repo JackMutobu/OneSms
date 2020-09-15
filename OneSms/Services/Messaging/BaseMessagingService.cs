@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using OneSms.Contracts.V1.Dtos;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace OneSms.Services
 {
-    public abstract class BaseMessagingService<T, U> : IMessagingService<T, U> where T : BaseMessage where U : BaseMessagingRequest
+    public abstract class BaseMessagingService<T, U, V> : IMessagingService<T, U,V> where T : BaseMessage where U : BaseMessagingRequest where V:BaseMessageReceived
     {
         private DataContext _dbContext;
         private IMapper _mapper;
@@ -66,5 +67,23 @@ namespace OneSms.Services
            => _dbContext.AppSims.Include(x => x.Sim).FirstOrDefault(x => x.AppId == AppId)?.Sim?.Number;
 
         public abstract IAsyncEnumerable<T> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transId = "");
+
+        public async Task<T?> OnMessageReceived(V messageReceived, DateTime receivedTime)
+        {
+            SimCard receiver = GetReceiver(messageReceived);
+
+            if (receiver != null)
+            {
+                var appSim = receiver.Apps.FirstOrDefault();
+                T message = await SaveReceivedMessage(messageReceived, receivedTime, receiver, appSim);
+
+                return message;
+            }
+            return null;
+        }
+
+        protected abstract Task<T> SaveReceivedMessage(V messageReceived, DateTime receivedTime, SimCard receiver, ApplicationSim appSim);
+
+        protected abstract SimCard GetReceiver(V messageReceived);
     }
 }

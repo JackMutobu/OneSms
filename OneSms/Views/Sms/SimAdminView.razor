@@ -48,6 +48,9 @@
         <FormItem Label="Sim Slot">
             <Input @bind-Value="@context.SimSlot" />
         </FormItem>
+        <FormItem Label="IsWhatsappNumber">
+            <Checkbox Checked="@context.IsWhatsappNumber">@context.IsWhatsappNumber</Checkbox>
+        </FormItem>
         <FormItem Label="Network">
             <Select Placeholder="Select network" DefaultValue="@context.NetworkId.ToString()" OnChange="OnNetworkChange">
                 @foreach (var network in ViewModel.Networks)

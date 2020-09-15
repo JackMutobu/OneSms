@@ -10,6 +10,7 @@
         Failed,
         Executing,
         Pending,
-        NumberNotFound
+        NumberNotFound,
+        Received
     }
 }

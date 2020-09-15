@@ -30,6 +30,8 @@ namespace OneSms.Domain
 
         public int SimSlot { get; set; }
 
+        public bool IsWhatsappNumber { get; set; }
+
         public DateTime UpdatedOn { get; set; }
 
         public int NetworkId { get; set; }

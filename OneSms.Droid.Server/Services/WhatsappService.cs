@@ -22,6 +22,7 @@ using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1;
 using Java.IO;
+using OneSms.Contracts.V1.Dtos;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -32,10 +33,14 @@ namespace OneSms.Droid.Server.Services
 
         Task<PermissionStatus> CheckAndRequestReadContactPermission();
         Task<PermissionStatus> CheckAndRequestWriteContactPermission();
+        PermissionStatus NotificationListenerPermission();
 
         Task CheckContactAndSendVcard(Context context, string vcard, string number, string message);
+        Task CheckContactAndSendImage(Context context, Bitmap bitmap, string number, string message);
         Task Execute<T>(T request) where T : BaseMessageRequest;
         void SendText(string number, string message);
+
+        Task ReportReceivedMessage(WhastappMessageReceived messageReceived);
     }
 
     public class WhatsappService : IWhatsappService
@@ -101,6 +106,7 @@ namespace OneSms.Droid.Server.Services
 
         public Subject<object> OnRequestCompleted { get; }
 
+        public object CurrentTransaction { get; private set; }
 
         public async Task Execute<T>(T request) where T : BaseMessageRequest
         {
@@ -123,7 +129,8 @@ namespace OneSms.Droid.Server.Services
             }
         }
 
-        public object CurrentTransaction { get; private set; }
+        public Task ReportReceivedMessage(WhastappMessageReceived messageReceived)
+            => _httpClientService.PutAsync<string>(messageReceived, ApiRoutes.Whatsapp.WhatsappReceived);
 
         public void SendText(string number, string message)
         {
@@ -159,7 +166,7 @@ namespace OneSms.Droid.Server.Services
             }
         }
 
-        private async Task CheckContactAndSendImage(Context context, Bitmap bitmap, string number, string message)
+        public async Task CheckContactAndSendImage(Context context, Bitmap bitmap, string number, string message)
         {
             var toNumber = number.Replace("+", "").Replace(" ", "");
             var contactId = await GetContactId(context, toNumber);
@@ -388,6 +395,30 @@ namespace OneSms.Droid.Server.Services
             if (status != PermissionStatus.Granted)
                 status = await Permissions.RequestAsync<Permissions.ContactsWrite>();
             return status;
+        }
+
+        public PermissionStatus NotificationListenerPermission()
+        {
+            if (IsNotificationServiceEnabled())
+                return PermissionStatus.Granted;
+            else
+                _context.StartActivity(new Intent(Settings.ActionNotificationListenerSettings));
+            return PermissionStatus.Disabled;
+        }
+
+        private bool IsNotificationServiceEnabled()
+        {
+            var flat = Settings.Secure.GetString(_context.ContentResolver, "ENABLED_NOTIFICATION_LISTENERS");
+            if (!string.IsNullOrEmpty(flat))
+            {
+                var names = flat.Split(":");
+                foreach(var name in names)
+                {
+                    var cn = ComponentName.UnflattenFromString(name);
+                    return cn != null && _context.PackageName == cn.PackageName;
+                }
+            }
+            return false;
         }
 
         private async Task<string> GetWhatsappNumber(Context context, string contactId)

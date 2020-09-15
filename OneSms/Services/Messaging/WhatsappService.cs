@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using OneSms.Contracts.V1.Dtos;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
@@ -13,9 +14,9 @@ using System.Threading.Tasks;
 
 namespace OneSms.Services
 {
-    public interface IWhatsappService: IMessagingService<WhatsappMessage, WhatsappRequest> { }
+    public interface IWhatsappService: IMessagingService<WhatsappMessage, WhatsappRequest,WhastappMessageReceived> { }
 
-    public class WhatsappService :BaseMessagingService<WhatsappMessage, WhatsappRequest>, IWhatsappService
+    public class WhatsappService :BaseMessagingService<WhatsappMessage, WhatsappRequest,WhastappMessageReceived>, IWhatsappService
     {
         private readonly DataContext _dbContext;
 
@@ -57,7 +58,34 @@ namespace OneSms.Services
             }
         }
 
+        protected override async Task<WhatsappMessage> SaveReceivedMessage(WhastappMessageReceived messageReceived, DateTime receivedTime, SimCard receiver, ApplicationSim appSim)
+        {
+            var message = new WhatsappMessage
+            {
+                AppId = appSim.AppId,
+                Body = messageReceived.Body,
+                CompletedTime = receivedTime,
+                StartTime = receivedTime,
+                MessageStatus = MessageStatus.Received,
+                MobileServerId = receiver.MobileServerId,
+                SenderNumber = messageReceived.SenderNumber,
+                RecieverNumber = receiver.Number,
+                TransactionId = Guid.NewGuid(),
+                Label = "Message received",
+                ImageLinkOne = messageReceived.ImageLinks?.FirstOrDefault()
+            };
 
-       
+            EntityEntry<WhatsappMessage> created = _dbContext.WhatsappMessages.Add(message);
+            await _dbContext.SaveChangesAsync();
+            message.Id = created.Entity.Id;
+            return message;
+        }
+
+        protected override SimCard GetReceiver(WhastappMessageReceived messageReceived)
+        {
+            return _dbContext.Sims
+                .Include(x => x.Apps)
+                .FirstOrDefault(x => x.MobileServerId.ToString() == messageReceived.MobileServerKey && x.IsWhatsappNumber == true);
+        }
     }
 }

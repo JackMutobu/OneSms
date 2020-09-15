@@ -86,6 +86,7 @@
     <Compile Include="Services\SmsService.cs" />
     <Compile Include="Services\UssdService.cs" />
     <Compile Include="Services\WhatsappAccessibilityService.cs" />
+    <Compile Include="Services\WhatsappNotificationListnerService.cs" />
     <Compile Include="Services\WhatsappService.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />

@@ -1,4 +1,5 @@
-﻿using OneSms.Contracts.V1.MobileServerRequest;
+﻿using OneSms.Contracts.V1.Dtos;
+using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Domain;
 using System;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace OneSms.Services
 {
-    public interface IMessagingService<T,U> where T:BaseMessage where U:BaseMessagingRequest
+    public interface IMessagingService<T,U,V> where T:BaseMessage where U:BaseMessagingRequest where V:BaseMessageReceived
     {
         IAsyncEnumerable<T> GetMessages(Guid appId);
         IAsyncEnumerable<T> GetMessagesByTransactionId(Guid transactionId);
@@ -17,5 +18,6 @@ namespace OneSms.Services
         IAsyncEnumerable<T> GetPendingMessages(string serverKey);
         Task<bool> CheckSenderNumber(string number);
         string? GetSenderNumber(Guid AppId);
+        Task<T?> OnMessageReceived(V messageReceived, DateTime receivedTime);
     }
 }

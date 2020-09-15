@@ -49,7 +49,6 @@
             public const string GetAllByAppId = Base + Controller + "/app/{appId}";
             public const string WhatsappReceived = Base + Controller + "/received";
             public const string StatusChanged = Base + Controller + "/status";
-            public const string NumberNotFound = Base + Controller + "/numbernotfound";
         }
 
         public static class Upload

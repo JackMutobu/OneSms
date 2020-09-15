@@ -79,6 +79,7 @@ namespace OneSms.Droid.Server
             await smsService.CheckAndRequestReadPhoneStatePermission();
             await whatsappService.CheckAndRequestReadContactPermission();
             await whatsappService.CheckAndRequestWriteContactPermission();
+            whatsappService.NotificationListenerPermission();
         }
 
         private void InitializeSmsServices()

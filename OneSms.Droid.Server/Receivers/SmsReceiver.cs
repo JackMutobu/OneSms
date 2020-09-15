@@ -71,7 +71,7 @@ namespace OneSms.Droid.Server.Receivers
                 foreach(var sms in smsMessages)
                 {
                     smsModel.Body += sms.MessageBody;
-                    smsModel.OriginatingAddress = sms.OriginatingAddress.ToLower();
+                    smsModel.SenderNumber = sms.OriginatingAddress.ToLower();
                 }
                 smsModel.SimSlot = GetSimSlot(intent);
                 smsModel.MobileServerKey = Preferences.Get(OneSmsAction.ServerKey,"Server Key not set");

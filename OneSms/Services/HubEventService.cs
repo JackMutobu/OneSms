@@ -13,11 +13,14 @@ namespace OneSms.Services
             OnMessageStateChanged = new Subject<BaseMessage>();
             OnSmsMessageStatusChanged = new Subject<SmsMessage>();
             OnWhatsappMessageStatusChanged = new Subject<WhatsappMessage>();
-        }
+            OnMessageReceived = new Subject<BaseMessage>();
+    }
 
         public Subject<UssdTransactionDto> OnUssdStateChanged { get; }
 
         public Subject<BaseMessage> OnMessageStateChanged { get; }
+
+        public Subject<BaseMessage> OnMessageReceived { get; }
 
         public Subject<SmsMessage> OnSmsMessageStatusChanged { get; }
 

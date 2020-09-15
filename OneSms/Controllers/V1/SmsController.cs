@@ -18,7 +18,7 @@ namespace OneSms.Controllers.V1
 {
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class SmsController : BaseMessagingController<SmsMessage,SmsRequest>
+    public class SmsController : BaseMessagingController<SmsMessage,SmsRequest,SmsReceived>
     {
         private readonly IUriService _uriService;
         private readonly IHubContext<OneSmsHub> _hubContext;
@@ -46,13 +46,11 @@ namespace OneSms.Controllers.V1
 
         [HttpPut(ApiRoutes.Sms.StatusChanged)]
         public override Task<IActionResult> OnStatusChanged([FromBody] SmsRequest smsRequest)
-         => base.OnStatusChanged(smsRequest);
+            => base.OnStatusChanged(smsRequest);
 
         [HttpPut(ApiRoutes.Sms.SmsReceived)]
-        public  IActionResult OnSmsReceived([FromBody]SmsReceived smsReceived)
-        {
-            return Ok("Received");
-        }
+        public override Task<IActionResult> OnMessageReceived([FromBody] SmsReceived receivedMessage)
+            => base.OnMessageReceived(receivedMessage);
 
         protected override async Task<IActionResult> SendToMobileServer(SendMessageRequest messageRequest)
         {

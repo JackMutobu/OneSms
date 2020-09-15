@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OneSms.Contracts.V1.Dtos;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
@@ -15,13 +16,13 @@ namespace OneSms.Controllers.V1
 {
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public abstract class BaseMessagingController<T,U>:ControllerBase where T:BaseMessage where U: BaseMessagingRequest
+    public abstract class BaseMessagingController<T,U,V>:ControllerBase where T:BaseMessage where U: BaseMessagingRequest where V:BaseMessageReceived
     {
-        protected readonly IMessagingService<T, U> _messagingService;
+        protected readonly IMessagingService<T, U,V> _messagingService;
         protected readonly IMapper _mapper;
         private readonly HubEventService _hubEventService;
 
-        public BaseMessagingController(IMessagingService<T,U> messagingService, IMapper mapper, HubEventService hubEventService)
+        public BaseMessagingController(IMessagingService<T,U,V> messagingService, IMapper mapper, HubEventService hubEventService)
         {
             _messagingService = messagingService;
             _mapper = mapper;
@@ -79,6 +80,15 @@ namespace OneSms.Controllers.V1
                 _hubEventService.OnMessageStateChanged.OnNext(message);
 
             return Ok($"Message status changed:{message?.MessageStatus}");
+        }
+
+        public virtual async Task<IActionResult> OnMessageReceived([FromBody] V receivedMessage)
+        {
+            var message = await _messagingService.OnMessageReceived(receivedMessage, DateTime.UtcNow);
+            if (message != null)
+                _hubEventService.OnMessageReceived.OnNext(message);
+
+            return Ok($"Message received:{message?.MessageStatus}");
         }
 
         protected abstract Task<IActionResult> SendToMobileServer(SendMessageRequest messageRequest);

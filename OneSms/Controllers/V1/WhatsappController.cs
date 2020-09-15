@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Net.Http.Headers;
 using OneSms.Contracts.V1;
+using OneSms.Contracts.V1.Dtos;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
@@ -24,7 +25,7 @@ namespace OneSms.Controllers.V1
 {
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class WhatsappController : BaseMessagingController<WhatsappMessage,WhatsappRequest>
+    public class WhatsappController : BaseMessagingController<WhatsappMessage,WhatsappRequest,WhastappMessageReceived>
     {
         private readonly IUriService _uriService;
         private readonly IHubContext<OneSmsHub> _hubContext;
@@ -57,6 +58,10 @@ namespace OneSms.Controllers.V1
         [HttpPut(ApiRoutes.Whatsapp.StatusChanged)]
         public override Task<IActionResult> OnStatusChanged([FromBody] WhatsappRequest whatsappRequest)
             => base.OnStatusChanged(whatsappRequest);
+
+        [HttpPut(ApiRoutes.Whatsapp.WhatsappReceived)]
+        public override Task<IActionResult> OnMessageReceived([FromBody] WhastappMessageReceived receivedMessage)
+            => base.OnMessageReceived(receivedMessage);
 
         protected override  async Task<IActionResult> SendToMobileServer(SendMessageRequest messageRequest)
         {
