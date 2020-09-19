@@ -32,9 +32,12 @@ namespace OneSms.Controllers.V1
             _serverConnectionService = serverConnectionService;
         }
 
-        [HttpGet(ApiRoutes.Sms.Send)]
+        [HttpPost(ApiRoutes.Sms.Send)]
         public override Task<IActionResult> SendMessage(SendMessageRequest messageRequest)
-            => base.SendMessage(messageRequest);
+        {
+
+            return base.SendMessage(messageRequest);
+        }
 
         [HttpGet(ApiRoutes.Sms.GetAllByTransactionId)]
         public override Task<IActionResult> GetMessagesByTransactionId(string transactionId)

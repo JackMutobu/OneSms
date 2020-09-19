@@ -18,8 +18,6 @@ namespace OneSms.Services
 
     public class SmsService : BaseMessagingService<SmsMessage, SmsRequest,SmsReceived>,ISmsService
     {
-        private readonly DataContext _dbContext;
-
         public SmsService(DataContext dbContext, IMapper mapper):base(dbContext,mapper)
         {
             _dbContext = dbContext;
@@ -28,8 +26,8 @@ namespace OneSms.Services
         public override async IAsyncEnumerable<SmsMessage> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transId = "")
         {
             var transactionId = string.IsNullOrEmpty(transId) ? Guid.NewGuid() : new Guid(transId);
-            var mobileServerId = _dbContext.Sims.SingleOrDefault(x => x.Number == sendMessageRequest.SenderNumber)?.MobileServerId;
-            if (mobileServerId != null)
+            var simCards = _dbContext.Sims.Where(x => x.Number == sendMessageRequest.SenderNumber).ToList();
+            if(simCards.Count() > 0)
             {
                 foreach (var recipient in sendMessageRequest.Recipients)
                 {
@@ -41,7 +39,7 @@ namespace OneSms.Services
                         CompletedTime = DateTime.UtcNow,
                         Label = sendMessageRequest.Label,
                         MessageStatus = MessageStatus.Pending,
-                        MobileServerId = (Guid)mobileServerId,
+                        MobileServerId = GetSimCard(recipient, simCards)?.MobileServerId ?? simCards.FirstOrDefault().MobileServerId,
                         RecieverNumber = recipient,
                         SenderNumber = sendMessageRequest.SenderNumber,
                         TransactionId = transactionId,
@@ -53,6 +51,39 @@ namespace OneSms.Services
                     yield return sms;
                 }
             }
+        }
+
+        public async override Task<SmsRequest> OnSendingMessage(SmsMessage message)
+        {
+            message.MessageStatus = MessageStatus.Sending;
+            var simCard = GetSimCard(message.RecieverNumber, _dbContext.Sims.Where(x => x.MobileServerId == message.MobileServerId).ToList());
+            _dbContext.Update(message);
+            await _dbContext.SaveChangesAsync();
+            var smsRequest = _mapper.Map<SmsRequest>(message);
+            smsRequest.SimSlot = simCard?.SimSlot ?? 0;
+            return smsRequest;
+        }
+
+        private SimCard? GetSimCard(string recipient,List<SimCard> sims)
+        {
+            var receiver = recipient.Replace("+","").Substring(3,4);
+            var networks = _dbContext.Networks;
+            foreach(var network in networks)
+            {
+                var aliases = network.Alias.Split(",");
+
+                if (network.Name == "Airtel RDC")
+                    receiver = recipient.Replace("+", "").Substring(3, 1);
+
+                foreach (var alias in aliases)
+                {
+                    if (receiver.Contains(alias))
+                    {
+                        return sims.FirstOrDefault(x => x.NetworkId == network.Id);
+                    }    
+                }
+            }
+            return null;
         }
 
         protected override SimCard GetReceiver(SmsReceived messageReceived)

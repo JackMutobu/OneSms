@@ -4,6 +4,7 @@ using OneSms.Hubs;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -42,7 +43,7 @@ namespace OneSms.Services
                  {
                      await CheckClientAvailability(conId);
                  }
-             });
+             },ex => Debug.WriteLine(ex.Message));
         }
         public Dictionary<string, string> ConnectedServers { get; set; }
 

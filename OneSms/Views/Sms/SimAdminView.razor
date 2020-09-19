@@ -15,6 +15,7 @@
     <Column @bind-Field="@context.AirtimeBalance"></Column>
     <Column @bind-Field="@context.MobileMoneyBalance"></Column>
     <Column @bind-Field="@context.SimSlot"></Column>
+    <Column @bind-Field="@context.IsWhatsappNumber"></Column>
     @if (context.MobileServer != null)
     {
         <ActionColumn Title="Server">@context.MobileServer.Name</ActionColumn>
@@ -49,7 +50,7 @@
             <Input @bind-Value="@context.SimSlot" />
         </FormItem>
         <FormItem Label="IsWhatsappNumber">
-            <Checkbox Checked="@context.IsWhatsappNumber">@context.IsWhatsappNumber</Checkbox>
+            <Checkbox CheckedChange="@ToggleChecked" Checked="@context.IsWhatsappNumber">@context.IsWhatsappNumber</Checkbox>
         </FormItem>
         <FormItem Label="Network">
             <Select Placeholder="Select network" DefaultValue="@context.NetworkId.ToString()" OnChange="OnNetworkChange">

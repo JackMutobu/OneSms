@@ -1,8 +1,10 @@
-﻿using OneSms.Contracts.V1;
+﻿using Microsoft.AspNetCore.Http;
+using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
 using OneSms.Droid.Server.Models;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -18,6 +20,7 @@ namespace OneSms.Droid.Server.Services
         Task<Result<T>> GetAsync<T>(object content, string uri) where T : class;
         Task<Result<T>> PostAsync<T>(object content, string uri) where T : class;
         Task<Result<T>> PutAsync<T>(object content, string uri) where T : class;
+        Task<FileUploadSuccessReponse> UploadImage(IFormFile formFile);
         void SetAuthorizationHeaderToken(string token);
         Task<AuthSuccessResponse> Authenticate(ServerAuthRequest model);
         void ChangeBaseAdresse(Uri uri);
@@ -114,6 +117,35 @@ namespace OneSms.Droid.Server.Services
             else
                 result = new Result<T>(response.StatusCode, await response.Content.ReadAsStringAsync());
             return result;
+        }
+
+        public async Task<FileUploadSuccessReponse> UploadImage(IFormFile file)
+        {
+            using var content = new MultipartFormDataContent
+            {
+                {
+                    new StreamContent(file.OpenReadStream())
+                    {
+                        Headers =
+                {
+                    ContentLength = file.Length,
+                    ContentType = new MediaTypeHeaderValue(file.ContentType)
+                }
+                    },
+                    "formImage",
+                    file.FileName
+                }
+            };
+
+            var response = await HttpClient.PostAsync(ApiRoutes.Upload.Image, content);
+            if (response.IsSuccessStatusCode)
+            {
+                var stringResult = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<FileUploadSuccessReponse>(stringResult, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return result;
+            }
+            else
+                throw new Exception(await response.Content.ReadAsStringAsync());
         }
 
     }

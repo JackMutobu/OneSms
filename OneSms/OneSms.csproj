@@ -40,4 +40,8 @@
     <ProjectReference Include="..\OneSms.Web\Shared\OneSms.Web.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\images\" />
+  </ItemGroup>
+
 </Project>

@@ -1,11 +1,16 @@
-﻿using Android.App;
+﻿using Android;
+using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.Graphics;
 using Android.Views;
 using Android.Widget;
+using AndroidX.Core.Content;
 using OneSms.Droid.Server.Services;
 using Splat;
 using System.Text;
+using System.Threading.Tasks;
+using Xamarin.Essentials;
 
 namespace OneSms.Droid.Server.Views
 {
@@ -24,6 +29,7 @@ namespace OneSms.Droid.Server.Views
         private Button _sendVCard;
         private Button _buttonStartSignalRChecker;
         private Button _buttonRestartActivity;
+        private Button _buttonPermission;
         private ImageView _imageView;
         public HomeView(Context context):base(context)
         {
@@ -38,6 +44,7 @@ namespace OneSms.Droid.Server.Views
             _buttonSendImage = new Button(context) { Text = "Send Image" };
             _buttonStartSignalRChecker = new Button(context) { Text = "Start SignalR Checker" };
             _buttonRestartActivity = new Button(context) { Text = "Restart" };
+            _buttonPermission = new Button(context) { Text = "Check Permissions" };
             _sendVCard = new Button(context) { Text = "Send Vcard" };
             _imageView = new ImageView(context);
             Orientation = Android.Widget.Orientation.Vertical;
@@ -50,6 +57,7 @@ namespace OneSms.Droid.Server.Views
             AddView(_buttonSendImage);
             AddView(_sendVCard);
             AddView(_buttonStartSignalRChecker);
+            AddView(_buttonPermission);
             AddView(_buttonRestartActivity);
 
             _button.Click += (s, e) =>
@@ -101,6 +109,8 @@ namespace OneSms.Droid.Server.Views
             _buttonStartSignalRChecker.Click += (s, e) => _signalRService.SignalRServiceConnectionChecker();
 
             _buttonRestartActivity.Click += (s, e) => MainActivity.RestartActivity(context);
+
+            _buttonPermission.Click += async (s, e) => await CheckAndRequestReadStorage();
         }
 
         public Bitmap BitmapImage { get; set; }
@@ -119,6 +129,19 @@ namespace OneSms.Droid.Server.Views
         {
             _imageView.SetImageBitmap(bitmap);
         }
-        
+
+        public async Task<PermissionStatus> CheckAndRequestReadStorage()
+        {
+            var status = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
+            if (status != PermissionStatus.Granted)
+                status = await Permissions.RequestAsync<Permissions.StorageRead>();
+            if (ContextCompat.CheckSelfPermission(Context, Manifest.Permission.ReadExternalStorage) == Permission.Denied)
+            {
+                //ask for permission
+                ((Activity)Context).RequestPermissions(new string[] { Manifest.Permission.ReadExternalStorage }, 67899654);
+            }
+            return status;
+        }
+
     }
 }

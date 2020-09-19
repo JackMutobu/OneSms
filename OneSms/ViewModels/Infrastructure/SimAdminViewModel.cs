@@ -33,6 +33,7 @@ namespace OneSms.ViewModels
             AddOrUpdateCard = ReactiveCommand.CreateFromTask<SimCard,int>(sim =>
             {
                 _dbContext.Entry(sim).State = EntityState.Detached;
+                sim.Network = null;
                 _dbContext.Update(sim);
                 return _dbContext.SaveChangesAsync();
             });

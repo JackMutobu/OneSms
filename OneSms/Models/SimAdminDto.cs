@@ -26,7 +26,9 @@ namespace OneSms.Models
             AppIds = simCard.Apps.Select(x => x.AppId).ToList();
             SimSlot = simCard.SimSlot;
             MobileServerId = simCard.MobileServerId;
-            
+            IsWhatsappNumber = simCard.IsWhatsappNumber;
+
+
         }
 
         [Required]
@@ -46,7 +48,8 @@ namespace OneSms.Models
                 Number = this.Number,
                 Apps = this.Apps,
                 SimSlot = this.SimSlot,
-                MobileServerId = this.MobileServerId
+                MobileServerId = this.MobileServerId,
+                IsWhatsappNumber = this.IsWhatsappNumber
         };
         }
     }

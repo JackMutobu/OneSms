@@ -1,4 +1,5 @@
-﻿using Android.App;
+﻿using Android;
+using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
@@ -7,6 +8,7 @@ using Android.Provider;
 using Android.Runtime;
 using Android.Views;
 using AndroidX.AppCompat.App;
+using AndroidX.Core.Content;
 using Java.Lang;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Droid.Server.Constants;
@@ -70,11 +72,12 @@ namespace OneSms.Droid.Server
             InitializeSmsServices();
         }
 
-        private async Task RequestPermissions()
+        public async Task RequestPermissions()
         {
             UssdController.VerifyAccesibilityAccess(this);
             UssdController.VerifyOverLay(this);
             UssdController.RequestPermission(this);
+            await CheckAndRequestReadStorage();
             await smsService.CheckAndRequestSmsPermission();
             await smsService.CheckAndRequestReadPhoneStatePermission();
             await whatsappService.CheckAndRequestReadContactPermission();
@@ -206,6 +209,20 @@ namespace OneSms.Droid.Server
             base.OnResume();
             whatsappService?.OnRequestCompleted.OnNext(whatsappService?.CurrentTransaction);
         }
+
+        public async Task<PermissionStatus> CheckAndRequestReadStorage()
+        {
+            var status = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
+            if (status != PermissionStatus.Granted)
+                status = await Permissions.RequestAsync<Permissions.StorageRead>();
+            if (ContextCompat.CheckSelfPermission(this,Manifest.Permission.ReadExternalStorage) == Permission.Denied)
+            {
+                //ask for permission
+                RequestPermissions(new string[] { Manifest.Permission.ReadExternalStorage }, 67899654);
+            }
+            return status;
+        }
+
     }
 }
 

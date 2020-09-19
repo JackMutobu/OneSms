@@ -147,5 +147,10 @@ namespace OneSms.Views.Sms
             sim.AppIds.AddRange(((IEnumerable<string>)value.Value).Select(x => new Guid(x)));
         }
         private void CanAddApp() => canAddApp = !canAddApp;
+
+        private void ToggleChecked(bool value)
+        {
+            sim.IsWhatsappNumber = !sim.IsWhatsappNumber;
+        }
     }
 }

@@ -15,8 +15,8 @@ namespace OneSms.Services
 {
     public abstract class BaseMessagingService<T, U, V> : IMessagingService<T, U,V> where T : BaseMessage where U : BaseMessagingRequest where V:BaseMessageReceived
     {
-        private DataContext _dbContext;
-        private IMapper _mapper;
+        protected DataContext _dbContext;
+        protected IMapper _mapper;
 
         public BaseMessagingService(DataContext dbContext, IMapper mapper)
         {
@@ -45,7 +45,7 @@ namespace OneSms.Services
             .Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending)
             .AsAsyncEnumerable();
 
-        public async Task<U> OnSendingMessage(T message)
+        public virtual async Task<U> OnSendingMessage(T message)
         {
             message.MessageStatus = MessageStatus.Sending;
             _dbContext.Update(message);
