@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using OneSms.Data;
-using OneSms.Models;
-using OneSms.Web.Shared.Enumerations;
-using OneSms.Web.Shared.Models;
+﻿using OneSms.Contracts.V1.Enumerations;
+using OneSms.Domain;
+using OneSms.Services;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System;
@@ -16,51 +14,58 @@ namespace OneSms.ViewModels
 {
     public class RegexAdminViewModel:ReactiveObject
     {
-        private OneSmsDbContext _oneSmsDbContext;
+        private readonly IMessageExtractionService _messageExtractionService;
+        private readonly INetworkService _networkService;
 
-        public RegexAdminViewModel(OneSmsDbContext oneSmsDbContext)
+        public RegexAdminViewModel(IMessageExtractionService messageExtractionService, INetworkService networkService)
         {
-            _oneSmsDbContext = oneSmsDbContext;
-            LoadSmsExtractors = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.SmsDataExtractors.Include(x => x.Network).ToListAsync());
-            LoadSmsExtractors.Do(items => SmsDataExtractors = new ObservableCollection<SmsDataExtractor>(items)).Subscribe();
+            _messageExtractionService = messageExtractionService;
+            _networkService = networkService;
+            Networks = new ObservableCollection<NetworkOperator>();
+            MessageExtractors = new ObservableCollection<NetworkMessageExtractor>();
+            LoadExtractors = ReactiveCommand.CreateFromTask(() => _messageExtractionService.GetExtractors());
+            NetworkActionTypes = new ObservableCollection<NetworkActionType>(Enum.GetValues(typeof(NetworkActionType)).Cast<NetworkActionType>());
 
-            LoadNetworks = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.Networks.ToListAsync());
+            LoadExtractors.Do(items => MessageExtractors = new ObservableCollection<NetworkMessageExtractor>(items)).Subscribe();
+            LoadExtractors.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+
+            LoadNetworks = ReactiveCommand.CreateFromTask(() => _networkService.GetNetworks());
             LoadNetworks.Do(items => Networks = new ObservableCollection<NetworkOperator>(items)).Subscribe();
-            LoadNetworks.Select(_ => Unit.Default).InvokeCommand(LoadSmsExtractors);
+            LoadNetworks.Select(_ => Unit.Default).InvokeCommand(LoadExtractors);
+            LoadNetworks.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
 
-            UssdActionTypes = new ObservableCollection<UssdActionType>(Enum.GetValues(typeof(UssdActionType)).Cast<UssdActionType>());
 
-            AddOrUpdateItem = ReactiveCommand.CreateFromTask<SmsDataExtractor, int>(item =>
+
+            AddOrUpdateItem = ReactiveCommand.CreateFromTask<NetworkMessageExtractor, NetworkMessageExtractor>(_messageExtractionService.AddExtractor);
+            AddOrUpdateItem.Do(x =>
             {
-                item.CreatedOn = DateTime.UtcNow;
-                _oneSmsDbContext.Update(item);
-                return _oneSmsDbContext.SaveChangesAsync();
-            });
-            AddOrUpdateItem.Where(rows => rows > 0).Select(_ => Unit.Default).InvokeCommand(LoadSmsExtractors);
+                MessageExtractors.Add(x);
+                MessageExtractors = new ObservableCollection<NetworkMessageExtractor>(MessageExtractors.OrderByDescending(x => x.Id));
+            }).Subscribe();
+            AddOrUpdateItem.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
 
-            DeleteItem = ReactiveCommand.CreateFromTask<SmsDataExtractor, int>(data =>
-            {
-                _oneSmsDbContext.SmsDataExtractors.Remove(data);
-                return _oneSmsDbContext.SaveChangesAsync();
-            });
-            DeleteItem.Where(rows => rows > 0).Select(_ => Unit.Default).InvokeCommand(LoadSmsExtractors);
+            DeleteItem = ReactiveCommand.CreateFromTask<NetworkMessageExtractor, int>(_messageExtractionService.DeleteExtractor);
+            DeleteItem.Where(rows => rows > 0).Select(_ => Unit.Default).InvokeCommand(LoadExtractors);
+            DeleteItem.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
         }
 
+        public string? Errors { [ObservableAsProperty]get; }
+
         [Reactive]
-        public ObservableCollection<SmsDataExtractor> SmsDataExtractors { get; set; }
+        public ObservableCollection<NetworkMessageExtractor> MessageExtractors { get; set; }
 
         [Reactive]
         public ObservableCollection<NetworkOperator> Networks { get; set; }
 
         [Reactive]
-        public ObservableCollection<UssdActionType> UssdActionTypes { get; set; }
+        public ObservableCollection<NetworkActionType> NetworkActionTypes { get; set; }
 
-        public ReactiveCommand<Unit,List<SmsDataExtractor>> LoadSmsExtractors { get;}
+        public ReactiveCommand<Unit,List<NetworkMessageExtractor>> LoadExtractors { get;}
 
         public ReactiveCommand<Unit, List<NetworkOperator>> LoadNetworks { get; }
 
-        public ReactiveCommand<SmsDataExtractor,int> AddOrUpdateItem { get; }
+        public ReactiveCommand<NetworkMessageExtractor, NetworkMessageExtractor> AddOrUpdateItem { get; }
 
-        public ReactiveCommand<SmsDataExtractor,int> DeleteItem { get; }
+        public ReactiveCommand<NetworkMessageExtractor, int> DeleteItem { get; }
     }
 }

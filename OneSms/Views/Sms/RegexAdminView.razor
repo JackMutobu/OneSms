@@ -2,18 +2,20 @@
 @inherits ReactiveComponentBase<RegexAdminViewModel>
 @attribute [Authorize(Roles = "SuperAdmin")]
 <PageHeader BackIcon="string.Empty">
-    <PageHeaderTitle>Sms Data Extractor</PageHeaderTitle>
+    <PageHeaderTitle>Network Data Extractor</PageHeaderTitle>
     <PageHeaderExtra>
-        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(smsDataExtractor)">Add</Button>
+        <Button Type="@ButtonType.Primary" @onclick="() => ShowModal(networkMessageExtractor)">Add</Button>
     </PageHeaderExtra>
 </PageHeader>
-<Table DataSource="@ViewModel.SmsDataExtractors" Class="table-responsive">
+<div style="margin:10px">
+    <Text Type="danger">@ViewModel.Errors</Text>
+</div>
+<Table DataSource="@ViewModel.MessageExtractors" Class="table-responsive">
     <Column @bind-Field="@context.Description"></Column>
-    <Column @bind-Field="@context.UssdAction"></Column>
+    <Column @bind-Field="@context.NetworkAction"></Column>
     <Column @bind-Field="@context.OriginatingAddress"></Column>
     <ActionColumn Title="Network">@context.Network?.Name</ActionColumn>
         <Column @bind-Field="@context.RegexPatern"></Column>
-        <Column @bind-Field="@context.CreatedOn"></Column>
         <ActionColumn Title="Action">
             <Space Size="middle">
                 <SpaceItem>
@@ -26,7 +28,7 @@
         </ActionColumn>
 </Table>
 <Modal Title="@("Add or modify regex")" OnCancel="HideModal" Visible="@modalVisible" Footer="null">
-    <Form Model="smsDataExtractor" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
+    <Form Model="networkMessageExtractor" OnFinish="Save" LabelCol="new ColLayoutParam { Span = 8 }" WrapperCol="new ColLayoutParam { Span = 16 }">
         <FormItem Label="Descritption">
             <Input @bind-Value="@context.Description" />
         </FormItem>
@@ -45,8 +47,8 @@
             </Select>
         </FormItem>
         <FormItem Label="Action Type">
-            <Select DefaultValue=@(((int)context.UssdAction).ToString()) OnChange="OnUssdActionTypeChange">
-                @foreach (var ussd in ViewModel.UssdActionTypes)
+            <Select DefaultValue=@(((int)context.NetworkAction).ToString()) OnChange="OnUssdActionTypeChange">
+                @foreach (var ussd in ViewModel.NetworkActionTypes)
                 {
                     <SelectOption Value="@(((int)ussd).ToString())">@ussd</SelectOption>
                 }
@@ -58,7 +60,7 @@
                     <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
                 </SpaceItem>
                 <SpaceItem>
-                    <Button @onclick="() => smsDataExtractor = new SmsDataExtractor()">Clear</Button>
+                    <Button @onclick="() => networkMessageExtractor = new NetworkMessageExtractor()">Clear</Button>
                 </SpaceItem>
             </Space>
         </FormItem>

@@ -8,23 +8,25 @@ namespace OneSms.Data
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
-        public DbSet<Application> Apps { get; set; }
+        public DbSet<Application> Apps { get; set; } = null!;
 
-        public DbSet<SimCard> Sims { get; set; }
+        public DbSet<SimCard> Sims { get; set; } = null!;
 
-        public DbSet<MobileServer> MobileServers { get; set; }
+        public DbSet<MobileServer> MobileServers { get; set; } = null!;
 
-        public DbSet<NetworkOperator> Networks { get; set; }
+        public DbSet<NetworkOperator> Networks { get; set; } = null!;
 
-        public DbSet<ApplicationSim> AppSims { get; set; }
+        public DbSet<ApplicationSim> AppSims { get; set; } = null!;
 
-        public DbSet<SmsMessage> SmsMessages { get; set; }
+        public DbSet<SmsMessage> SmsMessages { get; set; } = null!;
 
-        public DbSet<WhatsappMessage> WhatsappMessages { get; set; }
+        public DbSet<WhatsappMessage> WhatsappMessages { get; set; } = null!;
 
-        public DbSet<Contact> Contacts { get; set; }
+        public DbSet<Contact> Contacts { get; set; } = null!;
 
-        public DbSet<AppContact> AppContacts { get; set; }
+        public DbSet<AppContact> AppContacts { get; set; } = null!;
+
+        public DbSet<NetworkMessageExtractor> NetworkMessageExtractors { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

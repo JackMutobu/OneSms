@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneSms.Data;
 using OneSms.Domain;
+using OneSms.Models;
 using OneSms.Options;
 using OneSms.Services;
 
@@ -37,9 +38,11 @@ namespace OneSms.Installers
             services.AddScoped<ISmsService, SmsService>();
             services.AddScoped<IWhatsappService, WhatsappService>();
             services.AddScoped<IContactService, ContactService>();
+            services.AddScoped<IMessageExtractionService, MessageExtractionService>();
+            services.AddScoped<INetworkService, NetworkService>();
+            services.AddScoped<SmsDataExtractorService>();
             services.AddSingleton<HubEventService>();
             services.AddScoped<TimService>();
-            services.AddScoped<SmsDataExtractorService>();
             services.AddScoped<SimService>();
 
             var urlOptions = new UrlOptions();
