@@ -1,7 +1,10 @@
-﻿using BlazorInputFile;
+﻿using AntDesign;
+using BlazorInputFile;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
+using OneOf;
+using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Services;
 using OneSms.Web.Shared.Constants;
@@ -18,6 +21,7 @@ namespace OneSms.Views.Infrastructure
         bool modalVisible;
         ApiAuthRequest authRequest = new ApiAuthRequest();
         SendMessageRequest messageRequest = new SendMessageRequest();
+        string selectedProcessor = "0";
         string? receivers;
         IFileListEntry? fileImage;
 
@@ -80,6 +84,20 @@ namespace OneSms.Views.Infrastructure
             messageRequest.AppId = string.IsNullOrEmpty(ViewModel.AppId) ? System.Guid.NewGuid() : new System.Guid(ViewModel.AppId);
 
             await ViewModel.SendMessages.Execute(messageRequest).ToTask();
+        }
+
+        private void OnChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
+        {
+            selectedProcessor = value.AsT0.ToString();
+            if (selectedProcessor == "0")
+            {
+                messageRequest.Processors = new List<MessageProcessor> { MessageProcessor.SMS };
+            }
+            else
+            {
+                messageRequest.Processors = new List<MessageProcessor> { MessageProcessor.Whatsapp };
+            }
+            StateHasChanged();
         }
     }
 }

@@ -79,30 +79,37 @@ namespace OneSms.Controllers.V1
         [HttpPost(ApiRoutes.Message.SendPending)]
         public async Task<IActionResult> SendPendingMessage(string serverId)
         {
-            string? serverConnectionId;
-            if(_serverConnectionService.ConnectedServers.TryGetValue(serverId, out serverConnectionId))
-                await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.ResetToActive);
+            try
+            {
+                string? serverConnectionId;
+                if (_serverConnectionService.ConnectedServers.TryGetValue(serverId, out serverConnectionId))
+                    await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.ResetToActive);
 
-            var numberOfSentMessages = 0;
-            var numberOfPendingMessages = 0;
-            await foreach(var message in  _whatsappService.GetPendingMessages(serverId))
-            {
-                var (sentMessages, pendingMessages) = await OnSendWhatsapp(message);
-                numberOfPendingMessages += pendingMessages;
-                numberOfSentMessages += sentMessages;
-            }
+                var numberOfSentMessages = 0;
+                var numberOfPendingMessages = 0;
+                foreach (var message in await _whatsappService.GetListOfPendingMessages(serverId))
+                {
+                    var (sentMessages, pendingMessages) = await OnSendWhatsapp(message);
+                    numberOfPendingMessages += pendingMessages;
+                    numberOfSentMessages += sentMessages;
+                }
 
-            await foreach (var message in _smsService.GetPendingMessages(serverId))
-            {
-                var (sentMessages, pendingMessages) = await OnSendSms(message);
-                numberOfPendingMessages += pendingMessages;
-                numberOfSentMessages += sentMessages;
+                foreach (var message in await _smsService.GetListOfPendingMessages(serverId))
+                {
+                    var (sentMessages, pendingMessages) = await OnSendSms(message);
+                    numberOfPendingMessages += pendingMessages;
+                    numberOfSentMessages += sentMessages;
+                }
+                return Ok(new SendMessageResponse
+                {
+                    PendingMessages = numberOfPendingMessages,
+                    SentMessages = numberOfSentMessages
+                });
             }
-            return Ok(new SendMessageResponse
+            catch(Exception ex)
             {
-                PendingMessages = numberOfPendingMessages,
-                SentMessages = numberOfSentMessages
-            });
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet(ApiRoutes.Message.GetAllByTransactionId)]

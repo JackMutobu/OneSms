@@ -32,6 +32,8 @@ namespace OneSms.ViewModels
             _hubEventService = hubEventService;
             SmsTransactions = new ObservableCollection<SmsMessage>();
             Sims = new ObservableCollection<SimCard>();
+            MobileServers = new ObservableCollection<MobileServer>();
+            SelectedSimCard = new SimCard();
 
             LoadMobileServers = ReactiveCommand.CreateFromTask(() => _dataContext.MobileServers.ToListAsync());
 
@@ -73,7 +75,7 @@ namespace OneSms.ViewModels
             AddSmsTransaction.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
             LoadSimCards.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
 
-            _hubEventService.OnSmsMessageStatusChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(sms =>
+            _hubEventService.OnMessageStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(sms =>
             {
                 var item = SmsTransactions.FirstOrDefault(x => x.Id == sms.Id);
                 if(item != null)
@@ -96,7 +98,7 @@ namespace OneSms.ViewModels
         [Reactive]
         public ObservableCollection<SimCard> Sims { get; set; }
 
-        public string Errors { [ObservableAsProperty]get; }
+        public string? Errors { [ObservableAsProperty]get; }
 
         public SimCard SelectedSimCard { get; set; }
 

@@ -45,6 +45,11 @@ namespace OneSms.Services
             .Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending)
             .AsAsyncEnumerable();
 
+        public Task<List<T>> GetListOfPendingMessages(string serverKey)
+           => _dbContext.Set<T>()
+           .Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending)
+           .ToListAsync();
+
         public virtual async Task<U> OnSendingMessage(T message)
         {
             message.MessageStatus = MessageStatus.Sending;

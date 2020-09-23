@@ -18,8 +18,6 @@ namespace OneSms.Services
 
     public class WhatsappService :BaseMessagingService<WhatsappMessage, WhatsappRequest,WhastappMessageReceived>, IWhatsappService
     {
-        private readonly DataContext _dbContext;
-
         public WhatsappService(DataContext dbContext, IMapper mapper):base(dbContext,mapper)
         {
             _dbContext = dbContext;

@@ -16,6 +16,7 @@ namespace OneSms.Services
         Task<T> OnStatusChanged(U request, DateTime completedTime);
         IAsyncEnumerable<T> RegisterSendMessageRequest(SendMessageRequest sendMessageRequest, string transId = "");
         IAsyncEnumerable<T> GetPendingMessages(string serverKey);
+        Task<List<T>> GetListOfPendingMessages(string serverKey);
         Task<bool> CheckSenderNumber(string number);
         string? GetSenderNumber(Guid AppId);
         Task<T?> OnMessageReceived(V messageReceived, DateTime receivedTime);

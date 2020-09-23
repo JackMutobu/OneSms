@@ -26,6 +26,8 @@ namespace OneSms.Installers
             services.AddAntDesign();
 
             services.AddHttpContextAccessor();
+
+            services.AddHttpClient();
         }
     }
 }

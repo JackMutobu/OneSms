@@ -64,11 +64,13 @@ namespace OneSms.Droid.Server.Services
                 => Connection.InvokeAsync(hubMethodCallback, requestId, true));
 
             Connectivity.ConnectivityChanged += async (s, e) => await ReconnectToHub();
+
+            SignalRServiceConnectionChecker();
         }
 
         public void SignalRServiceConnectionChecker()
         {
-            Observable.Interval(TimeSpan.FromSeconds(30)).Subscribe(async number =>
+            Observable.Interval(TimeSpan.FromMinutes(3)).Subscribe(async number =>
             {
                 if (Connection.State == HubConnectionState.Disconnected)
                     await ReconnectToHub();

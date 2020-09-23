@@ -1,5 +1,6 @@
 ﻿using BlazorInputFile;
 using DynamicData;
+using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
 using OneSms.Data;
@@ -16,6 +17,7 @@ using System.Net.Http.Headers;
 using System.Reactive.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace OneSms.ViewModels.Infrastructure
 {
@@ -46,31 +48,32 @@ namespace OneSms.ViewModels.Infrastructure
              });
             Authenticate.Do(authData => _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authData.Token)).Subscribe();
             Authenticate.Select(_ => "Authenticated").ToPropertyEx(this, x => x.AuthMessage);
-            Authenticate.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            Authenticate.ThrownExceptions.Do(x => Errors = x.Message).Subscribe();
             Authenticate.IsExecuting.Do(x => IsBusy = x).Subscribe();
 
 
-            SendMessages = ReactiveCommand.CreateFromTask<SendMessageRequest, List<MessageResponse>>(async messageRequest =>
-             {
-                 var data = JsonSerializer.Serialize(messageRequest);
-                 var content = new StringContent(data, Encoding.UTF8, "application/json");
-                 var response = await _httpClient.PostAsync("/api/v1/whatsapp/send", content);
-                 if(response.IsSuccessStatusCode)
-                 {
-                     var sendMessageResponse = JsonSerializer.Deserialize<SendMessageResponse>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                     var getMessages = await _httpClient.GetAsync($"/api/v1/whatsapp/transaction/{sendMessageResponse.TransactionId}");
-                     var messageString = await getMessages.Content.ReadAsStringAsync();
-                     var result = JsonSerializer.Deserialize<List<MessageResponse>>(messageString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                     return result;
-                 }
-                 else
-                     throw new Exception(await response.Content.ReadAsStringAsync());
-             });
-            SendMessages.Do(messages => Messages.AddRange(messages)).Subscribe();
+            SendMessages = ReactiveCommand.CreateFromTask<SendMessageRequest, List<MessageResponse>?>(async messageRequest =>
+            {
+                try
+                {
+                    var data = JsonSerializer.Serialize(messageRequest);
+                    var content = new StringContent(data, Encoding.UTF8, "application/json");
+                    if (messageRequest.Processors?.FirstOrDefault() == Contracts.V1.Enumerations.MessageProcessor.Whatsapp)
+                        return await SendMessage(content, ApiRoutes.Whatsapp.Send, "whatsapp");
+                    else
+                        return await SendMessage(content, ApiRoutes.Sms.Send, "sms");
+                }
+                catch(Exception ex)
+                {
+                    Errors = ex.Message;
+                }
+                return null;
+            });
+            SendMessages.Where(x => x != null).Do(messages => Messages.AddRange(messages)).Subscribe();
             SendMessages.IsExecuting.Do(x => IsBusy = x).Subscribe();
-            SendMessages.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            SendMessages.ThrownExceptions.Do(x => Errors = x.Message).Subscribe();
 
-            _hubEventService.OnWhatsappMessageStatusChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(message =>
+            _hubEventService.OnMessageStateChanged.ObserveOn(RxApp.MainThreadScheduler).Subscribe(message =>
             {
                 var item = Messages.FirstOrDefault(x => x.Id == message.Id);
                 if (item != null)
@@ -110,11 +113,27 @@ namespace OneSms.ViewModels.Infrastructure
                      throw new Exception(await response.Content.ReadAsStringAsync());
              });
             UploadFile.Do(image => ImageLink = image.Url).Subscribe();
-            UploadFile.ThrownExceptions.Select(x => x.Message).ToPropertyEx(this, x => x.Errors);
+            UploadFile.ThrownExceptions.Do(x => Errors = x.Message).Subscribe();
             UploadFile.IsExecuting.Do(x => IsBusy = x).Subscribe();
         }
 
-        public string? Errors { [ObservableAsProperty]get; }
+        private async Task<List<MessageResponse>> SendMessage(StringContent content,string sendUrl, string transactionController)
+        {
+            var response = await _httpClient.PostAsync($"/{sendUrl}", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var sendMessageResponse = JsonSerializer.Deserialize<SendMessageResponse>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var getMessages = await _httpClient.GetAsync($"/api/v1/{transactionController}/transaction/{sendMessageResponse.TransactionId}");
+                var messageString = await getMessages.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<List<MessageResponse>>(messageString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return result;
+            }
+            else
+                throw new Exception(await response.Content.ReadAsStringAsync());
+        }
+
+        [Reactive]
+        public string? Errors { get; set; }
 
         public string? AuthMessage { [ObservableAsProperty]get; }
 
@@ -123,7 +142,7 @@ namespace OneSms.ViewModels.Infrastructure
 
         public ReactiveCommand<ApiAuthRequest, AuthSuccessResponse> Authenticate { get; }
 
-        public ReactiveCommand<SendMessageRequest, List<MessageResponse>> SendMessages { get; }
+        public ReactiveCommand<SendMessageRequest, List<MessageResponse>?> SendMessages { get; }
 
         public ReactiveCommand<IFileListEntry, FileUploadSuccessReponse> UploadFile { get; }
 
