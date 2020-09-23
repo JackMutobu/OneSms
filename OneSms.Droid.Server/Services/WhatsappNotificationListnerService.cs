@@ -17,6 +17,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Debug = System.Diagnostics.Debug;
@@ -27,10 +28,10 @@ namespace OneSms.Droid.Server.Services
 {
     [Service(Enabled = true, Label = "OneSms Whatsapp notification reader", Permission = Manifest.Permission.BindNotificationListenerService)]
     [IntentFilter(new[] { "android.service.notification.NotificationListenerService" })]
-    public class WhatsappNotificationListnerService: NotificationListenerService
+    public class WhatsappNotificationListnerService : NotificationListenerService
     {
-        private  const string TAG = "NotificationListener";
-        private const string  WastappPackageName = "com.whatsapp.w4b";
+        private const string TAG = "NotificationListener";
+        private const string WastappPackageName = "com.whatsapp.w4b";
         private string _prevNotificationKey;
         private IHttpClientService _httpClientService;
 
@@ -68,29 +69,42 @@ namespace OneSms.Droid.Server.Services
                 if (from == "WhatsApp Business" || message.Contains("new messages") || isGroupMessage)
                     return;
 
-                var whatsappImageDirectory = Environment.ExternalStorageDirectory.AbsolutePath + "/WhatsApp Business/Media/WhatsApp Business Images/";
-                var directory = System.IO.Path.GetDirectoryName(whatsappImageDirectory);
-                var files = Directory.GetFiles(whatsappImageDirectory);
+                //var whatsappImageDirectory = Environment.ExternalStorageDirectory.AbsolutePath + "/WhatsApp Business/Media/WhatsApp Business Images/";
+                //var directory = System.IO.Path.GetDirectoryName(whatsappImageDirectory);
+                //var files = Directory.GetFiles(whatsappImageDirectory);
 
-                File whatsappMediaDirectory = new File(whatsappImageDirectory);
+                //File whatsappMediaDirectory = new File(whatsappImageDirectory);
 
-                File[] mediaDirectories = whatsappMediaDirectory.ListFiles();
+                //File[] mediaDirectories = whatsappMediaDirectory.ListFiles();
 
-                var lastFile = mediaDirectories.LastOrDefault();
-                var lastFileDate = lastFile.LastModified();
-                var millis = GetTime();
+                //var lastFile = mediaDirectories.LastOrDefault();
+                //var lastFileDate = lastFile.LastModified();
+                //var millis = GetTime();
+
+                //sbn.Notification.ContentIntent.IntentSender.
+
+                var infoText = bundle.Get("android.InfoText");
+                var messagingUser = bundle.Get("android.messagingUser");
+
+                var intent = GetIntent(sbn.Notification.ContentIntent);
+
+                var methodes = typeof(Notification).GetMethods().Select(x=> x.Name);
+                var properties = typeof(Notification).GetProperties().Select(x => x.Name);
+
+                var sbnMethodes = typeof(StatusBarNotification).GetMethods().Select(x => x.Name);
+                var sbnProperties = typeof(StatusBarNotification).GetProperties().Select(x => x.Name);
 
                 var receivedMessage = new WhastappMessageReceived
                 {
                     Body = message,
-                    SenderNumber = from.Contains("OneSms") ? from.Replace("-","").Replace("OneSms","").Replace(" ","") : from,
+                    SenderNumber = from.Contains("OneSms") ? from.Replace("-", "").Replace("OneSms", "").Replace(" ", "") : from,
                     MobileServerKey = Preferences.Get(OneSmsAction.ServerKey, string.Empty)
                 };
-                
+
                 _whatsappService.ReportReceivedMessage(receivedMessage);
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine(TAG, "Exception: " + ex.Message);
             }
@@ -182,5 +196,21 @@ namespace OneSms.Droid.Server.Services
             //}
         }
 
+        public static Intent GetIntent(PendingIntent pendingIntent)
+        {
+            Intent intent = null;
+            try
+            {
+                var getIntents = pendingIntent.Class.GetDeclaredMethods().Select(x => x.Name);
+                var getIntent = pendingIntent.Class.GetDeclaredMethod("getIntent");
+                intent = (Intent)getIntent.Invoke(pendingIntent);
+
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+            return intent;
+        }
     }
 }
