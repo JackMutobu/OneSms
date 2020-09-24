@@ -23,13 +23,15 @@ namespace OneSms.Controllers.V1
         private readonly IUriService _uriService;
         private readonly IHubContext<OneSmsHub> _hubContext;
         private readonly IServerConnectionService _serverConnectionService;
+        private readonly INetworkMessageExtractionService _messageExtractionService;
 
         public SmsController(ISmsService smsService, IMapper mapper,IUriService uriService,HubEventService hubEventService,
-            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService):base(smsService,mapper,hubEventService)
+            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService, INetworkMessageExtractionService messageExtractionService) :base(smsService,mapper,hubEventService)
         {
             _uriService = uriService;
             _hubContext = hubContext;
             _serverConnectionService = serverConnectionService;
+            _messageExtractionService = messageExtractionService;
         }
 
         [HttpPost(ApiRoutes.Sms.Send)]
@@ -52,8 +54,16 @@ namespace OneSms.Controllers.V1
             => base.OnStatusChanged(smsRequest);
 
         [HttpPut(ApiRoutes.Sms.SmsReceived)]
-        public override Task<IActionResult> OnMessageReceived([FromBody] SmsReceived receivedMessage)
-            => base.OnMessageReceived(receivedMessage);
+        public async override Task<IActionResult> OnMessageReceived([FromBody] SmsReceived receivedMessage)
+        {
+            var networkMessage = _messageExtractionService.GetMessageData(receivedMessage);
+            if(networkMessage != null)
+            {
+                await _messageExtractionService.SaveNetworkMessageData(networkMessage);
+                return Ok("Network message received");
+            }
+            return await base.OnMessageReceived(receivedMessage);
+        }
 
         protected override async Task<IActionResult> SendToMobileServer(SendMessageRequest messageRequest)
         {

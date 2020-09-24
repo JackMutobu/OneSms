@@ -1,0 +1,29 @@
+﻿@page "/networkmessages"
+@using OneSms.ViewModels.Sms
+@inherits ReactiveComponentBase<NetworkMessageViewModel>
+<PageHeader BackIcon="string.Empty">
+    <PageHeaderTitle>Network Messages</PageHeaderTitle>
+</PageHeader>
+<Table DataSource="@ViewModel.Messages" Class="table-responsive">
+    <Column @bind-Field="@context.Amount"></Column>
+    <Column @bind-Field="@context.Cost"></Column>
+    <Column @bind-Field="@context.NetworkAction"></Column>
+    <Column @bind-Field="@context.ExecutionDate"></Column>
+    <Column @bind-Field="@context.Message"></Column>
+    @if (context.Sim != null)
+    {
+        <ActionColumn Title="Number">
+            @context.Sim.Number
+        </ActionColumn>
+        <ActionColumn Title="Network">
+            @context.Sim.Network
+        </ActionColumn>
+    }
+    <ActionColumn Title="Action">
+        <Space Size="middle">
+            <SpaceItem>
+                <Button Type="danger" @onclick="() => Delete(context)">Delete</Button>
+            </SpaceItem>
+        </Space>
+    </ActionColumn>
+</Table>
