@@ -27,7 +27,7 @@ namespace OneSms.Droid.Server.Views
         private Button _buttonSendImage;
         private Button _buttonChooseImage;
         private Button _sendVCard;
-        private Button _buttonStartSignalRChecker;
+        private Button _buttonClearPreferences;
         private Button _buttonRestartActivity;
         private Button _buttonPermission;
         private ImageView _imageView;
@@ -42,7 +42,7 @@ namespace OneSms.Droid.Server.Views
             _button = new Button(context) { Text = "Send"};
             _buttonChooseImage = new Button(context) { Text = "Choose image" };
             _buttonSendImage = new Button(context) { Text = "Send Image" };
-            _buttonStartSignalRChecker = new Button(context) { Text = "Start SignalR Checker" };
+            _buttonClearPreferences = new Button(context) { Text = "Clear Preferences" };
             _buttonRestartActivity = new Button(context) { Text = "Restart" };
             _buttonPermission = new Button(context) { Text = "Check Permissions" };
             _sendVCard = new Button(context) { Text = "Send Vcard" };
@@ -56,9 +56,9 @@ namespace OneSms.Droid.Server.Views
             AddView(_imageView);
             AddView(_buttonSendImage);
             AddView(_sendVCard);
-            AddView(_buttonStartSignalRChecker);
-            AddView(_buttonPermission);
-            AddView(_buttonRestartActivity);
+            AddView(_buttonClearPreferences);
+            //AddView(_buttonPermission);
+            //AddView(_buttonRestartActivity);
 
             _button.Click += (s, e) =>
             {
@@ -106,7 +106,7 @@ namespace OneSms.Droid.Server.Views
                 _whatsappService.CheckContactAndSendVcard(context, builder.ToString(), "+254786408335", "Card message to send");
             };
 
-            _buttonStartSignalRChecker.Click += (s, e) => _signalRService.SignalRServiceConnectionChecker();
+            _buttonClearPreferences.Click += (s, e) => Preferences.Clear();
 
             _buttonRestartActivity.Click += (s, e) => MainActivity.RestartActivity(context);
 

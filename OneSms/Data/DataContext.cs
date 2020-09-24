@@ -28,6 +28,8 @@ namespace OneSms.Data
 
         public DbSet<NetworkMessageExtractor> NetworkMessageExtractors { get; set; } = null!;
 
+        public DbSet<NetworkMessageData> NetworkMessages { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

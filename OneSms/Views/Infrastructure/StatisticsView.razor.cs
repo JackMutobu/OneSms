@@ -19,7 +19,11 @@ namespace OneSms.Views.Infrastructure
     public partial class StatisticsView
     {
         bool modalVisible;
-        ApiAuthRequest authRequest = new ApiAuthRequest();
+        ApiAuthRequest authRequest = new ApiAuthRequest
+        {
+            AppId = "32d3a7e4-d18d-462d-be59-08d84cf69cca",
+            AppSecret = "7d5b118d-772a-4423-981e-4dc1a666253b"
+        };
         SendMessageRequest messageRequest = new SendMessageRequest();
         string selectedProcessor = "0";
         string? receivers;
