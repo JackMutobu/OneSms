@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using OneOf;
+using OneSms.Contracts.V1.Enumerations;
 using OneSms.Data;
+using OneSms.Domain;
 using OneSms.ViewModels;
-using OneSms.Web.Shared.Enumerations;
-using OneSms.Web.Shared.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Threading.Tasks;
@@ -22,7 +22,7 @@ namespace OneSms.Views.Ussd
         bool ussdModalEditActionStep = false;
 
         [Inject]
-        OneSmsDbContext OneSmsDbContext { get; set; }
+        DataContext OneSmsDbContext { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {
@@ -42,7 +42,7 @@ namespace OneSms.Views.Ussd
         }
         private async void OnUssdActionTypeChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
         {
-            ViewModel.CurrentActionType = value.AsT0.ToString() == "-1" ? null : (UssdActionType?)ViewModel.UssdActionTypes.Single(x => (int)x == int.Parse(value.AsT0.ToString()));
+            ViewModel.CurrentActionType = value.AsT0.ToString() == "-1" ? null : (NetworkActionType?)ViewModel.UssdActionTypes.Single(x => (int)x == int.Parse(value.AsT0.ToString()));
             await LoadUssdItems((int?)ViewModel.CurrentNetwork?.Id ?? -1, (int?)ViewModel.CurrentActionType ?? -1);
         }
         private void OnUssdActionModalTypeChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)

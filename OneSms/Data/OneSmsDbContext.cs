@@ -4,6 +4,9 @@ using OneSms.Domain;
 using OneSms.Models;
 using OneSms.Web.Shared.Models;
 using SimCard = OneSms.Web.Shared.Models.SimCard;
+using UssdAction = OneSms.Web.Shared.Models.UssdAction;
+using UssdActionStep = OneSms.Web.Shared.Models.UssdActionStep;
+using UssdTransaction = OneSms.Web.Shared.Models.UssdTransaction;
 
 namespace OneSms.Data
 {

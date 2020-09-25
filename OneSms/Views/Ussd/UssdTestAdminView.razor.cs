@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.SignalR;
 using OneOf;
 using OneSms.Data;
+using OneSms.Domain;
 using OneSms.Hubs;
 using OneSms.Services;
-using OneSms.Web.Shared.Dtos;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Threading.Tasks;
@@ -16,13 +16,13 @@ namespace OneSms.Views.Ussd
 {
     public partial class UssdTestAdminView
     {
-        UssdTransactionDto ussdTransactionDto = new UssdTransactionDto();
+        UssdTransaction ussdTransaction = new UssdTransaction();
 
         [Inject]
-        OneSmsDbContext OneSmsDbContext { get; set; } = null!;
+        DataContext DataContext { get; set; } = null!;
 
         [Inject]
-        IHubContext<OneSmsHub> OneSmsHubContext { get; set; } = null!;
+        IHubContext<OneSmsHub> HubContext { get; set; } = null!;
 
         [Inject]
         HubEventService HubEventService { get; set; } = null!;
@@ -32,7 +32,7 @@ namespace OneSms.Views.Ussd
 
         protected async override Task OnInitializedAsync()
         {
-            ViewModel = new ViewModels.UssdTestAdminViewModel(OneSmsDbContext,HubEventService,ServerConnectionService, OneSmsHubContext);
+            ViewModel = new ViewModels.UssdTestAdminViewModel(DataContext,HubEventService,ServerConnectionService, HubContext);
             await ViewModel.LoadMobileServers.Execute().ToTask();
         }
 
@@ -40,13 +40,11 @@ namespace OneSms.Views.Ussd
         {
             var sim = ViewModel.SimCards.First(x => x.Id == int.Parse(value.Value.ToString()));
             ViewModel.SelectedSimCard = sim;
-            ussdTransactionDto.SimId = sim.Id;
-            ussdTransactionDto.SimSlot = sim.SimSlot;
+            ussdTransaction.SimId = sim.Id;
         }
         private void OnUssdActionSelectChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
         {
-            var ussdAction = ViewModel.UssdActions.First(x => (int)x == int.Parse(value.Value.ToString()));
-            ussdTransactionDto.ActionType = ussdAction;
+            var ussdAction = ViewModel.UssdActions.First(x => x.Id == int.Parse(value.Value.ToString()));
             ViewModel.SelectedAction = ussdAction;
         }
         private void OnServerChange(OneOf<string, IEnumerable<string>, LabeledValue, IEnumerable<LabeledValue>> value, OneOf<SelectOption, IEnumerable<SelectOption>> option)
@@ -59,7 +57,7 @@ namespace OneSms.Views.Ussd
         }
         private async Task OnFinish(EditContext editContext)
         {
-            await ViewModel.AddUssdTransaction.Execute(ussdTransactionDto).ToTask();
+            await ViewModel.AddUssdTransaction.Execute(ussdTransaction).ToTask();
         }
     }
 }

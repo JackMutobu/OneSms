@@ -24,14 +24,17 @@ namespace OneSms.Controllers.V1
         private readonly IHubContext<OneSmsHub> _hubContext;
         private readonly IServerConnectionService _serverConnectionService;
         private readonly INetworkMessageExtractionService _messageExtractionService;
+        private readonly ISimCardManagementService _simCardManagementService;
 
         public SmsController(ISmsService smsService, IMapper mapper,IUriService uriService,HubEventService hubEventService,
-            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService, INetworkMessageExtractionService messageExtractionService) :base(smsService,mapper,hubEventService)
+            IHubContext<OneSmsHub> hubContext, IServerConnectionService serverConnectionService, 
+            INetworkMessageExtractionService messageExtractionService, ISimCardManagementService simCardManagementService) :base(smsService,mapper,hubEventService)
         {
             _uriService = uriService;
             _hubContext = hubContext;
             _serverConnectionService = serverConnectionService;
             _messageExtractionService = messageExtractionService;
+            _simCardManagementService = simCardManagementService;
         }
 
         [HttpPost(ApiRoutes.Sms.Send)]
@@ -59,8 +62,16 @@ namespace OneSms.Controllers.V1
             var networkMessage = _messageExtractionService.GetMessageData(receivedMessage);
             if(networkMessage != null)
             {
-                await _messageExtractionService.SaveNetworkMessageData(networkMessage);
-                return Ok("Network message received");
+                var savedInstances = await _messageExtractionService.SaveNetworkMessageData(networkMessage);
+                var ussdRequest = await _simCardManagementService.ProcessNetworkMessage(networkMessage);
+                if(ussdRequest != null)
+                {
+                    if (_serverConnectionService.ConnectedServers.TryGetValue(ussdRequest.MobileServerId.ToString(), out string? serverConnectionId))
+                    {
+                        await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendUssd, ussdRequest);
+                    }
+                }
+                return Ok($"Network message received:{savedInstances}");
             }
             return await base.OnMessageReceived(receivedMessage);
         }

@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OneSms.Data;
-using OneSms.Hubs;
+using OneSms.Domain;
 using OneSms.Services;
-using OneSms.Web.Shared.Models;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System;
@@ -17,23 +15,21 @@ namespace OneSms.ViewModels
 {
     public class UssdTransactionViewModel : ReactiveObject
     {
-        private OneSmsDbContext _oneSmsDbContext;
-        private IHubContext<OneSmsHub> _oneSmsHubContext;
+        private DataContext _dbContext;
         private HubEventService _smsHubEventService;
 
-        public UssdTransactionViewModel(OneSmsDbContext oneSmsDbContext, IHubContext<OneSmsHub> oneSmsHubContext, HubEventService smsHubEventService)
+        public UssdTransactionViewModel(DataContext dbContext, HubEventService smsHubEventService)
         {
-            _oneSmsDbContext = oneSmsDbContext;
-            _oneSmsHubContext = oneSmsHubContext;
+            _dbContext = dbContext;
             _smsHubEventService = smsHubEventService;
             Transactions = new ObservableCollection<UssdTransaction>();
-            LoadTransactions = ReactiveCommand.CreateFromTask(() => _oneSmsDbContext.UssdTransactions.Include(x => x.Sim).Include(x => x.MobileServer).OrderByDescending(x => x.CompletedTime).ToListAsync());
+            LoadTransactions = ReactiveCommand.CreateFromTask(() => _dbContext.UssdTransactions.Include(x => x.Sim).Include(x => x.UssdAction).OrderByDescending(x => x.EndTime).ToListAsync());
             LoadTransactions.Do(ussd => Transactions = new ObservableCollection<UssdTransaction>(ussd)).Subscribe();
 
             DeleteTransaction = ReactiveCommand.CreateFromTask<UssdTransaction, int>(ussd =>
             {
-                _oneSmsDbContext.Remove(ussd);
-                return _oneSmsDbContext.SaveChangesAsync();
+                _dbContext.Remove(ussd);
+                return _dbContext.SaveChangesAsync();
             });
             DeleteTransaction.Select(_ => Unit.Default).InvokeCommand(LoadTransactions);
             _smsHubEventService.OnUssdStateChanged.Select(_ => Unit.Default).InvokeCommand(LoadTransactions);

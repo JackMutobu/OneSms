@@ -1,4 +1,6 @@
 ﻿@page "/ussdadmin"
+@using UssdAction = OneSms.Domain.UssdAction;
+@using UssdActionStep = OneSms.Domain.UssdActionStep;
 @inherits ReactiveComponentBase<UssdAdminViewModel>
 @attribute [Authorize(Roles = "SuperAdmin")]
     <PageHeader BackIcon="string.Empty">
@@ -28,7 +30,6 @@
         <Column @bind-Field="@context.ActionType"></Column>
         <Column @bind-Field="@context.KeyLogins"></Column>
         <Column @bind-Field="@context.KeyProblems"></Column>
-        <Column @bind-Field="@context.CreatedOn"></Column>
         @if (context.Network != null)
         {
             <ActionColumn Title="Network name">
@@ -97,7 +98,6 @@
             <Column @bind-Field="@context.Value"></Column>
             <Column @bind-Field="@context.IsPlaceHolder"></Column>
             <Column @bind-Field="@context.CanSkipe"></Column>
-            <Column @bind-Field="@context.CreatedOn"></Column>
             <ActionColumn Title="Acton">
                 <Space Size="middle">
                     <SpaceItem>

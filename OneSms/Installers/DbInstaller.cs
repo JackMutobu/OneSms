@@ -40,6 +40,7 @@ namespace OneSms.Installers
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<IMessageExtractionService, MessageExtractionService>();
             services.AddScoped<INetworkMessageExtractionService, NetworkMessageExtractionService>();
+            services.AddScoped<ISimCardManagementService, SimCardManagementService>();
             services.AddScoped<INetworkService, NetworkService>();
             services.AddScoped<SmsDataExtractorService>();
             services.AddSingleton<HubEventService>();

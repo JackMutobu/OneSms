@@ -1,5 +1,4 @@
-﻿using OneSms.Web.Shared.Dtos;
-using System.Reactive.Subjects;
+﻿using System.Reactive.Subjects;
 using Splat;
 using OneSms.Domain;
 
@@ -9,14 +8,14 @@ namespace OneSms.Services
     {
         public HubEventService()
         {
-            OnUssdStateChanged = new Subject<UssdTransactionDto>();
+            OnUssdStateChanged = new Subject<UssdTransaction>();
             OnMessageStateChanged = new Subject<BaseMessage>();
             OnSmsMessageStatusChanged = new Subject<SmsMessage>();
             OnWhatsappMessageStatusChanged = new Subject<WhatsappMessage>();
             OnMessageReceived = new Subject<BaseMessage>();
     }
 
-        public Subject<UssdTransactionDto> OnUssdStateChanged { get; }
+        public Subject<UssdTransaction> OnUssdStateChanged { get; }
 
         public Subject<BaseMessage> OnMessageStateChanged { get; }
 

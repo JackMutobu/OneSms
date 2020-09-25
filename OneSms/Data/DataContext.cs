@@ -30,6 +30,12 @@ namespace OneSms.Data
 
         public DbSet<NetworkMessageData> NetworkMessages { get; set; } = null!;
 
+        public DbSet<UssdAction> UssdActions { get; set; } = null!;
+
+        public DbSet<UssdActionStep> UssdActionSteps { get; set; } = null!;
+
+        public DbSet<UssdTransaction> UssdTransactions { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

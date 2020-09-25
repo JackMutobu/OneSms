@@ -2,6 +2,7 @@
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Domain;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OneSms.Mappings
 {
@@ -18,7 +19,9 @@ namespace OneSms.Mappings
                .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ReceiverNumber, opt => opt.MapFrom(src => src.RecieverNumber))
                .ForMember(dest => dest.ImageLinks, opt =>
-                   opt.MapFrom(src => new List<string> { src.ImageLinkOne, src.ImageLinkTwo, src.ImageLinkThree })); ;
+                   opt.MapFrom(src => new List<string> { src.ImageLinkOne, src.ImageLinkTwo, src.ImageLinkThree })); 
+
+
         }
     }
 }

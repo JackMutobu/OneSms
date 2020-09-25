@@ -8,25 +8,22 @@
             <Select DefaultValue=@(ViewModel.CurrentServerKey) Style="width:100px" OnChange="OnServerChange">
                 @foreach (var item in ViewModel.MobileServers)
                 {
-                    <SelectOption Value="@item.Key.ToString()">@item.Name</SelectOption>
+                    <SelectOption Value="@item.Id.ToString()">@item.Name</SelectOption>
                 }
             </Select>
-            <Button Type="danger" @onclick="() => CancelUssdOperation(ViewModel.CurrentServerKey)">Cancel</Button>
+            <Button Type="danger" @onclick="() => CancelUssdOperation(ViewModel?.CurrentServerKey)">Cancel</Button>
         </PageHeaderExtra>
     </PageHeader>
 <Text Type="danger">@ViewModel.Errors</Text>
 
 <Form Layout="@FormLayout.Horizontal"
-      Model="@ussdTransactionDto"
+      Model="@ussdTransaction"
       OnFinish="OnFinish">
-    <FormItem Label="Title">
-        <Input Size="@InputSize.Large" @bind-Value="@context.Title" />
-    </FormItem>
     <FormItem Label="Sim">
         <Select Size="@InputSize.Large" Placeholder="Select Sim" OnChange="OnSimSelectChange">
             @foreach (var sim in ViewModel.SimCards)
             {
-                <SelectOption Value="@sim.Id.ToString()">@($"{sim.Name} - {sim.MobileServer.Name}")</SelectOption>
+                <SelectOption Value="@sim.Id.ToString()">@($"{sim.Name} - {sim?.MobileServer?.Name}")</SelectOption>
             }
         </Select>
     </FormItem>
@@ -35,7 +32,7 @@
         <Select Size="@InputSize.Large" Placeholder="Select Action" OnChange="OnUssdActionSelectChange">
             @foreach (var item in ViewModel.UssdActions)
             {
-                <SelectOption Value="@(((int)item).ToString())">@item</SelectOption>
+                <SelectOption Value="@item.Id.ToString()">@item</SelectOption>
             }
         </Select>
     </FormItem>
@@ -48,15 +45,15 @@
 </Form>
 
 <Table DataSource="@ViewModel.UssdTransactions" Class="table-responsive">
-    <Column @bind-Field="@context.Title"></Column>
-    <Column @bind-Field="@context.ActionType"></Column>
-    <Column @bind-Field="@context.LastMessage"></Column>
-    <Column @bind-Field="@context.StartTime"></Column>
-    <Column @bind-Field="@context.CompletedTime"></Column>
+    <Column @bind-Field="@context.SimId"></Column>
+    <Column @bind-Field="@context.UssdAction?.ActionType"></Column>
+    <ActionColumn Title="Sim">@context.Sim?.Number</ActionColumn>
+    <ActionColumn Title="Sim Name">@context.Sim?.Name</ActionColumn>
     <Column @bind-Field="@context.TransactionState"></Column>
-    @if (context.MobileServer != null)
-    {
-        <Column @bind-Field="@context.MobileServer.Name"></Column>
-    }
-    <Column @bind-Field="@context.CreatedOn"></Column>
+    <Column @bind-Field="@context.TransactionId"></Column>
+    <Column @bind-Field="@context.StartTime"></Column>
+    <Column @bind-Field="@context.EndTime"></Column>
+    <ActionColumn Title="Time">
+        @((context.EndTime - context.StartTime).TotalSeconds) seconds
+    </ActionColumn>
 </Table>

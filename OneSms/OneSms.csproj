@@ -14,6 +14,8 @@
     <Compile Remove="Data\Migrations\20200803074157_UssdUpdateTable.Designer.cs" />
     <Compile Remove="Data\Migrations\V1\20200831090048_AddMessages.cs" />
     <Compile Remove="Data\Migrations\V1\20200831090048_AddMessages.Designer.cs" />
+    <Compile Remove="Data\Migrations\V1\20200924110241_AddedUssdTables.cs" />
+    <Compile Remove="Data\Migrations\V1\20200924110241_AddedUssdTables.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
