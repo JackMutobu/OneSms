@@ -13,6 +13,7 @@ namespace OneSms.Services
     public interface ISimCardManagementService
     {
         Task<UssdRequest?> ProcessNetworkMessage(NetworkMessageData networkMessageData, Guid? transactionId = null);
+        Task<UssdRequest?> GetUssdRequest(SmsRequest smsRequest);
     }
 
     public class SimCardManagementService : ISimCardManagementService
@@ -24,36 +25,57 @@ namespace OneSms.Services
             _dbContext = dbContext;
         }
 
-        public async Task<UssdRequest?> ProcessNetworkMessage(NetworkMessageData networkMessageData, Guid? transactionId = null)
+        public Task<UssdRequest?> ProcessNetworkMessage(NetworkMessageData networkMessageData, Guid? transactionId = null)
         {
-            if (networkMessageData.NetworkAction == NetworkActionType.SmsBalance && networkMessageData.Amount < 5)
+            var simCard = _dbContext.Sims.First(x => x.Id == networkMessageData.SimId);
+            if (networkMessageData.NetworkAction == NetworkActionType.SmsBalance && networkMessageData.Amount < simCard.MinSmsBalance)
+                return GetUssdRequest(simCard, NetworkActionType.AirtimeBalance, transactionId);
+            else if (networkMessageData.NetworkAction == NetworkActionType.AirtimeBalance)
             {
-                var simCard = _dbContext.Sims.First(x => x.Id == networkMessageData.SimId);
-                var ussdAction = _dbContext.UssdActions.Include(x => x.Steps).FirstOrDefault(x => x.NetworkId == simCard.NetworkId && x.ActionType == networkMessageData.NetworkAction);
-                if (ussdAction != null)
+                if (decimal.Parse(simCard.SmsBalance ?? "0") < simCard.MinSmsBalance)
                 {
-                    var ussdTransaction = await AddTransaction(new UssdTransaction
-                    {
-                        StartTime = DateTime.UtcNow,
-                        SimId = simCard.Id,
-                        TransactionId = transactionId ?? Guid.NewGuid(),
-                        UssdActionId = ussdAction.Id
-                    });
-
-                    return new UssdRequest
-                    {
-                        SimId = networkMessageData.SimId,
-                        KeyProblems = ussdAction.KeyProblems.Split(',').ToList(),
-                        KeyWelcomes = ussdAction.KeyProblems.Split(',').ToList(),
-                        NetworkAction = networkMessageData.NetworkAction,
-                        SimSlot = simCard.SimSlot,
-                        TransactionId = ussdTransaction.TransactionId,
-                        UssdId = ussdTransaction.Id,
-                        UssdNumber = ussdAction.UssdNumber,
-                        UssdInputs = ussdAction.Steps.OrderBy(x => x.Id).Select(x => x.Value).ToList(),
-                        MobileServerId = simCard.MobileServerId
-                    };
+                    if (decimal.Parse(simCard.AirtimeBalance ?? "0") >= simCard.MinAirtimeBalance)
+                        return GetUssdRequest(simCard, NetworkActionType.SmsActivation, transactionId);
+                    else
+                        return GetUssdRequest(simCard, NetworkActionType.AirtimeRecharge, transactionId);
                 }
+            }
+            else if(networkMessageData.NetworkAction == NetworkActionType.AirtimeRecharge)
+                return GetUssdRequest(simCard, NetworkActionType.SmsActivation, transactionId);
+
+            return Task.FromResult<UssdRequest?>(null);
+        }
+        public Task<UssdRequest?> GetUssdRequest(SmsRequest smsRequest)
+        {
+            var simCard = _dbContext.Sims.First(x => x.MobileServerId == smsRequest.MobileServerId && x.SimSlot == smsRequest.SimSlot);
+            return GetUssdRequest(simCard, NetworkActionType.SmsBalance);
+        }
+        private async Task<UssdRequest?> GetUssdRequest(SimCard simCard, NetworkActionType networkActionType, Guid? transactionId = null)
+        {
+            var ussdAction = _dbContext.UssdActions.Include(x => x.Steps).FirstOrDefault(x => x.NetworkId == simCard.NetworkId && x.ActionType == networkActionType);
+            if (ussdAction != null)
+            {
+                var ussdTransaction = await AddTransaction(new UssdTransaction
+                {
+                    StartTime = DateTime.UtcNow,
+                    SimId = simCard.Id,
+                    TransactionId = transactionId ?? Guid.NewGuid(),
+                    UssdActionId = ussdAction.Id
+                });
+
+                return new UssdRequest
+                {
+                    SimId = simCard.Id,
+                    KeyProblems = ussdAction.KeyProblems.Split(',').ToList(),
+                    KeyWelcomes = ussdAction.KeyLogins.Split(',').ToList(),
+                    NetworkAction = ussdAction.ActionType,
+                    SimSlot = simCard.SimSlot,
+                    TransactionId = ussdTransaction.TransactionId,
+                    UssdId = ussdTransaction.Id,
+                    UssdNumber = ussdAction.UssdNumber,
+                    UssdInputs = ussdAction.Steps.OrderBy(x => x.Id).Select(x => x.Value).ToList(),
+                    MobileServerId = simCard.MobileServerId
+                };
             }
             return null;
         }

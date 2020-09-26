@@ -22,9 +22,13 @@ namespace OneSms.Domain
 
         public string? SmsBalance { get; set; }
 
+        public decimal MinSmsBalance { get; set; }
+
         public string? MobileMoneyBalance { get; set; }
 
         public string? AirtimeBalance { get; set; }
+
+        public decimal MinAirtimeBalance { get; set; }
 
         public string? CallBalance { get; set; }
 

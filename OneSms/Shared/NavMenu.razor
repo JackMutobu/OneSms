@@ -16,7 +16,7 @@
                 </Space>
             </NavLink>
         </li>
-        @if (user.IsInRole(UserRoles.TimAccount))
+        @*@if (user.IsInRole(UserRoles.TimAccount))
         {
             <li class="nav-item px-3">
                 <NavLink class="nav-link" href="timtransctions">
@@ -42,8 +42,8 @@
                     </Space>
                 </NavLink>
             </li>
-        }
-        @if (user.IsInRole(UserRoles.SuperAdmin))
+        }*@
+        @if (user.IsInRole(Roles.SuperAdmin))
         {
 
             <li class="nav-item px-3">
@@ -75,14 +75,6 @@
                     <Space>
                         <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
                         <SpaceItem><h6 style="color:white; margin-top:10px">Network Messages</h6></SpaceItem>
-                    </Space>
-                </NavLink>
-            </li>
-            <li class="nav-item px-3">
-                <NavLink class="nav-link" href="ussdadmin">
-                    <Space>
-                        <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
-                        <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Admin</h6></SpaceItem>
                     </Space>
                 </NavLink>
             </li>
@@ -147,6 +139,14 @@
                     <Space>
                         <SpaceItem><Icon Style="font-size:25px" Type="SlidersOutlined" /></SpaceItem>
                         <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Transactions</h6></SpaceItem>
+                    </Space>
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="ussdadmin">
+                    <Space>
+                        <SpaceItem><Icon Style="font-size:25px" Type="MergeCellsOutlined" /></SpaceItem>
+                        <SpaceItem><h6 style="color:white; margin-top:10px">Ussd Admin</h6></SpaceItem>
                     </Space>
                 </NavLink>
             </li>

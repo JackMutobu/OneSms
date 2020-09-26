@@ -4,14 +4,20 @@
     <PageHeaderTitle>USSD Transactions</PageHeaderTitle>
 </PageHeader>
 <Table DataSource="@ViewModel.Transactions" Class="table-responsive">
-    <Column @bind-Field="@context.SimId"></Column>
-    <Column @bind-Field="@context.UssdAction?.ActionType"></Column>
-    <ActionColumn Title="Sim">@context.Sim?.Number</ActionColumn>
-    <ActionColumn Title="Sim Name">@context.Sim?.Name</ActionColumn>
     <Column @bind-Field="@context.TransactionState"></Column>
     <Column @bind-Field="@context.TransactionId"></Column>
     <Column @bind-Field="@context.StartTime"></Column>
     <Column @bind-Field="@context.EndTime"></Column>
+    <Column @bind-Field="@context.LastMessage"></Column>
+    <ActionColumn>
+        @context.SimId
+    </ActionColumn>
+    <ActionColumn Title="Sim">
+        @context.Sim?.Number
+    </ActionColumn>
+    <ActionColumn Title="Sim Name">
+        @context.Sim?.Name
+    </ActionColumn>
     <ActionColumn Title="Time">
         @((context.EndTime - context.StartTime).TotalSeconds) seconds
     </ActionColumn>

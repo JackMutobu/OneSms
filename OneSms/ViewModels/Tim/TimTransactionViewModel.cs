@@ -94,7 +94,7 @@ namespace OneSms.ViewModels
                 var item = Transactions.FirstOrDefault();
                 if (item != null)
                 {
-                    item.EndTime = ussd.TimeStamp;
+                    item.EndTime = ussd.EndTime;
                     item.TransactionState = ussd.TransactionState;
                     item.LastMessage = ussd.LastMessage;
                     Transactions.Remove(item);

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Dtos;
+using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
@@ -53,8 +54,21 @@ namespace OneSms.Controllers.V1
             => base.GetMessagesByTransactionId(appId);
 
         [HttpPut(ApiRoutes.Sms.StatusChanged)]
-        public override Task<IActionResult> OnStatusChanged([FromBody] SmsRequest smsRequest)
-            => base.OnStatusChanged(smsRequest);
+        public async override Task<IActionResult> OnStatusChanged([FromBody] SmsRequest smsRequest)
+        {
+            if(smsRequest.MessageStatus == MessageStatus.Canceled || smsRequest.MessageStatus == MessageStatus.Failed)
+            {
+                var ussdRequest = await _simCardManagementService.GetUssdRequest(smsRequest);
+                if(ussdRequest != null)
+                {
+                    if (_serverConnectionService.ConnectedServers.TryGetValue(ussdRequest.MobileServerId.ToString(), out string? serverConnectionId))
+                    {
+                        await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.SendUssd, ussdRequest);
+                    }
+                }
+            }
+            return await base.OnStatusChanged(smsRequest);
+        }
 
         [HttpPut(ApiRoutes.Sms.SmsReceived)]
         public async override Task<IActionResult> OnMessageReceived([FromBody] SmsReceived receivedMessage)

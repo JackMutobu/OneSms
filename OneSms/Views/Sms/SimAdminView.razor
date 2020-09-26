@@ -12,7 +12,9 @@
     <Column @bind-Field="@context.Name"></Column>
     <Column @bind-Field="@context.Number"></Column>
     <Column @bind-Field="@context.SmsBalance"></Column>
+    <Column @bind-Field="@context.MinSmsBalance"></Column>
     <Column @bind-Field="@context.AirtimeBalance"></Column>
+    <Column @bind-Field="@context.MinAirtimeBalance"></Column>
     <Column @bind-Field="@context.MobileMoneyBalance"></Column>
     <Column @bind-Field="@context.SimSlot"></Column>
     <Column @bind-Field="@context.IsWhatsappNumber"></Column>
@@ -49,6 +51,12 @@
         <FormItem Label="Sim Slot">
             <Input @bind-Value="@context.SimSlot" />
         </FormItem>
+        <FormItem Label="MinAirtimeBalance">
+            <Input @bind-Value="@context.MinAirtimeBalance" />
+        </FormItem>
+        <FormItem Label="MinSmsBalance">
+            <Input @bind-Value="@context.MinSmsBalance" />
+        </FormItem>
         <FormItem Label="IsWhatsappNumber">
             <Checkbox CheckedChange="@ToggleChecked" Checked="@context.IsWhatsappNumber">@context.IsWhatsappNumber</Checkbox>
         </FormItem>
@@ -69,7 +77,7 @@
             </Select>
         </FormItem>
         <FormItem Label="Mobile Server">
-            <Select Placeholder="Select Server"   OnChange="OnServerSelectChange">
+            <Select Placeholder="Select Server" OnChange="OnServerSelectChange">
                 @foreach (var server in ViewModel.MobileServers)
                 {
                     <SelectOption Value="@server.Id.ToString()">@($"{server.Name}")</SelectOption>

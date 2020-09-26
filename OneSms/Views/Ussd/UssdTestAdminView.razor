@@ -32,7 +32,7 @@
         <Select Size="@InputSize.Large" Placeholder="Select Action" OnChange="OnUssdActionSelectChange">
             @foreach (var item in ViewModel.UssdActions)
             {
-                <SelectOption Value="@item.Id.ToString()">@item</SelectOption>
+                <SelectOption Value="@item.Id.ToString()">@item.Name</SelectOption>
             }
         </Select>
     </FormItem>
@@ -45,14 +45,20 @@
 </Form>
 
 <Table DataSource="@ViewModel.UssdTransactions" Class="table-responsive">
-    <Column @bind-Field="@context.SimId"></Column>
-    <Column @bind-Field="@context.UssdAction?.ActionType"></Column>
-    <ActionColumn Title="Sim">@context.Sim?.Number</ActionColumn>
-    <ActionColumn Title="Sim Name">@context.Sim?.Name</ActionColumn>
     <Column @bind-Field="@context.TransactionState"></Column>
     <Column @bind-Field="@context.TransactionId"></Column>
     <Column @bind-Field="@context.StartTime"></Column>
     <Column @bind-Field="@context.EndTime"></Column>
+    <Column @bind-Field="@context.LastMessage"></Column>
+    <ActionColumn Title="Action Type">
+        @context.UssdAction?.ActionType
+    </ActionColumn>
+    <ActionColumn Title="Sim">
+        @context.Sim?.Number
+    </ActionColumn>
+    <ActionColumn Title="Sim Name">
+        @context.Sim?.Name
+    </ActionColumn>
     <ActionColumn Title="Time">
         @((context.EndTime - context.StartTime).TotalSeconds) seconds
     </ActionColumn>

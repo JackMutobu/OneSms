@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OneSms.Data;
+using OneSms.Domain;
 using OneSms.Services;
-using OneSms.Web.Shared.Dtos;
-using OneSms.Web.Shared.Enumerations;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,9 +24,9 @@ namespace OneSms.Online.Controllers
         }
 
         [HttpPut("StatusChanged")]
-        public async Task<IActionResult> SmsStatusChanged([FromBody] UssdTransactionDto ussd)
+        public async Task<IActionResult> SmsStatusChanged([FromBody] UssdTransaction ussd)
         {
-            if (ussd.ActionType == UssdActionType.TimTransaction)
+            if (ussd.UssdAction == UssdActionType.TimTransaction)
             {
                 var transaction = _oneSmsDbContext.TimTransactions.First(x => x.Id == ussd.UssdTransactionId && (ussd.ClientId == 0 || x.ClientId == ussd.ClientId));
                 transaction.TransactionState = ussd.TransactionState;

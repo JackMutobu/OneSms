@@ -64,5 +64,12 @@
 
             public const string Share = Base + Controller + "/share";
         }
+
+        public static class Ussd
+        {
+            public const string Controller = "/ussd";
+
+            public const string StatusChanged = Base + Controller + "/status";
+        }
     }
 }

@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.SignalR;
 using OneOf;
+using OneSms.Contracts.V1.Enumerations;
 using OneSms.Data;
 using OneSms.Domain;
 using OneSms.Hubs;
 using OneSms.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Threading.Tasks;
@@ -28,7 +30,7 @@ namespace OneSms.Views.Ussd
         HubEventService HubEventService { get; set; } = null!;
 
         [Inject]
-        ServerConnectionService ServerConnectionService { get; set; } = null!;
+        IServerConnectionService ServerConnectionService { get; set; } = null!;
 
         protected async override Task OnInitializedAsync()
         {
@@ -57,7 +59,15 @@ namespace OneSms.Views.Ussd
         }
         private async Task OnFinish(EditContext editContext)
         {
+            ussdTransaction.TransactionId = Guid.NewGuid();
+            ussdTransaction.StartTime = ussdTransaction.EndTime = DateTime.UtcNow;
+            ussdTransaction.TransactionState = UssdTransactionState.Sending;
             await ViewModel.AddUssdTransaction.Execute(ussdTransaction).ToTask();
+            ussdTransaction = new UssdTransaction()
+            {
+                SimId = ussdTransaction.SimId,
+                UssdActionId = ussdTransaction.UssdActionId
+            };
         }
     }
 }

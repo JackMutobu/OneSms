@@ -64,7 +64,7 @@ namespace OneSms.Droid.Server
 
         private void InitializeServices()
         {
-            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://6318aa7572a5.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://6318aa7572a5.ngrok.io/onesmshub"));
+            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://2c71504223fb.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://2c71504223fb.ngrok.io/onesmshub"));
             signalRService = Locator.Current.GetService<ISignalRService>();
             smsService = Locator.Current.GetService<ISmsService>();
             whatsappService = Locator.Current.GetService<IWhatsappService>();
@@ -143,6 +143,14 @@ namespace OneSms.Droid.Server
             Runtime.GetRuntime().Exit(0);
         }
 
+        public static void GoToHomeScreen(Context context)
+        {
+            var startMain = new Intent(Intent.ActionMain);
+            startMain.AddCategory(Intent.CategoryHome);
+            startMain.AddFlags(ActivityFlags.NewTask);
+            context.StartActivity(startMain);
+        }
+
         public void StartOneForegroundService()
         {
             var it = new Intent(this, typeof(OneForegroundService));
@@ -152,12 +160,6 @@ namespace OneSms.Droid.Server
             else
                 this.StartService(it);
         }
-
-        //private void ActionOnOneForegroundService(string serviceState)
-        //{
-        //    if (this.GetServiceState() == OneSmsAction.ServiceStopped && serviceState == OneSmsAction.ServiceStopped) return;
-        //    StartOneForegroundService();
-        //}
 
         protected override void OnActivityResult(int requestCode, [GeneratedEnum] Result resultCode, Intent data)
         {
@@ -222,6 +224,8 @@ namespace OneSms.Droid.Server
             }
             return status;
         }
+
+
 
     }
 }

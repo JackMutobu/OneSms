@@ -8,6 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ViewModels\Tim\**" />
+    <Compile Remove="Views\Tim\**" />
+    <Content Remove="ViewModels\Tim\**" />
+    <Content Remove="Views\Tim\**" />
+    <EmbeddedResource Remove="ViewModels\Tim\**" />
+    <EmbeddedResource Remove="Views\Tim\**" />
+    <None Remove="ViewModels\Tim\**" />
+    <None Remove="Views\Tim\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\TimController.cs" />
+    <Compile Remove="Controllers\UssdController.cs" />
     <Compile Remove="Data\Migrations\20200803071501_AddUssdNumber.cs" />
     <Compile Remove="Data\Migrations\20200803071501_AddUssdNumber.Designer.cs" />
     <Compile Remove="Data\Migrations\20200803074157_UssdUpdateTable.cs" />

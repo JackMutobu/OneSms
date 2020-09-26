@@ -22,10 +22,10 @@ namespace OneSms.ViewModels
     {
         private readonly DataContext _dbContext;
         private readonly HubEventService _hubEventService;
-        private readonly ServerConnectionService _serverConnectionService;
+        private readonly IServerConnectionService _serverConnectionService;
         private readonly IHubContext<OneSmsHub> _hubContext;
 
-        public UssdTestAdminViewModel(DataContext dbContext,HubEventService hubEventService, ServerConnectionService serverConnectionService, IHubContext<OneSmsHub> hubContext)
+        public UssdTestAdminViewModel(DataContext dbContext,HubEventService hubEventService, IServerConnectionService serverConnectionService, IHubContext<OneSmsHub> hubContext)
         {
             _dbContext = dbContext;
             _hubEventService = hubEventService;
@@ -49,7 +49,7 @@ namespace OneSms.ViewModels
                  {
                      SimId = transaction.SimId,
                      KeyProblems = SelectedAction!.KeyProblems.Split(',').ToList(),
-                     KeyWelcomes = SelectedAction.KeyProblems.Split(',').ToList(),
+                     KeyWelcomes = SelectedAction.KeyLogins.Split(',').ToList(),
                      NetworkAction = SelectedAction.ActionType,
                      SimSlot = SelectedSimCard!.SimSlot,
                      TransactionId = transaction.TransactionId,

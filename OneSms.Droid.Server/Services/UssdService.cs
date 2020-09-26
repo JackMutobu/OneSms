@@ -1,23 +1,24 @@
 ﻿using Android.Content;
-using OneSms.Web.Shared.Constants;
-using OneSms.Web.Shared.Dtos;
 using OneUssd;
 using System.Collections.Generic;
 using System;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Threading.Tasks;
-using OneSms.Web.Shared.Enumerations;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 using Splat;
+using OneSms.Contracts.V1.MobileServerRequest;
+using OneSms.Contracts.V1;
+using OneSms.Contracts.V1.Enumerations;
+using OneSms.Contracts.V1.Requests;
 
 namespace OneSms.Droid.Server.Services
 {
     public interface IUssdService
     {
         void Execute(string ussdNumber, int sim, Dictionary<string, HashSet<string>> keyMpas, List<string> inputData);
-        Task SendUssdStateChanged(UssdTransactionDto ussd);
+        Task SendUssdStateChanged(UssdApiRequest ussd);
         Context Context { get; set; }
     }
 
@@ -27,9 +28,10 @@ namespace OneSms.Droid.Server.Services
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
         private Queue<string> _inputData;
-        private UssdTransactionDto _currentTransactionDto;
-        private Queue<UssdTransactionDto> _pendingUssdTransactions;
+        private UssdRequest _ussdRequest;
+        private Queue<UssdRequest> _pendingUssdTransactions;
         private Subject<Unit> _ussdTimer;
+        private string _lastResponse;
 
         public Context Context { get; set; }
 
@@ -37,14 +39,14 @@ namespace OneSms.Droid.Server.Services
         {
             Context = context;
             _ussdController = UssdController.GetInstance(context);
-            _pendingUssdTransactions = new Queue<UssdTransactionDto>();
+            _pendingUssdTransactions = new Queue<UssdRequest>();
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
             _ussdTimer = new Subject<Unit>();
 
-            _signalRService.Connection.On(SignalRKeys.SendUssd, (Action<UssdTransactionDto>)(ussd =>
+            _signalRService.Connection.On(SignalRKeys.SendUssd, (Action<UssdRequest>)(ussd =>
             {
-                if (_currentTransactionDto == null && _pendingUssdTransactions.Count == 0)
+                if (_ussdRequest == null && _pendingUssdTransactions.Count == 0)
                     Execute(ussd);
                 else
                     _pendingUssdTransactions.Enqueue(ussd);
@@ -58,14 +60,14 @@ namespace OneSms.Droid.Server.Services
         }
 
 
-        private void Execute(UssdTransactionDto ussd)
+        private void Execute(UssdRequest ussd)
         {
             var map = new Dictionary<string, HashSet<string>>
                      {
                          { UssdController.KeyError, new HashSet<string>(ussd.KeyProblems) },
                          { UssdController.KeyLogin, new HashSet<string>(ussd.KeyWelcomes) }
                      };
-            _currentTransactionDto = ussd;
+            _ussdRequest = ussd;
             Execute(ussd.UssdNumber, ussd.SimSlot, map, ussd.UssdInputs);
             SendTransactionState("Started", UssdTransactionState.Executing);
             _ussdTimer.OnNext(Unit.Default);
@@ -94,14 +96,14 @@ namespace OneSms.Droid.Server.Services
 
         private void OnSessionCompleted(object sender, UssdEventArgs e)
         {
-            SendTransactionState(e.ResponseMessage, UssdTransactionState.Done);
+            SendTransactionState(e.ResponseMessage, UssdTransactionState.Completed);
             UnRegisterEvents();
             ExecuteNextTransactionOrReset();
         }
 
         private void OnSessionAborted(object sender, UssdEventArgs e)
         {
-            SendTransactionState(e.ResponseMessage, UssdTransactionState.Canceled);
+            SendTransactionState(_lastResponse, UssdTransactionState.Aborted);
             UnRegisterEvents();
             ExecuteNextTransactionOrReset();
         }
@@ -111,9 +113,9 @@ namespace OneSms.Droid.Server.Services
             if (_ussdController.IsRunning)
             {
                 var lastMessage = _ussdController.StopOperation();
-                SendTransactionState(lastMessage, UssdTransactionState.Canceled);
+                SendTransactionState(lastMessage, UssdTransactionState.Aborted);
             }
-            MainActivity.RestartActivity(Context);
+            MainActivity.GoToHomeScreen(Context);
         }
 
         private void OnResponseRecieved(object sender, UssdEventArgs e)
@@ -122,6 +124,7 @@ namespace OneSms.Droid.Server.Services
             {
                 var input = _inputData.Dequeue();
                 _ussdController.SendData(input);
+                _lastResponse = e.ResponseMessage;
             }
             _ussdTimer.OnNext(Unit.Default);//reset timer
         }
@@ -131,21 +134,29 @@ namespace OneSms.Droid.Server.Services
             if (_pendingUssdTransactions.Count > 0)
                 Execute(_pendingUssdTransactions.Dequeue());
             else
-                _currentTransactionDto = null;
+                _ussdRequest = null;
         }
 
         private void SendTransactionState(string lastResponse, UssdTransactionState transactionState)
         {
-            if (_currentTransactionDto != null)
+            if (_ussdRequest != null)
             {
-                _currentTransactionDto.TimeStamp = DateTime.UtcNow;
-                _currentTransactionDto.TransactionState = transactionState;
-                _currentTransactionDto.LastMessage = lastResponse;
-                SendUssdStateChanged(_currentTransactionDto);
+                var transactionReport = new UssdApiRequest
+                {
+                    LastMessage = lastResponse,
+                    MobileServerId = _ussdRequest.MobileServerId,
+                    NetworkAction = _ussdRequest.NetworkAction,
+                    SimId = _ussdRequest.SimId,
+                    SimSlot = _ussdRequest.SimSlot,
+                    TransactionState = transactionState,
+                    TransactionId = _ussdRequest.TransactionId,
+                    UssdId = _ussdRequest.UssdId
+                };
+                SendUssdStateChanged(transactionReport);
             }
         }
 
-        public Task SendUssdStateChanged(UssdTransactionDto ussd) => _httpClientService.PutAsync<string>(ussd, "Ussd/StatusChanged");
+        public Task SendUssdStateChanged(UssdApiRequest ussd) => _httpClientService.PutAsync<string>(ussd, ApiRoutes.Ussd.StatusChanged);
 
     }
 }

@@ -7,7 +7,6 @@ using OneOf;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Services;
-using OneSms.Web.Shared.Constants;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -29,11 +28,6 @@ namespace OneSms.Views.Infrastructure
         string? receivers;
         IFileListEntry? fileImage;
 
-        [Inject]
-        AuthenticationStateProvider AuthenticationsStateProvider { get; set; } = null!;
-
-        [Inject]
-        NavigationManager NavigationManager { get; set; } = null!;
 
         [Inject]
         IHttpClientFactory HttpClientFactory { get; set; } = null!;
@@ -44,12 +38,12 @@ namespace OneSms.Views.Infrastructure
         [Inject]
         HubEventService HubEventService { get; set; } = null!;
 
-        protected override async Task OnInitializedAsync()
+        protected override void OnInitialized()
         {
-            var authstate = await AuthenticationsStateProvider.GetAuthenticationStateAsync();
-            var user = authstate.User;
-            if (user.IsInRole(UserRoles.TimAccount))
-                NavigationManager.NavigateTo("timtransctions");
+            //var authstate = await AuthenticationsStateProvider.GetAuthenticationStateAsync();
+            //var user = authstate.User;
+            //if (user.IsInRole(UserRoles.TimAccount))
+            //    NavigationManager.NavigateTo("timtransctions");
             ViewModel = new ViewModels.Infrastructure.StatisticsViewModel(HttpClientFactory, UriService, HubEventService);
         }
 

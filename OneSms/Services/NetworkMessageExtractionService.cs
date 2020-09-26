@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Rewrite;
+using Microsoft.EntityFrameworkCore;
 using OneSms.Contracts.V1.Dtos;
 using OneSms.Contracts.V1.Enumerations;
+using OneSms.Contracts.V1.Requests;
 using OneSms.Data;
 using OneSms.Domain;
 using System;
@@ -14,6 +16,7 @@ namespace OneSms.Services
     public interface INetworkMessageExtractionService
     {
         NetworkMessageData? GetMessageData(SmsReceived smsReceived);
+        NetworkMessageData? GetMessageData(UssdApiRequest ussdApiRequest);
         Task<int> SaveNetworkMessageData(NetworkMessageData networkMessage);
     }
 
@@ -35,6 +38,19 @@ namespace OneSms.Services
                 var messageDataExtractors = _dbContext.NetworkMessageExtractors
                     .Where(x => x.OriginatingAddress.ToLower() == smsReceived.SenderNumber.ToLower() && x.NetworkId == simCard.NetworkId).ToList();
                 return Extract(smsReceived.Body, simCard, messageDataExtractors);
+            }
+            return null;
+        }
+
+        public NetworkMessageData? GetMessageData(UssdApiRequest ussdApiRequest)
+        {
+            var simCard = _dbContext.Sims.Include(x => x.Network)
+                .FirstOrDefault(x => x.Id == ussdApiRequest.SimId);
+            if (simCard != null)
+            {
+                var messageDataExtractors = _dbContext.NetworkMessageExtractors
+                    .Where(x => x.OriginatingAddress.ToLower() == simCard.Network!.Name && x.NetworkId == simCard.NetworkId).ToList();
+                return Extract(ussdApiRequest.LastMessage, simCard, messageDataExtractors);
             }
             return null;
         }
@@ -84,7 +100,7 @@ namespace OneSms.Services
                             var amount = match.Groups["amount"].Value;
                             if (!string.IsNullOrEmpty(amount))
                             {
-                                messageData.Amount = decimal.Parse(amount);
+                                messageData.Amount = decimal.Parse(amount.Replace(',','.'));
                             }
                             else
                                 messageData.Amount = 0;
@@ -92,7 +108,7 @@ namespace OneSms.Services
                            var cost = match.Groups["cost"].Value;
                             if(!string.IsNullOrEmpty(cost))
                             {
-                                messageData.Cost = decimal.Parse(cost);
+                                messageData.Cost = decimal.Parse(cost.Replace(',', '.'));
                             }
                         }
                     };
