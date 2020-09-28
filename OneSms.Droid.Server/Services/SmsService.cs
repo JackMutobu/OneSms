@@ -30,53 +30,100 @@ namespace OneSms.Droid.Server.Services
         Task<Result<string>> SendReceivedSms(SmsReceived smsReceived);
         Task SendSms(SmsRequest smsTransactionDto);
         Task SendSms(string number, string message, int sim);
-        Context Context { get; set; }
     }
 
     public class SmsService : ISmsService
     {
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
+        private IUssdService _ussdService;
         private Queue<SmsRequest> _pendingSms;
+        private Context _context;
+        private bool _canExecute;
 
         public SmsService()
         {
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
+            _ussdService = Locator.Current.GetService<IUssdService>();
+            _canExecute = true;
         }
 
-        public SmsService(Context context)
+        public SmsService(Context context,IUssdService ussdService)
         {
-            Context = context;
+            _context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
-            OnSmsTransaction = new Subject<SmsRequest>();
-            OnSmsTransaction.Subscribe(sms =>
-            {
-                _httpClientService.PutAsync<string>(sms, ApiRoutes.Sms.StatusChanged);
-                if (_pendingSms.Count > 0 && sms.MessageStatus == MessageStatus.Sent)
-                    SendSms(_pendingSms.Dequeue());
-            },
-            ex =>
-            {
-                var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsRequest;
-                _httpClientService.PutAsync<string>(transacton, ApiRoutes.Sms.StatusChanged);
-                if (_pendingSms.Count > 0)
-                    SendSms(_pendingSms.Dequeue());
-            });
-
-            _signalRService.Connection.On<SmsRequest>(SignalRKeys.SendSms,sms =>
-            {
-                if (_pendingSms.Count == 0)
-                     SendSms(sms);
-                else
-                    _pendingSms.Enqueue(sms);
-            });
+            _ussdService = ussdService ?? Locator.Current.GetService<IUssdService>();
+            _canExecute = true;
             _pendingSms = new Queue<SmsRequest>();
+
+            OnSmsTransaction = new Subject<SmsRequest>();
+            OnSmsTransaction
+                .Subscribe(sms =>
+                {
+                    UpdateMessageStatus(sms);
+                    ExecuteNext();
+                },
+                ex =>
+                {
+                    var transacton = ex.Data[OneSmsAction.SmsTransaction] as SmsRequest;
+                    UpdateMessageStatus(transacton);
+                    ExecuteNext();
+                });
+
+            _signalRService
+                .Connection
+                .On(SignalRKeys.SendSms, (Action<SmsRequest>)(sms => Execute(sms)));
+
+            _ussdService
+                .OnUssdStarted
+                .Subscribe(ussd 
+                    => _canExecute = ussd.NetworkAction != NetworkActionType.AirtimeRecharge || ussd.NetworkAction == NetworkActionType.SmsActivation);//prevent sms sending when recharging airtime or activating sms
+        }
+
+        private void ExecuteNext()
+        {
+            if (_canExecute)
+                Execute(_pendingSms.Count > 0);
+            else
+            {
+                foreach (var pendingSms in _pendingSms.ToList())
+                {
+                    UpdateMessageStatus(pendingSms, MessageStatus.Pending);
+                }
+                _pendingSms.Clear();
+            }
+        }
+
+        private void Execute(SmsRequest sms)
+        {
+            if (_canExecute)
+                SendMessage(sms, _pendingSms.Count == 0);
+            else
+                UpdateMessageStatus(sms, MessageStatus.Pending);
+        }
+
+        private void UpdateMessageStatus(SmsRequest sms,MessageStatus? messageStatus = null)
+        {
+            sms.MessageStatus = messageStatus ?? sms.MessageStatus;
+            _httpClientService.PutAsync<string>(sms, ApiRoutes.Sms.StatusChanged);
+        }
+
+        private void SendMessage(SmsRequest sms, bool canSend)
+        {
+            if(canSend)
+                SendSms(sms);
+            else
+                _pendingSms.Enqueue(sms);   
+        }
+
+        private void Execute(bool canExecute)
+        {
+            if (canExecute)
+                SendSms(_pendingSms.Dequeue());
         }
 
         public Subject<SmsRequest> OnSmsTransaction { get; }
-
-        public Context Context { get; set; }
 
         public async Task SendSms(string number, string message, int sim)
         {
@@ -91,16 +138,16 @@ namespace OneSms.Droid.Server.Services
                 iSent.PutExtra(OneSmsAction.ReceiverNumber, number);
                 iSent.PutExtra(OneSmsAction.SmsTransactionId, "482498");
 
-                PendingIntent piSent = PendingIntent.GetBroadcast(Context, int.Parse(number), iSent, 0);
+                PendingIntent piSent = PendingIntent.GetBroadcast(_context, int.Parse(number), iSent, 0);
 
                 Intent iDel = new Intent(OneSmsAction.SmsDelivered);
                 iDel.PutExtra(OneSmsAction.ReceiverNumber, number);
                 iDel.PutExtra(OneSmsAction.SmsTransactionId, "482498");
-                PendingIntent piDel = PendingIntent.GetBroadcast(Context, 0, iDel, 0);
+                PendingIntent piDel = PendingIntent.GetBroadcast(_context, 0, iDel, 0);
 
                 if (Build.VERSION.SdkInt >= BuildVersionCodes.LollipopMr1)
                 {
-                    SubscriptionManager localSubscriptionManager = (SubscriptionManager)Context.GetSystemService(Context.TelephonySubscriptionService);
+                    SubscriptionManager localSubscriptionManager = (SubscriptionManager)_context.GetSystemService(Context.TelephonySubscriptionService);
 
                     if (localSubscriptionManager.ActiveSubscriptionInfoCount > 1)
                     {
@@ -163,7 +210,7 @@ namespace OneSms.Droid.Server.Services
                 iSent.PutExtra(OneSmsAction.SenderNumber, smsTransactionDto.SenderNumber);
                 iSent.PutExtra(OneSmsAction.MobileServerId, smsTransactionDto.MobileServerId.ToString());
 
-                PendingIntent piSent = PendingIntent.GetBroadcast(Context, smsTransactionDto.MessageId, iSent, PendingIntentFlags.UpdateCurrent);
+                PendingIntent piSent = PendingIntent.GetBroadcast(_context, smsTransactionDto.MessageId, iSent, PendingIntentFlags.UpdateCurrent);
 
                 Intent iDel = new Intent(OneSmsAction.SmsDelivered);
                 iDel.PutExtra(OneSmsAction.SmsBundleId, bundle);
@@ -172,11 +219,11 @@ namespace OneSms.Droid.Server.Services
                 iDel.PutExtra(OneSmsAction.SenderNumber, smsTransactionDto.SenderNumber);
                 iDel.PutExtra(OneSmsAction.MobileServerId, smsTransactionDto.MobileServerId.ToString());
 
-                PendingIntent piDel = PendingIntent.GetBroadcast(Context, smsTransactionDto.MessageId, iDel, PendingIntentFlags.UpdateCurrent);
+                PendingIntent piDel = PendingIntent.GetBroadcast(_context, smsTransactionDto.MessageId, iDel, PendingIntentFlags.UpdateCurrent);
 
                 if (Build.VERSION.SdkInt >= BuildVersionCodes.LollipopMr1)
                 {
-                    SubscriptionManager localSubscriptionManager = (SubscriptionManager)Context.GetSystemService(Context.TelephonySubscriptionService);
+                    SubscriptionManager localSubscriptionManager = (SubscriptionManager)_context.GetSystemService(Context.TelephonySubscriptionService);
 
                     if (localSubscriptionManager.ActiveSubscriptionInfoCount > 1)
                     {
@@ -220,7 +267,8 @@ namespace OneSms.Droid.Server.Services
             }
         }
 
-        public Task<Result<string>> SendReceivedSms(SmsReceived smsReceived) => _httpClientService.PutAsync<string>(smsReceived, ApiRoutes.Sms.SmsReceived);
+        public Task<Result<string>> SendReceivedSms(SmsReceived smsReceived) 
+            => _httpClientService.PutAsync<string>(smsReceived, ApiRoutes.Sms.SmsReceived);
 
         public async Task<PermissionStatus> CheckAndRequestSmsPermission()
         {
@@ -242,7 +290,6 @@ namespace OneSms.Droid.Server.Services
                 status = await Permissions.RequestAsync<ReadPhoneStatePermission>();
             return status;
         }
-
 
     }
 }

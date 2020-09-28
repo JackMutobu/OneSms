@@ -3,26 +3,19 @@ using Android.App;
 using Android.Content;
 using Android.Graphics;
 using Android.Graphics.Drawables;
-using Android.OS;
 using Android.Service.Notification;
 using AndroidX.Core.App;
-using AndroidX.Core.Content;
-using Java.IO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using OneSms.Contracts.V1.Dtos;
 using OneSms.Droid.Server.Constants;
 using Splat;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Debug = System.Diagnostics.Debug;
-using Environment = Android.OS.Environment;
-using File = Java.IO.File;
 
 namespace OneSms.Droid.Server.Services
 {

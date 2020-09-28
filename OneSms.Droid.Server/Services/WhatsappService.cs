@@ -30,6 +30,7 @@ namespace OneSms.Droid.Server.Services
     {
         object CurrentTransaction { get; }
         Subject<object> OnRequestCompleted { get; }
+        public bool IsBusy { get; }
 
         Task<PermissionStatus> CheckAndRequestReadContactPermission();
         Task<PermissionStatus> CheckAndRequestWriteContactPermission();
@@ -48,61 +49,80 @@ namespace OneSms.Droid.Server.Services
         private Queue<object> _transactionQueue;
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
+        private IUssdService _ussdService;
         private bool _isBusy;
         private Context _context;
+        private bool _canExecute;
 
         public WhatsappService(Context context)
         {
             _context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
+            _ussdService = Locator.Current.GetService<IUssdService>();
             OnRequestCompleted = new Subject<object>();
             _transactionQueue = new Queue<object>();
-            _signalRService.Connection.On(SignalRKeys.ResetToActive, () => _isBusy = false);
-            _signalRService.Connection.On<WhatsappRequest>(SignalRKeys.SendWhatsapp, async transaction => await Execute(transaction));
-            _signalRService.Connection.On<ShareContactRequest>(SignalRKeys.ShareContact, async contact => await Execute(contact));
+            _canExecute = true;
 
-
-            OnRequestCompleted.Subscribe(async request =>
-            {
-                _isBusy = false;
-                switch (request)
+            _signalRService
+                .Connection
+                .On(SignalRKeys.ResetToActive, () => _isBusy = false);
+            _signalRService
+                .Connection
+                .On<WhatsappRequest>(SignalRKeys.SendWhatsapp, async transaction =>
                 {
-                    case WhatsappRequest whatsappRequest:
-                        await ReportRequestState(whatsappRequest);
-                        break;
-                }
-
-                await ExecuteNext();
-
-                async Task ExecuteNext()
+                    if (_canExecute)
+                        await Execute(transaction);
+                });
+            _signalRService
+                .Connection
+                .On<ShareContactRequest>(SignalRKeys.ShareContact, async contact => 
                 {
-                    if (_transactionQueue.Count > 0)
-                    {
-                        var nextTransaction = _transactionQueue.Dequeue();
-                        switch (nextTransaction)
-                        {
-                            case WhatsappRequest wRequest:
-                                await Execute(wRequest);
-                                break;
-                            case ShareContactRequest sRequest:
-                                await Execute(sRequest);
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        CurrentTransaction = null;
-                    }
-                }
+                    if(_canExecute)
+                        await Execute(contact);
+                });
 
-                async Task ReportRequestState(WhatsappRequest whatsappRequest)
+
+            OnRequestCompleted
+                .Subscribe(async request =>
+                {
+                    _isBusy = false;
+                    switch (request)
+                    {
+                        case WhatsappRequest whatsappRequest:
+                            await ReportRequestState(whatsappRequest);
+                            break;
+                    }
+
+                    if(_canExecute)
+                        await ExecuteNext();
+
+                    async Task ReportRequestState(WhatsappRequest whatsappRequest)
                 {
                     whatsappRequest.MessageStatus = await BlobCache.LocalMachine.GetObject<MessageStatus>(OneSmsAction.MessageStatus);
                     _httpClientService.PutAsync<string>(whatsappRequest, ApiRoutes.Whatsapp.StatusChanged);
                 }
-            });
+                });
         }
+
+        public void Initialize(IUssdService ussdService)
+        {
+            _ussdService = ussdService;
+            _ussdService
+               .OnUssdReceived
+               .Subscribe(ussd => _canExecute = ussd == null);
+
+            _ussdService
+                .OnUssdCompleted
+                .Subscribe(async ussd =>
+                {
+                    _canExecute = !ussd.isPendingUssd;
+                    if (!ussd.isPendingUssd)
+                        await ExecuteNext();
+                });
+        }
+
+        public bool IsBusy => CurrentTransaction != null;
 
         public Subject<object> OnRequestCompleted { get; }
 
@@ -118,15 +138,37 @@ namespace OneSms.Droid.Server.Services
                 CurrentTransaction = request;
                 if (request is WhatsappRequest wRequest)
                 {
-                    wRequest.MessageStatus = MessageStatus.Executing;
-                    _httpClientService.PutAsync<string>(wRequest, ApiRoutes.Whatsapp.StatusChanged);
+                    UpdateWhatsappStatus(wRequest);
                     await SendAsync(wRequest);
                 }
                 else if (request is ShareContactRequest sRequest)
-                {
                     await CheckContactAndSendVcard(_context, sRequest.VcardInfo, sRequest.ReceiverNumber, sRequest.Body);
+            }
+        }
+
+        private async Task ExecuteNext()
+        {
+            if (_transactionQueue.Count > 0)
+            {
+                var nextTransaction = _transactionQueue.Dequeue();
+                switch (nextTransaction)
+                {
+                    case WhatsappRequest wRequest:
+                        await Execute(wRequest);
+                        break;
+                    case ShareContactRequest sRequest:
+                        await Execute(sRequest);
+                        break;
                 }
             }
+            else
+                CurrentTransaction = null;
+        }
+
+        private void UpdateWhatsappStatus(WhatsappRequest wRequest, MessageStatus? messageStatus = null)
+        {
+            wRequest.MessageStatus = messageStatus ?? wRequest.MessageStatus;
+            _httpClientService.PutAsync<string>(wRequest, ApiRoutes.Whatsapp.StatusChanged);
         }
 
         public Task ReportReceivedMessage(WhastappMessageReceived messageReceived)
@@ -441,7 +483,5 @@ namespace OneSms.Droid.Server.Services
             }
             return string.Empty;
         }
-
-
     }
 }

@@ -8,17 +8,23 @@ namespace OneSms.Droid.Server
     {
         public static void Initialize(Context context,string httpBaseUrl, string singalRBaseUrl)
         {
+
             Locator.CurrentMutable.RegisterConstant<IHttpClientService>(new HttpClientService(httpBaseUrl));
 
             Locator.CurrentMutable.RegisterConstant<IAuthService>(new AuthService(context));
 
             Locator.CurrentMutable.RegisterConstant<ISignalRService>(new SignalRService(context,singalRBaseUrl));
 
-            Locator.CurrentMutable.RegisterConstant<ISmsService>(new SmsService(context));
+            var whatsappService = new WhatsappService(context);
+            var ussdService = new UssdService(context, whatsappService);
+            var smsService = new SmsService(context, ussdService);
+            whatsappService.Initialize(ussdService);
 
-            Locator.CurrentMutable.RegisterConstant<IUssdService>(new UssdService(context));
+            Locator.CurrentMutable.RegisterConstant<ISmsService>(smsService);
 
-            Locator.CurrentMutable.RegisterConstant<IWhatsappService>(new WhatsappService(context));
+            Locator.CurrentMutable.RegisterConstant<IWhatsappService>(whatsappService);
+
+            Locator.CurrentMutable.RegisterConstant<IUssdService>(ussdService);
         }
     }
 }

@@ -17,9 +17,14 @@ namespace OneSms.Droid.Server.Services
 {
     public interface IUssdService
     {
+        bool IsBusy { get; }
+        Subject<(UssdRequest request, bool isPendingUssd)> OnUssdCompleted { get; }
+        Subject<UssdRequest> OnUssdStarted { get; }
+        Subject<UssdRequest> OnUssdReceived { get; }
+        UssdRequest UssdRequest { get; }
+
         void Execute(string ussdNumber, int sim, Dictionary<string, HashSet<string>> keyMpas, List<string> inputData);
         Task SendUssdStateChanged(UssdApiRequest ussd);
-        Context Context { get; set; }
     }
 
     public class UssdService : IUssdService
@@ -27,38 +32,65 @@ namespace OneSms.Droid.Server.Services
         private UssdController _ussdController;
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
+        private IWhatsappService _whatsappService;
         private Queue<string> _inputData;
-        private UssdRequest _ussdRequest;
         private Queue<UssdRequest> _pendingUssdTransactions;
         private Subject<Unit> _ussdTimer;
         private string _lastResponse;
+        private Context _context;
 
-        public Context Context { get; set; }
-
-        public UssdService(Context context)
+        public UssdService(Context context, IWhatsappService whatsappService)
         {
-            Context = context;
+            _context = context;
             _ussdController = UssdController.GetInstance(context);
             _pendingUssdTransactions = new Queue<UssdRequest>();
+            _ussdTimer = new Subject<Unit>();
+            OnUssdCompleted = new Subject<(UssdRequest request, bool isPendingUssd)>();
+            OnUssdStarted = new Subject<UssdRequest>();
+            OnUssdReceived = new Subject<UssdRequest>();
+
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
-            _ussdTimer = new Subject<Unit>();
+            _whatsappService = whatsappService ?? Locator.Current.GetService<IWhatsappService>();
 
-            _signalRService.Connection.On(SignalRKeys.SendUssd, (Action<UssdRequest>)(ussd =>
-            {
-                if (_ussdRequest == null && _pendingUssdTransactions.Count == 0)
-                    Execute(ussd);
-                else
-                    _pendingUssdTransactions.Enqueue(ussd);
-            }));
+            _signalRService
+                .Connection
+                .On(SignalRKeys.SendUssd, (Action<UssdRequest>)(ussd =>
+                {
+                    OnUssdReceived.OnNext(ussd);
+                    if (!_whatsappService.IsBusy && ussd != null && UssdRequest == null && _pendingUssdTransactions.Count == 0)
+                        Execute(ussd);
+                    else
+                        _pendingUssdTransactions.Enqueue(ussd);
+                }));
 
-            _signalRService.Connection.On(SignalRKeys.CancelUssdSession, () => CancelSession());
+            _signalRService
+                .Connection
+                .On(SignalRKeys.CancelUssdSession, () => CancelSession());
 
             _ussdTimer.Select(_ => Observable.Timer(TimeSpan.FromSeconds(30)))
                 .Switch()
                 .Subscribe(_ => CancelSession());
-        }
 
+            _whatsappService
+                .OnRequestCompleted
+                .Subscribe(whatsapp => 
+                {
+                    if (_pendingUssdTransactions.Count > 0)
+                        Execute(_pendingUssdTransactions.Dequeue());
+                });
+
+
+        }
+        public UssdRequest UssdRequest { get; private set; }
+
+        public Subject<(UssdRequest request, bool isPendingUssd)> OnUssdCompleted { get; }
+
+        public Subject<UssdRequest> OnUssdStarted { get; }
+
+        public Subject<UssdRequest> OnUssdReceived { get; }
+
+        public bool IsBusy => UssdRequest != null && _pendingUssdTransactions.Count > 0;
 
         private void Execute(UssdRequest ussd)
         {
@@ -67,8 +99,9 @@ namespace OneSms.Droid.Server.Services
                          { UssdController.KeyError, new HashSet<string>(ussd.KeyProblems) },
                          { UssdController.KeyLogin, new HashSet<string>(ussd.KeyWelcomes) }
                      };
-            _ussdRequest = ussd;
+            UssdRequest = ussd;
             Execute(ussd.UssdNumber, ussd.SimSlot, map, ussd.UssdInputs);
+            OnUssdStarted.OnNext(ussd);
             SendTransactionState("Started", UssdTransactionState.Executing);
             _ussdTimer.OnNext(Unit.Default);
         }
@@ -98,6 +131,7 @@ namespace OneSms.Droid.Server.Services
         {
             SendTransactionState(e.ResponseMessage, UssdTransactionState.Completed);
             UnRegisterEvents();
+            OnUssdCompleted.OnNext((UssdRequest,_pendingUssdTransactions.Count > 0));
             ExecuteNextTransactionOrReset();
         }
 
@@ -105,6 +139,7 @@ namespace OneSms.Droid.Server.Services
         {
             SendTransactionState(_lastResponse, UssdTransactionState.Aborted);
             UnRegisterEvents();
+            OnUssdCompleted.OnNext((UssdRequest, _pendingUssdTransactions.Count > 0));
             ExecuteNextTransactionOrReset();
         }
 
@@ -115,7 +150,7 @@ namespace OneSms.Droid.Server.Services
                 var lastMessage = _ussdController.StopOperation();
                 SendTransactionState(lastMessage, UssdTransactionState.Aborted);
             }
-            MainActivity.GoToHomeScreen(Context);
+            MainActivity.GoToHomeScreen(_context);
         }
 
         private void OnResponseRecieved(object sender, UssdEventArgs e)
@@ -134,23 +169,23 @@ namespace OneSms.Droid.Server.Services
             if (_pendingUssdTransactions.Count > 0)
                 Execute(_pendingUssdTransactions.Dequeue());
             else
-                _ussdRequest = null;
+                UssdRequest = null;
         }
 
         private void SendTransactionState(string lastResponse, UssdTransactionState transactionState)
         {
-            if (_ussdRequest != null)
+            if (UssdRequest != null)
             {
                 var transactionReport = new UssdApiRequest
                 {
                     LastMessage = lastResponse,
-                    MobileServerId = _ussdRequest.MobileServerId,
-                    NetworkAction = _ussdRequest.NetworkAction,
-                    SimId = _ussdRequest.SimId,
-                    SimSlot = _ussdRequest.SimSlot,
+                    MobileServerId = UssdRequest.MobileServerId,
+                    NetworkAction = UssdRequest.NetworkAction,
+                    SimId = UssdRequest.SimId,
+                    SimSlot = UssdRequest.SimSlot,
                     TransactionState = transactionState,
-                    TransactionId = _ussdRequest.TransactionId,
-                    UssdId = _ussdRequest.UssdId
+                    TransactionId = UssdRequest.TransactionId,
+                    UssdId = UssdRequest.UssdId
                 };
                 SendUssdStateChanged(transactionReport);
             }
