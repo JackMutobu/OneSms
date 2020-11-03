@@ -23,6 +23,11 @@ using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1;
 using Java.IO;
 using OneSms.Contracts.V1.Dtos;
+using OneSms.Droid.Server.Models;
+using Android.Text.Format;
+using System.Text;
+using System.Globalization;
+using OneSms.Droid.Server.Extensions;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -30,6 +35,7 @@ namespace OneSms.Droid.Server.Services
     {
         object CurrentTransaction { get; }
         Subject<object> OnRequestCompleted { get; }
+        public Subject<ImageData> OnImageDwonloaded { get; }
         public bool IsBusy { get; }
 
         Task<PermissionStatus> CheckAndRequestReadContactPermission();
@@ -53,6 +59,8 @@ namespace OneSms.Droid.Server.Services
         private bool _isBusy;
         private Context _context;
         private bool _canExecute;
+        private Queue<ImageData> _imageDatas;
+        private ImageData _currentImageDownload;
 
         public WhatsappService(Context context)
         {
@@ -61,7 +69,10 @@ namespace OneSms.Droid.Server.Services
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
             _ussdService = Locator.Current.GetService<IUssdService>();
             OnRequestCompleted = new Subject<object>();
+            OnImageDwonloaded = new Subject<ImageData>();
+
             _transactionQueue = new Queue<object>();
+            _imageDatas = new Queue<ImageData>();
             _canExecute = true;
 
             _signalRService
@@ -103,6 +114,65 @@ namespace OneSms.Droid.Server.Services
                     _httpClientService.PutAsync<string>(whatsappRequest, ApiRoutes.Whatsapp.StatusChanged);
                 }
                 });
+
+            OnImageDwonloaded.Subscribe(async x =>
+            {
+                _imageDatas.Enqueue(x);
+                if(_currentImageDownload == null)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(15));//Wait for image to be downloaded
+                    var copyAllImages = _imageDatas.ToList();
+                    _imageDatas.Clear();
+                    await GetImageData(copyAllImages);
+                }
+            });
+        }
+
+        private async Task GetImageData(List<ImageData> imageDatas)
+        {
+            foreach (var image in imageDatas)
+            {
+                _currentImageDownload = image;
+                File whatsappMediaDirectoryName = new File(Android.OS.Environment.GetExternalStoragePublicDirectory("Android/media/com.whatsapp.w4b").AbsolutePath + "/WhatsApp Business/Media/WhatsApp Business Images/");
+                
+                var todaysFiles = whatsappMediaDirectoryName.ListFiles()
+                    .Where(x => x.IsFile && x.Name.Contains($"{image.DateTime.Year}{image.DateTime.Month}0{image.DateTime.Day}")); 
+
+                var targetFile = todaysFiles.FirstOrDefault(x =>
+                {
+                    //var currentFileSize = Formatter.FormatFileSize(_context, x.Length());
+                    var fileDate = FromUnixTime(x.LastModified());
+                    var matchingDate = fileDate >= image.DateTime.IgnoreMilliseconds() && fileDate <= image.DateTime.IgnoreMilliseconds().AddSeconds(30);
+                    
+                    return matchingDate;
+                });
+
+                if (targetFile == null)
+                {
+                    if (image.Retry <= 3)
+                    {
+                        ++image.Retry;
+                        _imageDatas.Enqueue(image);
+                    }
+                }
+                else
+                {
+                    Bitmap bitmap = BitmapFactory.DecodeFile(targetFile.AbsolutePath);
+                    SaveImage(bitmap);
+                    targetFile.Delete();
+                }    
+
+            }
+
+            if (_imageDatas.Count() > 0)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(15));
+                var copyAllImages = _imageDatas.ToList();
+                _imageDatas.Clear();
+                await GetImageData(copyAllImages);
+            }
+            else
+                _currentImageDownload = null;
         }
 
         public void Initialize(IUssdService ussdService)
@@ -125,6 +195,8 @@ namespace OneSms.Droid.Server.Services
         public bool IsBusy => CurrentTransaction != null;
 
         public Subject<object> OnRequestCompleted { get; }
+
+        public Subject<ImageData> OnImageDwonloaded { get; }
 
         public object CurrentTransaction { get; private set; }
 
@@ -483,5 +555,34 @@ namespace OneSms.Droid.Server.Services
             }
             return string.Empty;
         }
+
+        public DateTime FromUnixTime(long unixTimeMillis)
+        {
+            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            return epoch.AddMilliseconds(unixTimeMillis);
+        }
+
+        public void SaveImage(Bitmap image)
+        {
+            try
+            {
+                var jFolder = new Java.IO.File(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryPictures), "");
+                if (!jFolder.Exists())
+                    jFolder.Mkdirs();
+
+                var jFile = new Java.IO.File(jFolder, $"IMG-{DateTime.UtcNow.Day}-{DateTime.UtcNow.Second}.png");
+
+                // Save File
+                using var fs = new FileStream(jFile.AbsolutePath, FileMode.CreateNew);
+                image.Compress(Bitmap.CompressFormat.Png, 100, fs);
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine(e.Message);
+            }
+        }
+
+        
     }
+
 }

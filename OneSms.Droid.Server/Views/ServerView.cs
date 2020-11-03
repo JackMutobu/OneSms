@@ -48,10 +48,12 @@ namespace OneSms.Droid.Server.Views
             };
             _serverText = new EditText(context)
             {
+                Text = "4d059bb6-29eb-446c-ab64-08d85670dfec",
                 Hint = "Server ID..."
             };
             _serverSecretText = new EditText(context)
             {
+                Text = "444ffa57-fcf6-46fc-a0f8-e5f920e9cd9b",
                 Hint = "Secret..."
             };
             _save = new Button(context)

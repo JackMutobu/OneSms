@@ -3,11 +3,14 @@ using Android;
 using Android.AccessibilityServices;
 using Android.App;
 using Android.Content;
+using Android.Graphics;
 using Android.Util;
 using Android.Views.Accessibility;
 using OneSms.Contracts.V1.Enumerations;
 using OneSms.Contracts.V1.MobileServerRequest;
 using OneSms.Droid.Server.Constants;
+using OneSms.Droid.Server.Extensions;
+using OneSms.Droid.Server.Models;
 using Splat;
 using System;
 using System.Collections.Generic;
@@ -17,18 +20,28 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Action = Android.Views.Accessibility.Action;
+using FeedbackFlags = Android.AccessibilityServices.FeedbackFlags;
 
 namespace OneSms.Droid.Server.Services
 {
     [Service(Enabled = true, Label = "OneSms on Whatsapp", Permission = Manifest.Permission.BindAccessibilityService)]
     [IntentFilter(new[] { "android.accessibilityservice.AccessibilityService" })]
     [MetaData("android.accessibilityservice", Resource = "@xml/whatsapp_service")]
-    public class WhatsappAccessibilityService : AccessibilityService,IEnableLogger
+    public class WhatsappAccessibilityService : AccessibilityService, IEnableLogger
     {
         private IWhatsappService _whatsappService;
+
         public WhatsappAccessibilityService()
         {
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
+        }
+
+        public Intent ScreenCaptureIntent { get; private set; }
+
+
+        public override void OnCreate()
+        {
+            base.OnCreate();
         }
 
         public async override void OnAccessibilityEvent(AccessibilityEvent e)
@@ -38,11 +51,29 @@ namespace OneSms.Droid.Server.Services
             var nodes = GetLeaves(e);
             var buttons = nodes.Where(x => x.ClassName == "android.widget.Button" || x.ClassName == "android.widget.ImageButton");
             var textViews = nodes.Where(x => x.ClassName == "android.widget.TextView");
-            
-           try
-            {
-                //ReturnToHomeFromInbox(nodes, buttons);
 
+            var unread = nodes.FirstOrDefault(x => x.Text?.Contains("UNREAD MESSAGES") == true || x.ContentDescription?.Contains("UNREAD MESSAGES") == true);
+
+            var images = nodes.Where(x => x.ClassName == "android.widget.ImageView" && x.Text?.Contains("kB") == true || x.ContentDescription?.Contains("kB") == true);
+
+            var buttonsImages = nodes.Where(x => x.ClassName == "android.widget.Button" && x.Text?.Contains("KB") == true || x.ContentDescription?.Contains("KB") == true);
+
+            var viewablePhots = nodes.Where(x => x.ClassName == "android.widget.ImageView" && x.Text?.Contains("View photo") == true || x.ContentDescription?.Contains("View photo") == true);
+
+            try
+            {
+                if (buttonsImages.Count() > 0)
+                {
+                    var buttonImage = buttonsImages.Last();
+                    var nowDate = DateTime.UtcNow;
+                    buttonImage.PerformAction(Action.Click);
+                    _whatsappService.OnImageDwonloaded.OnNext(new ImageData
+                    {
+                        DateTime = nowDate,
+                        Size = buttonImage.Text.GetSize()
+                    });
+                    PerformGlobalAction(GlobalAction.Home);
+                }
                 await ShareContact(buttons, textViews);
 
                 CanNotLookupNumber(textViews, buttons);
@@ -116,7 +147,7 @@ namespace OneSms.Droid.Server.Services
                 BlobCache.LocalMachine.InsertObject(OneSmsAction.MessageStatus, MessageStatus.Sent);
                 //For images this method is called twice from accessibility, so before going back to home screen check if this is the second call
                 var transactionId = Preferences.Get(OneSmsAction.ImageTransaction, 0);
-                if (_whatsappService.CurrentTransaction is WhatsappRequest whatsappRequest && whatsappRequest.MessageId  == transactionId)
+                if (_whatsappService.CurrentTransaction is WhatsappRequest whatsappRequest && whatsappRequest.MessageId == transactionId)
                     Preferences.Set(OneSmsAction.ImageTransaction, 0);
                 else
                     PerformGlobalAction(GlobalAction.Home);
@@ -187,6 +218,20 @@ namespace OneSms.Droid.Server.Services
             intent.SetAction(Intent.ActionMain);
             intent.AddCategory(Intent.CategoryLauncher);
             context.StartActivity(intent);
+        }
+
+        private static GestureDescription CreateClick(float x, float y)
+        {
+            // for a single tap a duration of 1 ms is enough
+            int DURATION = 1;
+
+            Path clickPath = new Path();
+            clickPath.MoveTo(x, y);
+            GestureDescription.StrokeDescription clickStroke =
+                    new GestureDescription.StrokeDescription(clickPath, 0, DURATION);
+            GestureDescription.Builder clickBuilder = new GestureDescription.Builder();
+            clickBuilder.AddStroke(clickStroke);
+            return clickBuilder.Build();
         }
     }
 }

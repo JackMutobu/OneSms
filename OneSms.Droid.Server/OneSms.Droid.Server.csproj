@@ -39,6 +39,7 @@
     <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
     <MandroidI18n />
     <LangVersion>8.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!--<AndroidKeyStore>True</AndroidKeyStore>
     <AndroidSigningKeyStore>C:\Users\jmuto\AppData\Local\Xamarin\Mono for Android\platform.keystore</AndroidSigningKeyStore>
     <AndroidSigningStorePass>android</AndroidSigningStorePass>
@@ -59,6 +60,7 @@
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <LangVersion>8.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -73,9 +75,14 @@
     <Compile Include="Constants\OneSmsAction.cs" />
     <Compile Include="Enumerations\TransactionState.cs" />
     <Compile Include="Extensions\ContextExtensions.cs" />
+    <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Extensions\ImageExtensions.cs" />
     <Compile Include="Extensions\UriExtensions.cs" />
+    <Compile Include="ImageCaptureActivity.cs" />
+    <Compile Include="Listners\OnImageAvailableListener.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Models\ContactInfo.cs" />
+    <Compile Include="Models\ImageData.cs" />
     <Compile Include="Models\Result.cs" />
     <Compile Include="Models\SimInfo.cs" />
     <Compile Include="ExtendedPermissions\ReadPhoneStatePermission.cs" />
@@ -86,6 +93,8 @@
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\HttpClientService.cs" />
     <Compile Include="Services\OneForegroundService.cs" />
+    <Compile Include="Services\ScreencaptureAccessibilityService.cs" />
+    <Compile Include="Services\ScreenCaptureService.cs" />
     <Compile Include="Services\SignalRService.cs" />
     <Compile Include="Services\SimService.cs" />
     <Compile Include="Services\SmsService.cs" />
@@ -206,9 +215,21 @@
   <ItemGroup>
     <AndroidResource Include="Resources\xml\whatsapp_service.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <AndroidResource Include="Resources\layout\activity_image_capture.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+  </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\xml\provider_paths.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\xml\access_service.xml">
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+    </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Helpers\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

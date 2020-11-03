@@ -1,19 +1,14 @@
 ﻿using Android;
 using Android.App;
 using Android.Content;
-using Android.Graphics;
-using Android.Graphics.Drawables;
+using Android.OS;
 using Android.Service.Notification;
 using AndroidX.Core.App;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
 using OneSms.Contracts.V1.Dtos;
 using OneSms.Droid.Server.Constants;
 using Splat;
 using System;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Debug = System.Diagnostics.Debug;
 
@@ -41,7 +36,7 @@ namespace OneSms.Droid.Server.Services
             base.OnCreate();
         }
 
-        public async override void OnNotificationPosted(StatusBarNotification sbn)
+        public override void OnNotificationPosted(StatusBarNotification sbn)
         {
             try
             {
@@ -62,31 +57,18 @@ namespace OneSms.Droid.Server.Services
                 if (from == "WhatsApp Business" || message.Contains("new messages") || isGroupMessage)
                     return;
 
-                //var whatsappImageDirectory = Environment.ExternalStorageDirectory.AbsolutePath + "/WhatsApp Business/Media/WhatsApp Business Images/";
-                //var directory = System.IO.Path.GetDirectoryName(whatsappImageDirectory);
-                //var files = Directory.GetFiles(whatsappImageDirectory);
+                var androidText = sbn.Notification.Extras.GetString("android.text");
 
-                //File whatsappMediaDirectory = new File(whatsappImageDirectory);
-
-                //File[] mediaDirectories = whatsappMediaDirectory.ListFiles();
-
-                //var lastFile = mediaDirectories.LastOrDefault();
-                //var lastFileDate = lastFile.LastModified();
-                //var millis = GetTime();
-
-                //sbn.Notification.ContentIntent.IntentSender.
-
-                var infoText = bundle.Get("android.InfoText");
-                var messagingUser = bundle.Get("android.messagingUser");
-
-                var intent = GetIntent(sbn.Notification.ContentIntent);
-
-                var methodes = typeof(Notification).GetMethods().Select(x=> x.Name);
-                var properties = typeof(Notification).GetProperties().Select(x => x.Name);
-
-                var sbnMethodes = typeof(StatusBarNotification).GetMethods().Select(x => x.Name);
-                var sbnProperties = typeof(StatusBarNotification).GetProperties().Select(x => x.Name);
-
+                if (androidText.Contains("📷"))
+                {
+                    //It's a picture
+                    var mes = message;
+                    OpenNumber(from);
+                }
+                else
+                {
+                    var mes = message;
+                }
                 var receivedMessage = new WhastappMessageReceived
                 {
                     Body = message,
@@ -94,7 +76,6 @@ namespace OneSms.Droid.Server.Services
                     MobileServerKey = Preferences.Get(OneSmsAction.ServerKey, string.Empty)
                 };
 
-                _whatsappService.ReportReceivedMessage(receivedMessage);
 
             }
             catch (Exception ex)
@@ -105,105 +86,26 @@ namespace OneSms.Droid.Server.Services
 
         public override void OnListenerConnected()
         {
+            Console.WriteLine("Notification listener connected");
             base.OnListenerConnected();
         }
 
-        private static DateTime JanFirst1970 = new DateTime(1970, 1, 1);
-        public static long GetTime()
+        public void OpenNumber(string number)
         {
-            return (long)((DateTime.Now - JanFirst1970).TotalMilliseconds + 0.5);
-        }
-
-        public async Task<PermissionStatus> CheckAndRequestReadStorage()
-        {
-            var status = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
-            if (status != PermissionStatus.Granted)
-                status = await Permissions.RequestAsync<Permissions.StorageRead>();
-            return status;
-        }
-
-        private IFormFile GetFileForm(Drawable image)
-        {
-            var bitmap = ((BitmapDrawable)image).Bitmap;
-            var stream = new MemoryStream();
-            bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
-            var fileName = $"image{DateTime.Now.Ticks}";
-            var formFile = new FormFile(stream, 0, stream.ToArray().Length, fileName, $"{fileName}.jpeg")
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "image/jpeg"
-            };
-            return formFile;
-        }
-
-        private IFormFile GetFileForm(Bitmap bitmap)
-        {
-            var stream = new MemoryStream();
-            bitmap.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
-            var fileName = $"image{DateTime.Now.Ticks}";
-            var formFile = new FormFile(stream, 0, stream.ToArray().Length, fileName, $"{fileName}.jpeg")
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "image/jpeg"
-            };
-            return formFile;
-        }
-
-        private void PreviousCode()
-        {
-            //var keys = bundle.KeySet();
-
-            //var images = bundle.Get("android.reduced.images");
-            //var template = bundle.Get("android.template");
-            //var messagingStyleUser = (Bundle)bundle.Get("android.messagingStyleUser");
-            //var styleKeys = messagingStyleUser.KeySet();
-            //var icon = messagingStyleUser.GetBundle("icon");
-            //var iconKeys = icon.KeySet();
-            //var iconImage = (Bitmap)icon.Get("obj");
-            //var extensions = bundle.Get("android.wearable.EXTENSIONS");
-            //var infoText = bundle.Get("android.infoText");
-
-
-            //var whenTime = new DateTime(sbn.Notification.When);
-            //var afterTimeOut = new DateTime(sbn.Notification.TimeoutAfter);
-
-            //var image = sbn.Notification.GetLargeIcon();
-            //var smallIcon = sbn.Notification.SmallIcon;
-            //if (smallIcon != null)
-            //{
-            //    var resources = PackageManager.GetResourcesForApplication(WastappPackageName);
-
-            //    var smallIconDrawable = resources.GetDrawable(smallIcon.ResId);
-
-            //    var imageDrawable = image.LoadDrawable(this);
-            //    var imageFileStream = GetFileForm(imageDrawable);
-            //    var uploadedFileSuccess = await _httpClientService.UploadImage(imageFileStream);
-            //}
-            //if (image != null)
-            //{
-            //    var imageDrawable = image.LoadDrawable(this);
-            //    var imageFileStream = GetFileForm(iconImage);
-            //    var uploadedFileSuccess = await _httpClientService.UploadImage(imageFileStream);
-            //    receivedMessage.ImageLinks.Add(uploadedFileSuccess?.Url);
-            //    receivedMessage.Body = message.Substring(2);
-            //}
-        }
-
-        public static Intent GetIntent(PendingIntent pendingIntent)
-        {
-            Intent intent = null;
+            Intent i = new Intent(Intent.ActionView);
             try
             {
-                var getIntents = pendingIntent.Class.GetDeclaredMethods().Select(x => x.Name);
-                var getIntent = pendingIntent.Class.GetDeclaredMethod("getIntent");
-                intent = (Intent)getIntent.Invoke(pendingIntent);
-
+                var url = $"https://api.whatsapp.com/send?phone={number}";
+                i.SetPackage("com.whatsapp.w4b");
+                i.SetData(Android.Net.Uri.Parse(url));
+                i.SetFlags(ActivityFlags.NewTask | ActivityFlags.ClearTask);
+                this.StartActivity(i);
             }
-            catch(Exception ex)
+            catch (Exception e)
             {
-                Debug.WriteLine(ex.Message);
+                System.Diagnostics.Debug.WriteLine($"{e.Message}\n { e.StackTrace}");
             }
-            return intent;
         }
+
     }
 }

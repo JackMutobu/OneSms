@@ -7,6 +7,7 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.Core.Content;
 using OneSms.Droid.Server.Services;
+using OneUssd;
 using Splat;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,7 @@ namespace OneSms.Droid.Server.Views
         private const int PICK_IMAGE_REQUSET = 71;
         private Context _context;
         private IWhatsappService _whatsappService;
+        private ISmsService _smsService;
         private ISignalRService _signalRService;
         private TextView _welcomeText;
         private EditText _message;
@@ -36,6 +38,7 @@ namespace OneSms.Droid.Server.Views
             _context = context;
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
             _signalRService = Locator.Current.GetService<ISignalRService>();
+            _smsService = Locator.Current.GetService<ISmsService>();
             _welcomeText = new TextView(context) { Text = "Welcome", TextSize = 25, TextAlignment = TextAlignment.Gravity, Gravity = GravityFlags.CenterHorizontal };
             _message = new EditText(context) { Hint = "Message" };
             _number = new EditText(context) { Hint = "Phone Number",Text = "+254786408335" };
@@ -57,7 +60,7 @@ namespace OneSms.Droid.Server.Views
             AddView(_buttonSendImage);
             AddView(_sendVCard);
             AddView(_buttonClearPreferences);
-            //AddView(_buttonPermission);
+            AddView(_buttonPermission);
             //AddView(_buttonRestartActivity);
 
             _button.Click += (s, e) =>
@@ -110,7 +113,7 @@ namespace OneSms.Droid.Server.Views
 
             _buttonRestartActivity.Click += (s, e) => MainActivity.RestartActivity(context);
 
-            _buttonPermission.Click += async (s, e) => await CheckAndRequestReadStorage();
+            _buttonPermission.Click += async (s, e) => await CheckPermissions();
         }
 
         public Bitmap BitmapImage { get; set; }
@@ -130,7 +133,21 @@ namespace OneSms.Droid.Server.Views
             _imageView.SetImageBitmap(bitmap);
         }
 
-        public async Task<PermissionStatus> CheckAndRequestReadStorage()
+        private async Task CheckPermissions()
+        {
+            UssdController.VerifyAccesibilityAccess(_context);
+            UssdController.VerifyOverLay(_context);
+            UssdController.RequestPermission(_context);
+            await CheckAndRequestStoragePermission();
+            await _smsService.CheckAndRequestSmsPermission();
+            await _smsService.CheckAndRequestReadPhoneStatePermission();
+            await _whatsappService.CheckAndRequestReadContactPermission();
+            await _whatsappService.CheckAndRequestWriteContactPermission();
+
+            ImageCaptureActivity.CheckScreenRecorderPermissions(_context);
+        }
+
+        public async Task<PermissionStatus> CheckAndRequestStoragePermission()
         {
             var status = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
             if (status != PermissionStatus.Granted)
@@ -139,6 +156,14 @@ namespace OneSms.Droid.Server.Views
             {
                 //ask for permission
                 ((Activity)Context).RequestPermissions(new string[] { Manifest.Permission.ReadExternalStorage }, 67899654);
+            }
+            status = await Permissions.CheckStatusAsync<Permissions.StorageWrite>();
+            if (status != PermissionStatus.Granted)
+                status = await Permissions.RequestAsync<Permissions.StorageWrite>();
+            if (ContextCompat.CheckSelfPermission(Context, Manifest.Permission.WriteExternalStorage) == Permission.Denied)
+            {
+                //ask for permission
+                ((Activity)Context).RequestPermissions(new string[] { Manifest.Permission.WriteExternalStorage }, 67899655);
             }
             return status;
         }

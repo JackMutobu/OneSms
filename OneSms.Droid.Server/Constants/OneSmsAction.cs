@@ -29,5 +29,6 @@
         public const string WhatsappTransaction = nameof(WhatsappTransaction);
         public const string TransactionState = nameof(TransactionState);
         public const string MessageStatus = nameof(MessageStatus);
+        public const string KeepRunning = nameof(KeepRunning);
     }
 }
