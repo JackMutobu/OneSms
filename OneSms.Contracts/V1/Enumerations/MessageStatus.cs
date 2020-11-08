@@ -11,6 +11,7 @@
         Executing,
         Pending,
         NumberNotFound,
+        ReceivedPending,
         Received
     }
 }

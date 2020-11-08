@@ -1,14 +1,13 @@
 ﻿using Android;
 using Android.App;
 using Android.Content;
-using Android.OS;
 using Android.Service.Notification;
 using AndroidX.Core.App;
 using OneSms.Contracts.V1.Dtos;
 using OneSms.Droid.Server.Constants;
+using OneSms.Droid.Server.Extensions;
 using Splat;
 using System;
-using System.Linq;
 using Xamarin.Essentials;
 using Debug = System.Diagnostics.Debug;
 
@@ -21,14 +20,13 @@ namespace OneSms.Droid.Server.Services
         private const string TAG = "NotificationListener";
         private const string WastappPackageName = "com.whatsapp.w4b";
         private string _prevNotificationKey;
-        private IHttpClientService _httpClientService;
-
+        private IRequestManagementService _requestManagementService;
         private IWhatsappService _whatsappService;
 
         public WhatsappNotificationListnerService()
         {
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
-            _httpClientService = Locator.Current.GetService<IHttpClientService>();
+            _requestManagementService = Locator.Current.GetService<IRequestManagementService>();
         }
 
         public override void OnCreate()
@@ -47,8 +45,6 @@ namespace OneSms.Droid.Server.Services
                 else
                     _prevNotificationKey = sbn.Key;
 
-                CancelNotification(sbn.Key);
-
                 var bundle = sbn.Notification.Extras;
                 var from = bundle.GetString(NotificationCompat.ExtraTitle);
                 var message = bundle.GetString(NotificationCompat.ExtraText);
@@ -58,25 +54,22 @@ namespace OneSms.Droid.Server.Services
                     return;
 
                 var androidText = sbn.Notification.Extras.GetString("android.text");
-
-                if (androidText.Contains("📷"))
-                {
-                    //It's a picture
-                    var mes = message;
-                    OpenNumber(from);
-                }
-                else
-                {
-                    var mes = message;
-                }
                 var receivedMessage = new WhastappMessageReceived
                 {
                     Body = message,
                     SenderNumber = from.Contains("OneSms") ? from.Replace("-", "").Replace("OneSms", "").Replace(" ", "") : from,
-                    MobileServerKey = Preferences.Get(OneSmsAction.ServerKey, string.Empty)
+                    MobileServerKey = Preferences.Get(OneSmsAction.ServerKey, string.Empty),
+                    MessageStatus = Contracts.V1.Enumerations.MessageStatus.Received,
+                    ReceivedDateTime = DateTime.UtcNow.IgnoreMilliseconds(),
+                    CompleteReceivedDateTime = DateTime.UtcNow.IgnoreMilliseconds()
                 };
 
+                if (androidText.Contains("📷"))
+                    _requestManagementService.OnWhatsappMessageReceived.OnNext(receivedMessage);
+                else
+                    _whatsappService.ReportReceivedMessage(receivedMessage);
 
+                CancelNotification(sbn.Key);
             }
             catch (Exception ex)
             {
@@ -90,22 +83,7 @@ namespace OneSms.Droid.Server.Services
             base.OnListenerConnected();
         }
 
-        public void OpenNumber(string number)
-        {
-            Intent i = new Intent(Intent.ActionView);
-            try
-            {
-                var url = $"https://api.whatsapp.com/send?phone={number}";
-                i.SetPackage("com.whatsapp.w4b");
-                i.SetData(Android.Net.Uri.Parse(url));
-                i.SetFlags(ActivityFlags.NewTask | ActivityFlags.ClearTask);
-                this.StartActivity(i);
-            }
-            catch (Exception e)
-            {
-                System.Diagnostics.Debug.WriteLine($"{e.Message}\n { e.StackTrace}");
-            }
-        }
+       
 
     }
 }

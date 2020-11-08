@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>aspnet-OneSms.Online-48479B79-74F0-4CD7-B93C-F67789F8389F</UserSecretsId>
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

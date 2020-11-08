@@ -18,7 +18,7 @@ namespace OneSms.Droid.Server.Services
     public interface IUssdService
     {
         bool IsBusy { get; }
-        Subject<(UssdRequest request, bool isPendingUssd)> OnUssdCompleted { get; }
+        Subject<UssdRequest> OnUssdCompleted { get; }
         Subject<UssdRequest> OnUssdStarted { get; }
         Subject<UssdRequest> OnUssdReceived { get; }
         UssdRequest UssdRequest { get; }
@@ -32,7 +32,6 @@ namespace OneSms.Droid.Server.Services
         private UssdController _ussdController;
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
-        private IWhatsappService _whatsappService;
         private Queue<string> _inputData;
         private Queue<UssdRequest> _pendingUssdTransactions;
         private Subject<Unit> _ussdTimer;
@@ -45,20 +44,19 @@ namespace OneSms.Droid.Server.Services
             _ussdController = UssdController.GetInstance(context);
             _pendingUssdTransactions = new Queue<UssdRequest>();
             _ussdTimer = new Subject<Unit>();
-            OnUssdCompleted = new Subject<(UssdRequest request, bool isPendingUssd)>();
+            OnUssdCompleted = new Subject<UssdRequest>();
             OnUssdStarted = new Subject<UssdRequest>();
             OnUssdReceived = new Subject<UssdRequest>();
 
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
-            _whatsappService = whatsappService ?? Locator.Current.GetService<IWhatsappService>();
 
             _signalRService
                 .Connection
                 .On(SignalRKeys.SendUssd, (Action<UssdRequest>)(ussd =>
                 {
                     OnUssdReceived.OnNext(ussd);
-                    if (!_whatsappService.IsBusy && ussd != null && UssdRequest == null && _pendingUssdTransactions.Count == 0)
+                    if (ussd != null && UssdRequest == null && _pendingUssdTransactions.Count == 0)
                         Execute(ussd);
                     else
                         _pendingUssdTransactions.Enqueue(ussd);
@@ -72,19 +70,11 @@ namespace OneSms.Droid.Server.Services
                 .Switch()
                 .Subscribe(_ => CancelSession());
 
-            _whatsappService
-                .OnRequestCompleted
-                .Subscribe(whatsapp => 
-                {
-                    if (_pendingUssdTransactions.Count > 0)
-                        Execute(_pendingUssdTransactions.Dequeue());
-                });
-
 
         }
         public UssdRequest UssdRequest { get; private set; }
 
-        public Subject<(UssdRequest request, bool isPendingUssd)> OnUssdCompleted { get; }
+        public Subject<UssdRequest> OnUssdCompleted { get; }
 
         public Subject<UssdRequest> OnUssdStarted { get; }
 
@@ -131,7 +121,7 @@ namespace OneSms.Droid.Server.Services
         {
             SendTransactionState(e.ResponseMessage, UssdTransactionState.Completed);
             UnRegisterEvents();
-            OnUssdCompleted.OnNext((UssdRequest,_pendingUssdTransactions.Count > 0));
+            OnUssdCompleted.OnNext(UssdRequest);
             ExecuteNextTransactionOrReset();
         }
 
@@ -139,7 +129,7 @@ namespace OneSms.Droid.Server.Services
         {
             SendTransactionState(_lastResponse, UssdTransactionState.Aborted);
             UnRegisterEvents();
-            OnUssdCompleted.OnNext((UssdRequest, _pendingUssdTransactions.Count > 0));
+            OnUssdCompleted.OnNext(UssdRequest);
             ExecuteNextTransactionOrReset();
         }
 

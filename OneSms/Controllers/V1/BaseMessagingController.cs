@@ -20,7 +20,7 @@ namespace OneSms.Controllers.V1
     {
         protected readonly IMessagingService<T, U,V> _messagingService;
         protected readonly IMapper _mapper;
-        private readonly HubEventService _hubEventService;
+        protected readonly HubEventService _hubEventService;
 
         public BaseMessagingController(IMessagingService<T,U,V> messagingService, IMapper mapper, HubEventService hubEventService)
         {
@@ -84,7 +84,7 @@ namespace OneSms.Controllers.V1
 
         public virtual async Task<IActionResult> OnMessageReceived([FromBody] V receivedMessage)
         {
-            var message = await _messagingService.OnMessageReceived(receivedMessage, DateTime.UtcNow);
+            var message = await _messagingService.OnMessageReceived(receivedMessage, receivedMessage.ReceivedDateTime);
             if (message != null)
                 _hubEventService.OnMessageReceived.OnNext(message);
 

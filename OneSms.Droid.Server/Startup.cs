@@ -18,13 +18,14 @@ namespace OneSms.Droid.Server
             var whatsappService = new WhatsappService(context);
             var ussdService = new UssdService(context, whatsappService);
             var smsService = new SmsService(context, ussdService);
-            whatsappService.Initialize(ussdService);
 
             Locator.CurrentMutable.RegisterConstant<ISmsService>(smsService);
 
             Locator.CurrentMutable.RegisterConstant<IWhatsappService>(whatsappService);
 
             Locator.CurrentMutable.RegisterConstant<IUssdService>(ussdService);
+
+            Locator.CurrentMutable.RegisterConstant<IRequestManagementService>(new RequestManagementService());
         }
     }
 }

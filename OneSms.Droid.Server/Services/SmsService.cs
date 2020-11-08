@@ -79,6 +79,8 @@ namespace OneSms.Droid.Server.Services
                 .OnUssdStarted
                 .Subscribe(ussd 
                     => _canExecute = ussd.NetworkAction != NetworkActionType.AirtimeRecharge || ussd.NetworkAction == NetworkActionType.SmsActivation);//prevent sms sending when recharging airtime or activating sms
+
+
         }
 
         private void ExecuteNext()

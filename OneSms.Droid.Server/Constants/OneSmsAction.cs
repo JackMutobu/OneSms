@@ -30,5 +30,6 @@
         public const string TransactionState = nameof(TransactionState);
         public const string MessageStatus = nameof(MessageStatus);
         public const string KeepRunning = nameof(KeepRunning);
+        public const string ImageRequestQueue = nameof(ImageRequestQueue);
     }
 }

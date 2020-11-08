@@ -33,6 +33,7 @@ namespace OneSms.Droid.Server
         private ServerView serverView;
         private HomeView homeView;
         private SmsReceiver smsReceiver;
+        private IRequestManagementService requestManagementService;
         private ISmsService smsService;
         private ISignalRService signalRService;
         private IWhatsappService whatsappService;
@@ -64,10 +65,11 @@ namespace OneSms.Droid.Server
 
         private void InitializeServices()
         {
-            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/"), Preferences.Get(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub"));
+            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://03fa5461216f.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://03fa5461216f.ngrok.io/onesmshub"));
             signalRService = Locator.Current.GetService<ISignalRService>();
             smsService = Locator.Current.GetService<ISmsService>();
             whatsappService = Locator.Current.GetService<IWhatsappService>();
+            requestManagementService = Locator.Current.GetService<IRequestManagementService>();
             authService = Locator.Current.GetService<IAuthService>();
             InitializeSmsServices();
         }
@@ -209,7 +211,7 @@ namespace OneSms.Droid.Server
         protected override void OnResume()
         {
             base.OnResume();
-            whatsappService?.OnRequestCompleted.OnNext(whatsappService?.CurrentTransaction);
+            requestManagementService.OnTransactionCompleted.OnNext(whatsappService?.CurrentTransaction);
         }
 
         public async Task<PermissionStatus> CheckAndRequestReadStorage()

@@ -52,43 +52,46 @@ namespace OneSms.Droid.Server.Services
             var buttons = nodes.Where(x => x.ClassName == "android.widget.Button" || x.ClassName == "android.widget.ImageButton");
             var textViews = nodes.Where(x => x.ClassName == "android.widget.TextView");
 
-            var unread = nodes.FirstOrDefault(x => x.Text?.Contains("UNREAD MESSAGES") == true || x.ContentDescription?.Contains("UNREAD MESSAGES") == true);
-
-            var images = nodes.Where(x => x.ClassName == "android.widget.ImageView" && x.Text?.Contains("kB") == true || x.ContentDescription?.Contains("kB") == true);
-
-            var buttonsImages = nodes.Where(x => x.ClassName == "android.widget.Button" && x.Text?.Contains("KB") == true || x.ContentDescription?.Contains("KB") == true);
-
-            var viewablePhots = nodes.Where(x => x.ClassName == "android.widget.ImageView" && x.Text?.Contains("View photo") == true || x.ContentDescription?.Contains("View photo") == true);
-
+         
             try
             {
-                if (buttonsImages.Count() > 0)
-                {
-                    var buttonImage = buttonsImages.Last();
-                    var nowDate = DateTime.UtcNow;
-                    buttonImage.PerformAction(Action.Click);
-                    _whatsappService.OnImageDwonloaded.OnNext(new ImageData
-                    {
-                        DateTime = nowDate,
-                        Size = buttonImage.Text.GetSize()
-                    });
-                    PerformGlobalAction(GlobalAction.Home);
-                }
+                DownloadReceivedImage(nodes);
+
+                SendTextMessage(nodes, buttons);
+
+                SendImage(nodes, buttons);
+
                 await ShareContact(buttons, textViews);
 
                 CanNotLookupNumber(textViews, buttons);
 
                 await NumberNotFoundOnWhatsapp(textViews, buttons);
 
-                SendTextMessage(nodes, buttons);
-
-                SendImage(nodes, buttons);
+                ReturnToHomeFromInbox(nodes,buttons);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Accessibility crashed: {ex.Message}");
             }
 
+        }
+
+        private void DownloadReceivedImage(List<AccessibilityNodeInfo> nodes)
+        {
+            var buttonsImages = nodes.Where(x => x.ClassName == "android.widget.Button" && x.Text?.Contains("KB") == true || x.ContentDescription?.Contains("KB") == true);
+
+            if (buttonsImages.Count() > 0)
+            {
+                var buttonImage = buttonsImages.Last();
+                var nowDate = DateTime.UtcNow;
+                buttonImage.PerformAction(Action.Click);
+                _whatsappService.OnImageDwonloaded.OnNext(new ImageData
+                {
+                    DateTime = nowDate,
+                    Size = buttonImage.Text.GetSize()
+                });
+                PerformGlobalAction(GlobalAction.Home);
+            }
         }
 
         private void ReturnToHomeFromInbox(List<AccessibilityNodeInfo> nodes, IEnumerable<AccessibilityNodeInfo> buttons)
@@ -138,7 +141,7 @@ namespace OneSms.Droid.Server.Services
         {
             var viewPager = nodes.FirstOrDefault(x => x.ClassName == "androidx.viewpager.widget.ViewPager");
             var textViewPager = nodes.FirstOrDefault(x => x.ClassName == "android.widget.ImageView" && x.ContentDescription == "Add text");
-            var navigateViewPager = nodes.FirstOrDefault(x => x.ClassName == "android.widget.ImageView" && x.ContentDescription == "Navigate up");
+            var navigateViewPager = nodes.FirstOrDefault(x => x.ClassName == "android.widget.ImageView" && (x.ContentDescription == "Navigate up" || x.ContentDescription == "Back"));
             var sendPagerButton = buttons.FirstOrDefault(x => x.ContentDescription == "Send");
             if (sendPagerButton != null && viewPager != null && textViewPager != null && navigateViewPager != null)
             {

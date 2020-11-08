@@ -48,12 +48,12 @@ namespace OneSms.Droid.Server.Views
             };
             _serverText = new EditText(context)
             {
-                Text = "4d059bb6-29eb-446c-ab64-08d85670dfec",
+                Text = "54d8675f-0f08-4222-b225-08d880cb88e9",
                 Hint = "Server ID..."
             };
             _serverSecretText = new EditText(context)
             {
-                Text = "444ffa57-fcf6-46fc-a0f8-e5f920e9cd9b",
+                Text = "47eebb1f-b8d0-4c21-9f3a-e8a3ac6e27f4",
                 Hint = "Secret..."
             };
             _save = new Button(context)
@@ -109,6 +109,7 @@ namespace OneSms.Droid.Server.Views
             AddView(_serverUrlText);
             AddView(_labelServerUrl);
             AddView(_serverUrlBtn);
+
 
             _labelConnected.Text = _signalRService.IsConnected ? "Connected" : "Disconnected";
             _save.Click += OnServerIdSave;

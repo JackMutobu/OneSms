@@ -14,7 +14,10 @@ using System.Threading.Tasks;
 
 namespace OneSms.Services
 {
-    public interface IWhatsappService: IMessagingService<WhatsappMessage, WhatsappRequest,WhastappMessageReceived> { }
+    public interface IWhatsappService: IMessagingService<WhatsappMessage, WhatsappRequest,WhastappMessageReceived>
+    {
+        Task<WhatsappMessage?> MessageReceivedStatusUpdate(WhastappMessageReceived whastappMessageReceived);
+    }
 
     public class WhatsappService :BaseMessagingService<WhatsappMessage, WhatsappRequest,WhastappMessageReceived>, IWhatsappService
     {
@@ -56,6 +59,19 @@ namespace OneSms.Services
             }
         }
 
+        public async Task<WhatsappMessage?> MessageReceivedStatusUpdate(WhastappMessageReceived whastappMessageReceived)
+        {
+            var message = _dbContext.WhatsappMessages.FirstOrDefault(x => x.CompletedTime == whastappMessageReceived.ReceivedDateTime && x.MessageStatus == MessageStatus.ReceivedPending);
+            if(message != null)
+            {
+                message.CompletedTime = whastappMessageReceived.CompleteReceivedDateTime;
+                message.MessageStatus = whastappMessageReceived.MessageStatus;
+                _dbContext.Update(message);
+                await _dbContext.SaveChangesAsync();
+            }
+            return message;
+        }
+
         protected override async Task<WhatsappMessage> SaveReceivedMessage(WhastappMessageReceived messageReceived, DateTime receivedTime, SimCard receiver, ApplicationSim appSim)
         {
             var message = new WhatsappMessage
@@ -64,7 +80,7 @@ namespace OneSms.Services
                 Body = messageReceived.Body,
                 CompletedTime = receivedTime,
                 StartTime = receivedTime,
-                MessageStatus = MessageStatus.Received,
+                MessageStatus = messageReceived.MessageStatus,
                 MobileServerId = receiver.MobileServerId,
                 SenderNumber = messageReceived.SenderNumber,
                 RecieverNumber = receiver.Number,
@@ -85,5 +101,6 @@ namespace OneSms.Services
                 .Include(x => x.Apps)
                 .FirstOrDefault(x => x.MobileServerId.ToString() == messageReceived.MobileServerKey && x.IsWhatsappNumber == true);
         }
+
     }
 }

@@ -31,6 +31,7 @@ namespace OneSms.Controllers.V1
         private readonly IHubContext<OneSmsHub> _hubContext;
         private readonly IServerConnectionService _serverConnectionService;
         private readonly IHttpClientFactory _clientFactory;
+        private readonly IWhatsappService _whatsappService;
         private List<SharingContactRequest> _shareContactRequests;
 
         public WhatsappController(IWhatsappService whatsappService, IMapper mapper,IUriService uriService, HubEventService hubEventService,
@@ -40,6 +41,7 @@ namespace OneSms.Controllers.V1
             _hubContext = hubContext;
             _serverConnectionService = serverConnectionService;
             _clientFactory = clientFactory;
+            _whatsappService = whatsappService;
             _shareContactRequests = new List<SharingContactRequest>();
         }
 
@@ -62,6 +64,16 @@ namespace OneSms.Controllers.V1
         [HttpPut(ApiRoutes.Whatsapp.WhatsappReceived)]
         public override Task<IActionResult> OnMessageReceived([FromBody] WhastappMessageReceived receivedMessage)
             => base.OnMessageReceived(receivedMessage);
+
+        [HttpPut(ApiRoutes.Whatsapp.ReceivedStatusChanged)]
+        public async Task<IActionResult> OnReceivedStatusChanged([FromBody] WhastappMessageReceived receivedMessage)
+        {
+            var message = await _whatsappService.MessageReceivedStatusUpdate(receivedMessage);
+            if (message != null)
+                _hubEventService.OnMessageReceived.OnNext(message);
+
+            return Ok($"Message received:{message?.MessageStatus}");
+        }
 
         protected override  async Task<IActionResult> SendToMobileServer(SendMessageRequest messageRequest)
         {

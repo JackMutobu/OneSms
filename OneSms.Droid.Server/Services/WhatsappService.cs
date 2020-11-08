@@ -24,10 +24,10 @@ using OneSms.Contracts.V1;
 using Java.IO;
 using OneSms.Contracts.V1.Dtos;
 using OneSms.Droid.Server.Models;
-using Android.Text.Format;
-using System.Text;
-using System.Globalization;
 using OneSms.Droid.Server.Extensions;
+using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.AspNetCore.Http;
+using OneSms.Droid.Server.Helpers;
 
 namespace OneSms.Droid.Server.Services
 {
@@ -48,17 +48,18 @@ namespace OneSms.Droid.Server.Services
         void SendText(string number, string message);
 
         Task ReportReceivedMessage(WhastappMessageReceived messageReceived);
+        Task UpdateReceivedMessage(WhastappMessageReceived messageReceived);
     }
 
     public class WhatsappService : IWhatsappService
     {
         private Queue<object> _transactionQueue;
+        private Queue<WhastappMessageReceived> _imageTransactionQueue;
         private ISignalRService _signalRService;
         private IHttpClientService _httpClientService;
-        private IUssdService _ussdService;
+        private IRequestManagementService _requestManagementService;
         private bool _isBusy;
         private Context _context;
-        private bool _canExecute;
         private Queue<ImageData> _imageDatas;
         private ImageData _currentImageDownload;
 
@@ -67,33 +68,18 @@ namespace OneSms.Droid.Server.Services
             _context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
-            _ussdService = Locator.Current.GetService<IUssdService>();
+
             OnRequestCompleted = new Subject<object>();
             OnImageDwonloaded = new Subject<ImageData>();
 
             _transactionQueue = new Queue<object>();
+            _imageTransactionQueue = new Queue<WhastappMessageReceived>();
             _imageDatas = new Queue<ImageData>();
-            _canExecute = true;
 
             _signalRService
                 .Connection
                 .On(SignalRKeys.ResetToActive, () => _isBusy = false);
-            _signalRService
-                .Connection
-                .On<WhatsappRequest>(SignalRKeys.SendWhatsapp, async transaction =>
-                {
-                    if (_canExecute)
-                        await Execute(transaction);
-                });
-            _signalRService
-                .Connection
-                .On<ShareContactRequest>(SignalRKeys.ShareContact, async contact => 
-                {
-                    if(_canExecute)
-                        await Execute(contact);
-                });
-
-
+           
             OnRequestCompleted
                 .Subscribe(async request =>
                 {
@@ -103,29 +89,50 @@ namespace OneSms.Droid.Server.Services
                         case WhatsappRequest whatsappRequest:
                             await ReportRequestState(whatsappRequest);
                             break;
+                        case bool canContinue:
+                            if (canContinue)
+                                await ExecuteNext();
+                            break;
                     }
 
-                    if(_canExecute)
+                    if(((int)_requestManagementService.CurrentTransaction) < 3)
                         await ExecuteNext();
 
                     async Task ReportRequestState(WhatsappRequest whatsappRequest)
-                {
-                    whatsappRequest.MessageStatus = await BlobCache.LocalMachine.GetObject<MessageStatus>(OneSmsAction.MessageStatus);
-                    _httpClientService.PutAsync<string>(whatsappRequest, ApiRoutes.Whatsapp.StatusChanged);
-                }
+                    {
+                        whatsappRequest.MessageStatus = await BlobCache.LocalMachine.GetObject<MessageStatus>(OneSmsAction.MessageStatus);
+                        _httpClientService.PutAsync<string>(whatsappRequest, ApiRoutes.Whatsapp.StatusChanged);
+                    }
                 });
 
-            OnImageDwonloaded.Subscribe(async x =>
-            {
-                _imageDatas.Enqueue(x);
-                if(_currentImageDownload == null)
+            OnImageDwonloaded
+                .Subscribe(x =>
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(15));//Wait for image to be downloaded
-                    var copyAllImages = _imageDatas.ToList();
-                    _imageDatas.Clear();
-                    await GetImageData(copyAllImages);
-                }
-            });
+                    BlobCache.LocalMachine.GetObject<Queue<WhastappMessageReceived>>(OneSmsAction.ImageRequestQueue)
+                    .Catch(Observable.Return(new Queue<WhastappMessageReceived>()))
+                    .Subscribe(async requests =>
+                    {
+                        if(requests.Count > 0)
+                        {
+                            x.WhastappMessage = requests.Dequeue();
+                            x.WhastappMessage.MessageStatus = MessageStatus.ReceivedPending;
+                            _imageDatas.Enqueue(x);
+
+                            BlobCache.LocalMachine.InsertObject(OneSmsAction.ImageRequestQueue, requests);
+                            ReportReceivedMessage(x.WhastappMessage);
+
+                            if (_currentImageDownload == null)
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(15));//Wait for image to be downloaded
+                                var copyAllImages = _imageDatas.ToList();
+                                _imageDatas.Clear();
+                                await GetImageData(copyAllImages);
+                            }
+                        }
+                    });
+                });
+
+
         }
 
         private async Task GetImageData(List<ImageData> imageDatas)
@@ -134,14 +141,16 @@ namespace OneSms.Droid.Server.Services
             {
                 _currentImageDownload = image;
                 File whatsappMediaDirectoryName = new File(Android.OS.Environment.GetExternalStoragePublicDirectory("Android/media/com.whatsapp.w4b").AbsolutePath + "/WhatsApp Business/Media/WhatsApp Business Images/");
-                
+
+                var day = image.DateTime.Day > 9 ? image.DateTime.Day.ToString() : $"0{image.DateTime.Day}";
+
                 var todaysFiles = whatsappMediaDirectoryName.ListFiles()
-                    .Where(x => x.IsFile && x.Name.Contains($"{image.DateTime.Year}{image.DateTime.Month}0{image.DateTime.Day}")); 
+                    .Where(x => x.IsFile && x.Name.Contains($"{image.DateTime.Year}{image.DateTime.Month}{day}")); 
 
                 var targetFile = todaysFiles.FirstOrDefault(x =>
                 {
                     //var currentFileSize = Formatter.FormatFileSize(_context, x.Length());
-                    var fileDate = FromUnixTime(x.LastModified());
+                    var fileDate = x.LastModified().FromUnixTime();
                     var matchingDate = fileDate >= image.DateTime.IgnoreMilliseconds() && fileDate <= image.DateTime.IgnoreMilliseconds().AddSeconds(30);
                     
                     return matchingDate;
@@ -157,9 +166,16 @@ namespace OneSms.Droid.Server.Services
                 }
                 else
                 {
-                    Bitmap bitmap = BitmapFactory.DecodeFile(targetFile.AbsolutePath);
-                    SaveImage(bitmap);
-                    targetFile.Delete();
+                    var newFileName = new File(whatsappMediaDirectoryName, $"IMG-{image.DateTime.Year}-{image.DateTime.Month}-{day}{NumberHelpers.GetRandomNumber(400, 5000000)}.jpg");
+                    targetFile.RenameTo(newFileName);
+
+                    var imageUrl = await UploadImage(targetFile);
+
+                    if(string.IsNullOrEmpty(imageUrl))
+                    {
+                        image.WhastappMessage.MessageStatus = MessageStatus.Received;
+                        UpdateReceivedMessage(image.WhastappMessage);
+                    }
                 }    
 
             }
@@ -175,24 +191,7 @@ namespace OneSms.Droid.Server.Services
                 _currentImageDownload = null;
         }
 
-        public void Initialize(IUssdService ussdService)
-        {
-            _ussdService = ussdService;
-            _ussdService
-               .OnUssdReceived
-               .Subscribe(ussd => _canExecute = ussd == null);
-
-            _ussdService
-                .OnUssdCompleted
-                .Subscribe(async ussd =>
-                {
-                    _canExecute = !ussd.isPendingUssd;
-                    if (!ussd.isPendingUssd)
-                        await ExecuteNext();
-                });
-        }
-
-        public bool IsBusy => CurrentTransaction != null;
+        public bool IsBusy => CurrentTransaction != null && _isBusy;
 
         public Subject<object> OnRequestCompleted { get; }
 
@@ -202,25 +201,49 @@ namespace OneSms.Droid.Server.Services
 
         public async Task Execute<T>(T request) where T : BaseMessageRequest
         {
-            if (_isBusy)
-                _transactionQueue.Enqueue(request);
+            _requestManagementService ??= Locator.Current.GetService<IRequestManagementService>();
+            if (IsBusy || ((int)_requestManagementService.CurrentTransaction) >=3 )
+            {
+                if (request is WhastappMessageReceived receivedMessage)
+                    _imageTransactionQueue.Enqueue(receivedMessage);
+                else
+                    _transactionQueue.Enqueue(request);
+            }
             else
             {
                 _isBusy = true;
                 CurrentTransaction = request;
+
                 if (request is WhatsappRequest wRequest)
                 {
                     UpdateWhatsappStatus(wRequest);
                     await SendAsync(wRequest);
                 }
+                else if (request is WhastappMessageReceived)//Download received image and send to server
+                {
+                    BlobCache.LocalMachine.GetObject<Queue<WhastappMessageReceived>>(OneSmsAction.ImageRequestQueue)
+                        .Catch(Observable.Return(new Queue<WhastappMessageReceived>()))
+                        .Subscribe(requests =>
+                        {
+                            requests.Enqueue(request as WhastappMessageReceived);
+                            BlobCache.LocalMachine.InsertObject(OneSmsAction.ImageRequestQueue, requests);
+                        });//Add image to cache queue
+
+                    OpenNumber(request.SenderNumber);
+                }
                 else if (request is ShareContactRequest sRequest)
                     await CheckContactAndSendVcard(_context, sRequest.VcardInfo, sRequest.ReceiverNumber, sRequest.Body);
+
             }
         }
 
         private async Task ExecuteNext()
         {
-            if (_transactionQueue.Count > 0)
+            if(_imageTransactionQueue.Count > 0)
+            {
+                await Execute(_imageTransactionQueue.Dequeue());
+            }
+            else if(_transactionQueue.Count > 0)
             {
                 var nextTransaction = _transactionQueue.Dequeue();
                 switch (nextTransaction)
@@ -245,6 +268,9 @@ namespace OneSms.Droid.Server.Services
 
         public Task ReportReceivedMessage(WhastappMessageReceived messageReceived)
             => _httpClientService.PutAsync<string>(messageReceived, ApiRoutes.Whatsapp.WhatsappReceived);
+
+        public Task UpdateReceivedMessage(WhastappMessageReceived messageReceived)
+            => _httpClientService.PutAsync<string>(messageReceived, ApiRoutes.Whatsapp.ReceivedStatusChanged);
 
         public void SendText(string number, string message)
         {
@@ -535,6 +561,48 @@ namespace OneSms.Droid.Server.Services
             return false;
         }
 
+        private async Task<string> UploadImage(File file)
+        {
+            try
+            {
+                Bitmap bitmap = BitmapFactory.DecodeFile(file.AbsolutePath);
+                using (var stream = new MemoryStream())
+                {
+                    bitmap.Compress(Bitmap.CompressFormat.Jpeg, 0, stream);
+                    var fileToUpload = new FormFile(stream, 0, stream.Length, "name", file.Name)
+                    {
+                        Headers = new HeaderDictionary(),
+                        ContentType = "image/jpeg"
+                    };
+
+                    var response = await _httpClientService.UploadImage(fileToUpload);
+                    return response.Url;
+                }
+            }
+            catch(Exception ex)
+            {
+                System.Console.WriteLine(ex.Message);
+            }
+            return string.Empty;
+        }
+
+        private void OpenNumber(string number)
+        {
+            Intent i = new Intent(Intent.ActionView);
+            try
+            {
+                var url = $"https://api.whatsapp.com/send?phone={number}";
+                i.SetPackage("com.whatsapp.w4b");
+                i.SetData(Android.Net.Uri.Parse(url));
+                i.SetFlags(ActivityFlags.NewTask | ActivityFlags.ClearTask);
+                _context.StartActivity(i);
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine($"{e.Message}\n { e.StackTrace}");
+            }
+        }
+
         private async Task<string> GetWhatsappNumber(Context context, string contactId)
         {
             if (await CheckAndRequestReadContactPermission() == PermissionStatus.Granted)
@@ -556,13 +624,7 @@ namespace OneSms.Droid.Server.Services
             return string.Empty;
         }
 
-        public DateTime FromUnixTime(long unixTimeMillis)
-        {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            return epoch.AddMilliseconds(unixTimeMillis);
-        }
-
-        public void SaveImage(Bitmap image)
+        private void SaveImage(Bitmap image)
         {
             try
             {
@@ -582,7 +644,6 @@ namespace OneSms.Droid.Server.Services
             }
         }
 
-        
     }
 
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Android.Graphics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
 using OneSms.Contracts.V1;
 using OneSms.Contracts.V1.Requests;
 using OneSms.Contracts.V1.Responses;
@@ -147,6 +149,8 @@ namespace OneSms.Droid.Server.Services
             else
                 throw new Exception(await response.Content.ReadAsStringAsync());
         }
+
+        
 
     }
 }
