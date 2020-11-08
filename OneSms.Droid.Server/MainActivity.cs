@@ -40,6 +40,7 @@ namespace OneSms.Droid.Server
         private IAuthService authService;
 
 
+
         protected async override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -65,7 +66,7 @@ namespace OneSms.Droid.Server
 
         private void InitializeServices()
         {
-            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://03fa5461216f.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://03fa5461216f.ngrok.io/onesmshub"));
+            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://94526119c550.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://94526119c550.ngrok.io/onesmshub"));
             signalRService = Locator.Current.GetService<ISignalRService>();
             smsService = Locator.Current.GetService<ISmsService>();
             whatsappService = Locator.Current.GetService<IWhatsappService>();

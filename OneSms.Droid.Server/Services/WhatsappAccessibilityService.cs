@@ -55,11 +55,12 @@ namespace OneSms.Droid.Server.Services
          
             try
             {
-                DownloadReceivedImage(nodes);
 
                 SendTextMessage(nodes, buttons);
 
                 SendImage(nodes, buttons);
+
+                DownloadReceivedImage(nodes);
 
                 await ShareContact(buttons, textViews);
 

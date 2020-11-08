@@ -62,6 +62,7 @@ namespace OneSms.Droid.Server.Services
         private Context _context;
         private Queue<ImageData> _imageDatas;
         private ImageData _currentImageDownload;
+        private HashSet<string> _downloadedImages;
 
         public WhatsappService(Context context)
         {
@@ -75,6 +76,7 @@ namespace OneSms.Droid.Server.Services
             _transactionQueue = new Queue<object>();
             _imageTransactionQueue = new Queue<WhastappMessageReceived>();
             _imageDatas = new Queue<ImageData>();
+            _downloadedImages = new HashSet<string>();
 
             _signalRService
                 .Connection
@@ -152,11 +154,11 @@ namespace OneSms.Droid.Server.Services
                     //var currentFileSize = Formatter.FormatFileSize(_context, x.Length());
                     var fileDate = x.LastModified().FromUnixTime();
                     var matchingDate = fileDate >= image.DateTime.IgnoreMilliseconds() && fileDate <= image.DateTime.IgnoreMilliseconds().AddSeconds(30);
-                    
+
                     return matchingDate;
                 });
 
-                if (targetFile == null)
+                if (targetFile == null || _downloadedImages.Contains(targetFile.Name))
                 {
                     if (image.Retry <= 3)
                     {
@@ -166,14 +168,13 @@ namespace OneSms.Droid.Server.Services
                 }
                 else
                 {
-                    var newFileName = new File(whatsappMediaDirectoryName, $"IMG-{image.DateTime.Year}-{image.DateTime.Month}-{day}{NumberHelpers.GetRandomNumber(400, 5000000)}.jpg");
-                    targetFile.RenameTo(newFileName);
+                    _downloadedImages.Add(targetFile.Name);
 
                     var imageUrl = await UploadImage(targetFile);
-
-                    if(string.IsNullOrEmpty(imageUrl))
+                    if (string.IsNullOrEmpty(imageUrl))
                     {
                         image.WhastappMessage.MessageStatus = MessageStatus.Received;
+                        image.WhastappMessage.ImageLinks.Add(imageUrl);
                         UpdateReceivedMessage(image.WhastappMessage);
                     }
                 }    
