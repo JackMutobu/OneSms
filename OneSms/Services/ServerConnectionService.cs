@@ -52,9 +52,11 @@ namespace OneSms.Services
 
         public void RemoveServer(string connectionId)
         {
-            var serverId = ConnectedServersReverse[connectionId];
-            ConnectedServers.Remove(serverId);
-            ConnectedServersReverse.Remove(connectionId);
+            if(ConnectedServersReverse.TryGetValue(connectionId, out string? serverId))
+            {
+                ConnectedServers.Remove(serverId);
+                ConnectedServersReverse.Remove(connectionId);
+            }
         }
 
         public void AddServer(string serverId,string connectionId)

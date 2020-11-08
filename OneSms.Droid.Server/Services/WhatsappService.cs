@@ -171,9 +171,10 @@ namespace OneSms.Droid.Server.Services
                     _downloadedImages.Add(targetFile.Name);
 
                     var imageUrl = await UploadImage(targetFile);
-                    if (string.IsNullOrEmpty(imageUrl))
+                    if(!string.IsNullOrEmpty(imageUrl))
                     {
                         image.WhastappMessage.MessageStatus = MessageStatus.Received;
+                        image.WhastappMessage.CompleteReceivedDateTime = DateTime.UtcNow.IgnoreMilliseconds();
                         image.WhastappMessage.ImageLinks.Add(imageUrl);
                         UpdateReceivedMessage(image.WhastappMessage);
                     }

@@ -22,6 +22,7 @@ namespace OneSms.Droid.Server.Services
         private string _prevNotificationKey;
         private IRequestManagementService _requestManagementService;
         private IWhatsappService _whatsappService;
+        private WhastappMessageReceived _previousMessage;
 
         public WhatsappNotificationListnerService()
         {
@@ -38,6 +39,8 @@ namespace OneSms.Droid.Server.Services
         {
             try
             {
+                CancelNotification(sbn.Key);
+
                 if (!(sbn.PackageName == WastappPackageName))
                     return;
                 if (_prevNotificationKey == sbn.Key)
@@ -67,9 +70,11 @@ namespace OneSms.Droid.Server.Services
                 if (androidText.Contains("📷"))
                     _requestManagementService.OnWhatsappMessageReceived.OnNext(receivedMessage);
                 else
-                    _whatsappService.ReportReceivedMessage(receivedMessage);
-
-                CancelNotification(sbn.Key);
+                {
+                    if(_previousMessage == null || (_previousMessage?.Body != receivedMessage.Body && _previousMessage?.SenderNumber != receivedMessage.SenderNumber))
+                        _whatsappService.ReportReceivedMessage(receivedMessage);
+                    _previousMessage = receivedMessage;
+                }
             }
             catch (Exception ex)
             {

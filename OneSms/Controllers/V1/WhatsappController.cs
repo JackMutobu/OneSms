@@ -72,7 +72,7 @@ namespace OneSms.Controllers.V1
             if (message != null)
                 _hubEventService.OnMessageReceived.OnNext(message);
 
-            return Ok($"Message received:{message?.MessageStatus}");
+            return Ok($"Message received status changed:{message?.MessageStatus}");
         }
 
         protected override  async Task<IActionResult> SendToMobileServer(SendMessageRequest messageRequest)

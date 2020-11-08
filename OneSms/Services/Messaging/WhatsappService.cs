@@ -66,6 +66,9 @@ namespace OneSms.Services
             {
                 message.CompletedTime = whastappMessageReceived.CompleteReceivedDateTime;
                 message.MessageStatus = whastappMessageReceived.MessageStatus;
+                message.ImageLinkOne = whastappMessageReceived.ImageLinks?.FirstOrDefault();
+                message.ImageLinkTwo = whastappMessageReceived.ImageLinks?.ElementAtOrDefault(2);
+                message.ImageLinkThree = whastappMessageReceived.ImageLinks?.ElementAtOrDefault(3);
                 _dbContext.Update(message);
                 await _dbContext.SaveChangesAsync();
             }
