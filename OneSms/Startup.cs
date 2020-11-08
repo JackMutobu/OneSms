@@ -68,6 +68,7 @@ namespace OneSms
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
                 endpoints.MapHub<OneSmsHub>("/onesmshub");
+                endpoints.MapHub<ChatHub>("/chat");
             });
         }
     }

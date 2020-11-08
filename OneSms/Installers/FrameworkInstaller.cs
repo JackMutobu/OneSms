@@ -23,6 +23,12 @@ namespace OneSms.Installers
              {
                  options.EnableDetailedErrors = true;
              });
+
+            services.AddSignalR().AddHubOptions<ChatHub>(options =>
+            {
+                options.EnableDetailedErrors = true;
+            });
+
             services.AddAntDesign();
 
             services.AddHttpContextAccessor();

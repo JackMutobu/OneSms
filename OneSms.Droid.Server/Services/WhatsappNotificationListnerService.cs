@@ -71,7 +71,7 @@ namespace OneSms.Droid.Server.Services
                     _requestManagementService.OnWhatsappMessageReceived.OnNext(receivedMessage);
                 else
                 {
-                    if(_previousMessage == null || (_previousMessage?.Body != receivedMessage.Body && _previousMessage?.SenderNumber != receivedMessage.SenderNumber))
+                    if(_previousMessage == null || !(_previousMessage?.Body == receivedMessage.Body && _previousMessage?.SenderNumber == receivedMessage.SenderNumber))
                         _whatsappService.ReportReceivedMessage(receivedMessage);
                     _previousMessage = receivedMessage;
                 }

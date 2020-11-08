@@ -53,6 +53,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OneSms.Contracts\OneSms.Contracts.csproj" />
+    <ProjectReference Include="..\OneSms.Domain\OneSms.Domain.csproj" />
     <ProjectReference Include="..\OneSms.Web\Shared\OneSms.Web.Shared.csproj" />
   </ItemGroup>
 

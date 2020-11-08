@@ -14,5 +14,10 @@
         public const string CheckClientAlive = nameof(CheckClientAlive);
 
         public const string ShareContact = nameof(ShareContact);
+
+        public const string OnException = nameof(OnException);
+
+        public const string OnMessageReceived = nameof(OnMessageReceived);
+        public const string OnMessageSentStatusChanged = nameof(OnMessageSentStatusChanged);
     }
 }

@@ -40,10 +40,6 @@ namespace OneSms.Views.Infrastructure
 
         protected override void OnInitialized()
         {
-            //var authstate = await AuthenticationsStateProvider.GetAuthenticationStateAsync();
-            //var user = authstate.User;
-            //if (user.IsInRole(UserRoles.TimAccount))
-            //    NavigationManager.NavigateTo("timtransctions");
             ViewModel = new ViewModels.Infrastructure.StatisticsViewModel(HttpClientFactory, UriService, HubEventService);
         }
 
