@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 
 namespace OneSms.Online.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
+   c
     public class UssdController : ControllerBase
     {
         private OneSmsDbContext _oneSmsDbContext;
