@@ -101,7 +101,7 @@ namespace OneSms.Droid.Server.Services
                                 buttons.Any(x => x.ContentDescription?.Contains("Camera") ?? false) && buttons.Any(x => x.ContentDescription?.Contains("Attach") ?? false))
             {
                 var editText = nodes.FirstOrDefault(x => x.ClassName == "android.widget.EditText");
-                if (editText != null && editText.Text == "Type a message")
+                if (editText != null && editText.Text == "Type a message" && !(_whatsappService.CurrentTransaction is WhatsappRequest))
                 {
                     this.PerformGlobalAction(GlobalAction.Home);
                 }

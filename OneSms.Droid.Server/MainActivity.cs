@@ -1,4 +1,5 @@
-﻿using Android;
+﻿using Akavache;
+using Android;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -19,6 +20,7 @@ using OneUssd;
 using Splat;
 using Syncfusion.Android.TabView;
 using System.IO;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 
@@ -51,7 +53,7 @@ namespace OneSms.Droid.Server
             //Register Akavache
             Akavache.Registrations.Start("OneSmsDb");
 
-            InitializeServices();
+            await InitializeServices();
             await RequestPermissions();
             await authService.Authenticate();
             await signalRService.ReconnectToHub();
@@ -64,9 +66,20 @@ namespace OneSms.Droid.Server
             InitializeTab();
         }
 
-        private void InitializeServices()
+        private async Task InitializeServices()
         {
-            Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/"), Preferences.Get(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub"));
+            var isInProduction = await BlobCache.UserAccount.GetObject<bool>(OneSmsAction.IsInProduction)
+                .Catch(Observable.Return(false));
+
+            if(isInProduction)
+            {
+                Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://afrisofttech-001-site20.btempurl.com/"), Preferences.Get(OneSmsAction.ServerUrl, "http://afrisofttech-001-site20.btempurl.com/onesmshub"));
+            }
+            else
+            {
+                Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://741927b7617a.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://741927b7617a.ngrok.io/onesmshub"));
+            }
+           
             signalRService = Locator.Current.GetService<ISignalRService>();
             smsService = Locator.Current.GetService<ISmsService>();
             whatsappService = Locator.Current.GetService<IWhatsappService>();
@@ -212,7 +225,7 @@ namespace OneSms.Droid.Server
         protected override void OnResume()
         {
             base.OnResume();
-            requestManagementService.OnTransactionCompleted.OnNext(whatsappService?.CurrentTransaction);
+            requestManagementService?.OnTransactionCompleted?.OnNext(whatsappService?.CurrentTransaction);
         }
 
         public async Task<PermissionStatus> CheckAndRequestReadStorage()

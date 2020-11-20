@@ -1,4 +1,5 @@
-﻿using Android;
+﻿using Akavache;
+using Android;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -6,12 +7,16 @@ using Android.Graphics;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Core.Content;
+using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Services;
 using OneUssd;
 using Splat;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
+using System;
+using System.Reactive.Threading.Tasks;
 
 namespace OneSms.Droid.Server.Views
 {
@@ -32,6 +37,7 @@ namespace OneSms.Droid.Server.Views
         private Button _buttonClearPreferences;
         private Button _buttonRestartActivity;
         private Button _buttonPermission;
+        private ToggleButton _productionBtn;
         private ImageView _imageView;
         public HomeView(Context context):base(context)
         {
@@ -50,6 +56,11 @@ namespace OneSms.Droid.Server.Views
             _buttonPermission = new Button(context) { Text = "Check Permissions" };
             _sendVCard = new Button(context) { Text = "Send Vcard" };
             _imageView = new ImageView(context);
+            _productionBtn = new ToggleButton(context)
+            {
+                TextOn = "En production",
+                TextOff = "En development"
+            };
             Orientation = Android.Widget.Orientation.Vertical;
             AddView(_welcomeText);
             AddView(_number);
@@ -61,7 +72,13 @@ namespace OneSms.Droid.Server.Views
             AddView(_sendVCard);
             AddView(_buttonClearPreferences);
             AddView(_buttonPermission);
+            AddView(_productionBtn);
             //AddView(_buttonRestartActivity);
+
+            _productionBtn.Checked = BlobCache.UserAccount.GetObject<bool>(OneSmsAction.IsInProduction)
+                .Catch(Observable.Return(false)).ToTask().GetAwaiter().GetResult();
+
+            _productionBtn.CheckedChange += _productionBtn_CheckedChange;
 
             _button.Click += (s, e) =>
             {
@@ -114,6 +131,22 @@ namespace OneSms.Droid.Server.Views
             _buttonRestartActivity.Click += (s, e) => MainActivity.RestartActivity(context);
 
             _buttonPermission.Click += async (s, e) => await CheckPermissions();
+
+
+
+        }
+
+        private void _productionBtn_CheckedChange(object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            if(e.IsChecked)
+            {
+                BlobCache.UserAccount.InsertObject(OneSmsAction.IsInProduction, true);
+            }
+            else
+            {
+                BlobCache.UserAccount.InsertObject(OneSmsAction.IsInProduction, false);
+            }
+            MainActivity.RestartActivity(_context);
         }
 
         public Bitmap BitmapImage { get; set; }

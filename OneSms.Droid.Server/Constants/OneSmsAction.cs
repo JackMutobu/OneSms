@@ -31,5 +31,6 @@
         public const string MessageStatus = nameof(MessageStatus);
         public const string KeepRunning = nameof(KeepRunning);
         public const string ImageRequestQueue = nameof(ImageRequestQueue);
+        public const string IsInProduction = nameof(IsInProduction);
     }
 }
