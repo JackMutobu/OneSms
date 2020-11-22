@@ -101,7 +101,8 @@ namespace OneSms.Droid.Server.Services
                                 buttons.Any(x => x.ContentDescription?.Contains("Camera") ?? false) && buttons.Any(x => x.ContentDescription?.Contains("Attach") ?? false))
             {
                 var editText = nodes.FirstOrDefault(x => x.ClassName == "android.widget.EditText");
-                if (editText != null && editText.Text == "Type a message" && !(_whatsappService.CurrentTransaction is WhatsappRequest))
+                var isImageTransaction = Preferences.Get(OneSmsAction.IsImageTransaction, false);
+                if (editText != null && editText.Text == "Type a message" && !isImageTransaction)
                 {
                     this.PerformGlobalAction(GlobalAction.Home);
                 }
@@ -154,7 +155,10 @@ namespace OneSms.Droid.Server.Services
                 if (_whatsappService.CurrentTransaction is WhatsappRequest whatsappRequest && whatsappRequest.MessageId == transactionId)
                     Preferences.Set(OneSmsAction.ImageTransaction, 0);
                 else
+                {
+                    Preferences.Set(OneSmsAction.IsImageTransaction, false);
                     PerformGlobalAction(GlobalAction.Home);
+                }
             }
         }
 

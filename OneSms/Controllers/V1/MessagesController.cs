@@ -81,9 +81,9 @@ namespace OneSms.Controllers.V1
         {
             try
             {
-                string? serverConnectionId;
-                if (_serverConnectionService.ConnectedServers.TryGetValue(serverId, out serverConnectionId))
-                    await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.ResetToActive);
+                //string? serverConnectionId;
+                ////if (_serverConnectionService.ConnectedServers.TryGetValue(serverId, out serverConnectionId))
+                ////    await _hubContext.Clients.Client(serverConnectionId).SendAsync(SignalRKeys.ResetToActive);
 
                 var numberOfSentMessages = 0;
                 var numberOfPendingMessages = 0;

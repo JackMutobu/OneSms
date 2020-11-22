@@ -42,7 +42,7 @@ namespace OneSms.Services
 
         public IAsyncEnumerable<T> GetPendingMessages(string serverKey)
             => _dbContext.Set<T>()
-            .Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending)
+            .Where(x => x.MobileServerId.ToString() == serverKey && x.MessageStatus == MessageStatus.Pending || (x.MessageStatus == MessageStatus.Sending && (x.StartTime.AddDays(1) - DateTime.UtcNow) < TimeSpan.FromHours(24)))
             .AsAsyncEnumerable();
 
         public Task<List<T>> GetListOfPendingMessages(string serverKey)

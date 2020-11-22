@@ -8,6 +8,7 @@ using OneSms.Droid.Server.Constants;
 using OneSms.Droid.Server.Extensions;
 using Splat;
 using System;
+using System.Collections.Generic;
 using Xamarin.Essentials;
 using Debug = System.Diagnostics.Debug;
 
@@ -22,7 +23,8 @@ namespace OneSms.Droid.Server.Services
         private string _prevNotificationKey;
         private IRequestManagementService _requestManagementService;
         private IWhatsappService _whatsappService;
-        private WhastappMessageReceived _previousMessage;
+        private long? _previousNotifWhen;
+        private  Dictionary<string, long?> _pkgLastNotificationWhen = new Dictionary<string, long?>();
 
         public WhatsappNotificationListnerService()
         {
@@ -48,6 +50,22 @@ namespace OneSms.Droid.Server.Services
                 else
                     _prevNotificationKey = sbn.Key;
 
+                if ((sbn.Notification.Flags & NotificationFlags.GroupSummary) != 0)
+                {
+                    Debug.WriteLine(TAG, "Ignore the notification FLAG_GROUP_SUMMARY");
+                    return;
+                }
+
+                if(_pkgLastNotificationWhen.TryGetValue(sbn.PackageName,out long? lastWhen))
+                {
+                    if (lastWhen != null && lastWhen >= sbn.Notification.When)
+                    {
+                        Debug.WriteLine(TAG, "Ignore Old notification");
+                        return;
+                    }
+                }
+                _pkgLastNotificationWhen[sbn.PackageName] =  sbn.Notification.When;
+
                 var bundle = sbn.Notification.Extras;
                 var from = bundle.GetString(NotificationCompat.ExtraTitle);
                 var message = bundle.GetString(NotificationCompat.ExtraText);
@@ -70,11 +88,7 @@ namespace OneSms.Droid.Server.Services
                 if (androidText.Contains("📷"))
                     _requestManagementService.OnWhatsappMessageReceived.OnNext(receivedMessage);
                 else
-                {
-                    if(_previousMessage == null || !(_previousMessage?.Body == receivedMessage.Body && _previousMessage?.SenderNumber == receivedMessage.SenderNumber))
-                        _whatsappService.ReportReceivedMessage(receivedMessage);
-                    _previousMessage = receivedMessage;
-                }
+                    _whatsappService.ReportReceivedMessage(receivedMessage);
             }
             catch (Exception ex)
             {

@@ -39,9 +39,16 @@ namespace OneSms.Services
             Observable.Interval(TimeSpan.FromSeconds(30))
              .Subscribe(async _ =>
              {
-                 foreach(var conId in ConnectedServers.Values)
+                 try
                  {
-                     await CheckClientAvailability(conId);
+                     foreach (var conId in ConnectedServers.Values)
+                     {
+                         await CheckClientAvailability(conId);
+                     }
+                 }
+                 catch(InvalidOperationException ex)
+                 {
+                     Debug.WriteLine(ex.Message); 
                  }
              },ex => Debug.WriteLine(ex.Message));
         }
@@ -102,8 +109,15 @@ namespace OneSms.Services
 
         public void CheckClientAvailabilityCallback(Guid requestId, bool response)
         {
-            if (_pendingTasks.TryRemove(requestId, out var obj) && obj is TaskCompletionSource<bool> source)
-                source.SetResult(response);
+            try
+            {
+                if (_pendingTasks.TryRemove(requestId, out var obj) && obj is TaskCompletionSource<bool> source)
+                    source.SetResult(response);
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
     }

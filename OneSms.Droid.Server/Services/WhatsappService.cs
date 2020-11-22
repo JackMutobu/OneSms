@@ -342,6 +342,7 @@ namespace OneSms.Droid.Server.Services
 
             try
             {
+                Preferences.Set(OneSmsAction.IsImageTransaction, true);
                 _context.StartActivity(i);
             }
             catch (Exception ex)

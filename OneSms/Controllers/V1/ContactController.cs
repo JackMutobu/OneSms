@@ -29,7 +29,7 @@ namespace OneSms.Controllers.V1
         [HttpPost(ApiRoutes.Contact.Share)]
         public async Task<IActionResult> ShareContact([FromBody] ShareContactListRequest shareContactListRequest)
         {
-            foreach (var request in shareContactListRequest.SharingContactRequests)
+            foreach (var request in shareContactListRequest.SharingContactRequests ?? new List<SharingContactRequest>())
             {
                 await OnSharingContact(request);
             }

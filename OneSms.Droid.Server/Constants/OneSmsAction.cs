@@ -32,5 +32,6 @@
         public const string KeepRunning = nameof(KeepRunning);
         public const string ImageRequestQueue = nameof(ImageRequestQueue);
         public const string IsInProduction = nameof(IsInProduction);
+        public const string IsImageTransaction = nameof(IsImageTransaction);
     }
 }

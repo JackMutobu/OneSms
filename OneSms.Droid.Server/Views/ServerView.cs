@@ -143,17 +143,21 @@ namespace OneSms.Droid.Server.Views
             _signalRService.OnConnectionChanged.Subscribe(con => MainThread.BeginInvokeOnMainThread(() => _labelConnected.Text = con ? "Connected" : "Disconnected"));
 
             BlobCache.LocalMachine.GetObject<string>(OneSmsAction.AuthKey).Catch(Observable.Return(string.Empty))
-                .Subscribe(x => MainThread.BeginInvokeOnMainThread(() => _authStateLabel.Text = string.IsNullOrEmpty(x) ? "Authenticated" : "Authenticated"));
+                .Subscribe(x => MainThread.BeginInvokeOnMainThread(() => _authStateLabel.Text = string.IsNullOrEmpty(x) ? "Not authenticated" : "Authenticated"));
 
             _authService.OnAuthStateChanged.Subscribe(x =>
             {
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    _authStateLabel.Text = x ? "Authenticated" : "AuthenticatedAuthenticated";
+                    _authStateLabel.Text = x ? "Authenticated" : "Not authenticated";
                 });
             });
 
-            _authBtn.Click += (s, e) => _authService.Authenticate();
+            _authBtn.Click += async (s, e) => 
+            {
+                await BlobCache.LocalMachine.InsertObject(OneSmsAction.AuthKey, "");
+                await _authService.Authenticate();
+            };
 
             BlobCache.UserAccount.GetObject<bool>(OneSmsAction.IsInProduction)
                 .Catch(Observable.Return(false))
@@ -183,6 +187,9 @@ namespace OneSms.Droid.Server.Views
                 Preferences.Set(OneSmsAction.ServerSecret, _serverSecretText.Text);
                 _labelServerId.Text = Preferences.Get(OneSmsAction.ServerKey, string.Empty);
                 _serverSecretText.Text = string.Empty;
+
+                await BlobCache.LocalMachine.InsertObject(OneSmsAction.AuthKey, "");
+                await _authService.Authenticate();
                 await _signalRService.ReconnectToHub();
             }
         }
