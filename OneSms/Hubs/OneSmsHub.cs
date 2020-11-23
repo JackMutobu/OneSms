@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Net.Http.Headers;
+using OneSms.Contracts.V1;
 using OneSms.Services;
 using System;
 using System.Diagnostics;
@@ -77,6 +78,11 @@ namespace OneSms.Hubs
                 client.SendAsync(request);
             }
             return Task.CompletedTask;
+        }
+
+        public Task Ping()
+        {
+            return Clients.Caller.SendAsync(SignalRKeys.Ping, true);
         }
 
     }

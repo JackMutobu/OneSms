@@ -77,7 +77,7 @@ namespace OneSms.Droid.Server
             }
             else
             {
-                Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://6fa84b61820e.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://6fa84b61820e.ngrok.io/onesmshub"));
+                Startup.Initialize(this, Preferences.Get(OneSmsAction.BaseUrl, "http://26a225099f79.ngrok.io/"), Preferences.Get(OneSmsAction.ServerUrl, "http://26a225099f79.ngrok.io/onesmshub"));
             }
            
             signalRService = Locator.Current.GetService<ISignalRService>();

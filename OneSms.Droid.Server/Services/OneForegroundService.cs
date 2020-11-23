@@ -35,7 +35,6 @@ namespace OneSms.Droid.Server.Services
         {
             _httpClientService = new HttpClientService("https://jsonplaceholder.typicode.com/");
             _signalRService = Locator.Current.GetService<ISignalRService>();
-            _signalRService.Context = this;
             _whatsappService = Locator.Current.GetService<IWhatsappService>();
             _transactionQueue = new Queue<MessageTransactionProcessDto>();
             //_signalRService.Connection.On(SignalRKeys.SendWhatsapp, (Action<MessageTransactionProcessDto>)(transaction =>

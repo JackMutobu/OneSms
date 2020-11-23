@@ -19,5 +19,6 @@
 
         public const string OnMessageReceived = nameof(OnMessageReceived);
         public const string OnMessageSentStatusChanged = nameof(OnMessageSentStatusChanged);
+        public const string Ping = nameof(Ping);
     }
 }

@@ -63,12 +63,14 @@ namespace OneSms.Droid.Server.Services
         private Queue<ImageData> _imageDatas;
         private ImageData _currentImageDownload;
         private HashSet<string> _downloadedImages;
+        private readonly Subject<bool> _resetToActive;
 
         public WhatsappService(Context context)
         {
             _context = context;
             _signalRService = Locator.Current.GetService<ISignalRService>();
             _httpClientService = Locator.Current.GetService<IHttpClientService>();
+            _resetToActive = new Subject<bool>();
 
             OnRequestCompleted = new Subject<object>();
             OnImageDwonloaded = new Subject<ImageData>();
@@ -85,6 +87,7 @@ namespace OneSms.Droid.Server.Services
             OnRequestCompleted
                 .Subscribe(async request =>
                 {
+                    _resetToActive.OnNext(true);//Reset timer
                     _isBusy = false;
                     switch (request)
                     {
@@ -134,7 +137,16 @@ namespace OneSms.Droid.Server.Services
                     });
                 });
 
+            var resUpdated = _resetToActive
+               .Select(x => Observable.Interval(TimeSpan.FromSeconds(30)))
+               .Switch();
+            resUpdated.Subscribe(async value => 
+            {
+                _isBusy = false;
+                await ExecuteNext();
+            });
 
+            _resetToActive.OnNext(true);//Start timer;
         }
 
         private async Task GetImageData(List<ImageData> imageDatas)
