@@ -87,7 +87,8 @@ namespace OneSms.Droid.Server.Services
             resUpdated.Subscribe(async value => await ReconnectToHub());
 
             _pingUpdate.OnNext(true);//Start timer;
-            Connection.On<bool>(SignalRKeys.Ping, result => _pingUpdate.OnNext(result)/*reset timer*/);
+            Connection.On<bool>(SignalRKeys.Ping, result => 
+            _pingUpdate.OnNext(result)/*reset timer*/);
         }
 
         private void BuildConnection(string url)

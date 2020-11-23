@@ -59,6 +59,9 @@ namespace OneSms.Droid.Server.Services
                             _whatsappService.OnRequestCompleted.OnNext(true);
                         _ussdService.OnUssdCompleted.OnNext(ussdRequest);
                         break;
+                    default:
+                        _whatsappService.OnRequestCompleted.OnNext(true);
+                        break;
                 }
             });
 

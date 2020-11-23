@@ -100,7 +100,7 @@ namespace OneSms.Droid.Server.Services
                             break;
                     }
 
-                    if(((int)_requestManagementService.CurrentTransaction) < 3)
+                    if(_requestManagementService != null && ((int)_requestManagementService.CurrentTransaction) < 3)
                         await ExecuteNext();
 
                     async Task ReportRequestState(WhatsappRequest whatsappRequest)
@@ -108,7 +108,7 @@ namespace OneSms.Droid.Server.Services
                         whatsappRequest.MessageStatus = await BlobCache.LocalMachine.GetObject<MessageStatus>(OneSmsAction.MessageStatus);
                         _httpClientService.PutAsync<string>(whatsappRequest, ApiRoutes.Whatsapp.StatusChanged);
                     }
-                });
+                }, ex => System.Console.WriteLine(ex.Message));
 
             OnImageDwonloaded
                 .Subscribe(x =>
